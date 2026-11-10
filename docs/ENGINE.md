@@ -2,6 +2,8 @@
 
 The local Python library in [`awm_adm.engine`](../src/awm_adm/engine/) supports empty/snapshot initialization, finite typed models, queries/plans, ordered admission, independent owner requirements, private construction and invariant certificates. The reusable core uses the Python standard library and has no HTTP, database or provider transport dependency.
 
+Its finite grammar, algebraic constructions and generated proof templates are an ADM implementation profile inspired by AWM. They do not implement the paper's complete modeling and proof pipeline. The checks documented here establish their own bounded guarantees; the paper's results do not verify this interpreter or translator. See [foundation and provenance](REFERENCES.md).
+
 The instance coordinator is in memory. It does not persist requests, run background acquisition, issue worker grants, or provide crash recovery. The [runtime](RUNTIME.md) persists initialized model snapshots and local operator runs, adds process ownership and uses a separate authenticated control listener. The [application API](API.md) provides durable public application requests and events; the [learning service](LEARNING.md) supplies durable background episodes and ordered admission. The status-only development server stays unready; the actual Docker runtime reports its component readiness. Ask/Teach translation and explanation, source extraction and managed intake are implemented by the services above this library.
 
 ## 1. Running and using the library

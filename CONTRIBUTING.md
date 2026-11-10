@@ -59,4 +59,4 @@ python3 scripts/export_release.py /absolute/new/path/awm-adm-0.3.0 --verify
 
 The exporter includes an explicit public file set, excludes private stores/caches/credentials and records a SHA-256 inventory. It rejects source symlinks. This inventory is an integrity check, not a signature or proof of tests. Build/install from an exported directory without depending on files beside this repository.
 
-Keep plans, personal trial transcripts, screenshots, local databases and operational credentials out of commits. `.gitignore` protects normal local paths, but review `git status` and staged content before publication. Do not force-add ignored files. See [security](SECURITY.md) for reporting sensitive findings.
+Keep plans, personal trial transcripts/screenshots, local databases and operational credentials out of commits. Public documentation images belong under `docs/images/` and must be reviewed for private content and metadata before inclusion. `.gitignore` protects normal local paths, but review `git status` and staged content before publication. Do not force-add ignored files. See [security](SECURITY.md) for reporting sensitive findings.

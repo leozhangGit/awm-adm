@@ -1,12 +1,22 @@
 # AWM-ADM
 
-**Local knowledge. Checked learning. Reasoning you can inspect.**
+**Independent models. Checked learning. Reasoning you can inspect.**
 
-AWM-ADM is a local service for building and using **Algebraic Domain Models**: independently maintained models with explicit concepts, rules, evidence and supported operations. Each model can start empty or from a checked snapshot. The engine is domain agnostic; equipment checkout, water tanks and access permissions are examples, not built-in restrictions.
+AWM-ADM is a service for building and using **Algebraic Domain Models (ADMs)**: independently maintained models with explicit concepts, rules, evidence and supported operations. It combines LLM-assisted learning and conversation with an accepted model that can be inspected, revised and executed under its owner's control.
 
-An external LLM helps interpret requests, propose knowledge and explain outcomes. The ADM checks proposed changes and executes supported queries against its accepted local model. Provider output is fallible and does not become model authority merely because it sounds convincing.
+The project is inspired by [Algebraic World Model: From Exploration to Proofs](https://arxiv.org/html/2610.40503v1), which develops explicit models of particular environments and uses them for formal reasoning. Our focus is a practical service in which each ADM develops its own domain knowledge and history. A model can start empty or from a checked snapshot; the engine does not prescribe its domain. Equipment checkout, water tanks and access permissions are examples, not built-in restrictions.
+
+An external LLM helps interpret requests, propose knowledge and explain outcomes. The ADM validates proposed changes and executes supported queries against its accepted model. Learning can continue in the background while accepted capabilities remain available. Provider output is fallible; only checked, admitted content becomes active knowledge, and fluent explanations remain separate from computed results.
+
+Independent ownership, the learning/serving separation, forward/backward conflict policies and budgeted service workflows are **our ADM design choices**. AWM already uses LLM agents and environment-specific models; these choices describe how we apply its ideas. See [the foundation and implementation boundaries](docs/REFERENCES.md).
+
+**[Explore AWM-ADM on concourses.net](https://concourses.net/awm-adm.html)** for the motivation, architecture and examples.
 
 **Release: 0.3.0 · MIT license · Supported Docker target: Linux ARM64**
+
+![AWM-ADM console showing the Domain models workspace, Create model control and empty-model guidance](docs/images/domain-models.png)
+
+*The Domain models workspace: create an empty ADM, import a checked snapshot or try an example.*
 
 ## What you can do
 
@@ -89,6 +99,6 @@ The repository builds and tests on its own. It does not import a parent project 
 
 ## Foundation and license
 
-The project is inspired by the [Algebraic World Model paper](https://arxiv.org/html/2610.40503v1). It applies those ideas to locally owned domain models with explicit learning and serving boundaries; it is an independent implementation, not an official distribution of the paper's code.
+AWM-ADM is an independent implementation inspired by AWM. The [references](docs/REFERENCES.md) distinguish the paper's method from this service's architecture and verification scope. This repository is not an official distribution of the paper's code or a reproduction of its experiments.
 
 AWM-ADM is distributed under the [MIT License](LICENSE). Bundled third-party material retains its own notices; see [Third-party notices](THIRD_PARTY_NOTICES.md).

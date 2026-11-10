@@ -2,6 +2,8 @@
 
 AWM-ADM separates locally accepted knowledge from fallible knowledge acquisition and conversational presentation. Every model owns its own finite theory, evidence support, owner requirements, revision history and conflict policy. Domain content belongs to the instance; example domains never become special cases in the engine.
 
+This is the architecture of the ADM service we build using AWM ideas. Instance ownership, learning/serving separation, receipt-order conflict policies and the process boundaries below are our engineering contracts. The [foundation reference](REFERENCES.md) distinguishes them from the paper's method; the [project introduction](https://concourses.net/awm-adm.html) explains their motivation. Independent instances do not imply a distributed consensus or federation protocol.
+
 ```mermaid
 flowchart LR
   U[Console or API client] --> A[Application]

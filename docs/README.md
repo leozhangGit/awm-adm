@@ -2,6 +2,8 @@
 
 AWM-ADM 0.3.0 is a local, single-owner service. Start with the [repository README](../README.md) and [installation guide](INSTALLATION.md).
 
+For the motivation and conceptual architecture, read [Explore AWM-ADM](https://concourses.net/awm-adm.html). The [foundation reference](REFERENCES.md) separates AWM's method from our ADM design choices and implementation guarantees. All build and operating instructions are contained in this repository.
+
 ## Use the service
 
 | Guide | Covers |

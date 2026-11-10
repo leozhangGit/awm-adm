@@ -2,7 +2,26 @@
 
 ## Conceptual foundation
 
-The project is inspired by [Algebraic World Model: From Exploration to Proofs, arXiv:2610.40503v1](https://arxiv.org/html/2610.40503v1). AWM is the project's chosen foundation. The local ADM design applies those ideas to bounded, independently maintained domain theories with separate acquisition and serving. This is a project design premise, not a universal comparison claim or reproduction of the paper's experiments.
+The conceptual source is [Algebraic World Model: From Exploration to Proofs, arXiv:2610.40503v1](https://arxiv.org/html/2610.40503v1), by Guancheng Pan, Qixin Tan, Yang Yuan and Andrew C. Yao.
+
+### What the paper proposes
+
+AWM uses LLM agents to explore environments, test executable hypotheses, organize them into typed objects and rules, simplify their structure and construct Lean proofs. Its models describe particular environments, including individual games; a single theory of the whole world is not required. Read §§2–3 and the Statement on AI use for these aspects of the method. Proofs establish conclusions under a model's premises; the fit between those premises and the environment requires separate examination (§§4.4 and 6). [Source paper](https://arxiv.org/html/2610.40503v1)
+
+### What this project designs
+
+AWM-ADM adopts explicit, inspectable models as its foundation and organizes them into a service with independently maintained instances. The following are ADM engineering choices, rather than requirements attributed to the paper:
+
+- Empty or checked-snapshot initialization, independent ownership and versioned evidence/history.
+- A separation between fallible acquisition/conversational presentation and authoritative execution against accepted models.
+- Receiver-ordered forward/backward conflict policies, with mode changes applying only to future decisions.
+- Owner requirements, bounded background jobs, admission controls, spending limits, APIs and a conversational console.
+
+The role assigned to LLMs here is a service boundary, not a claim that AWM excludes LLM reasoning. AWM's value is a project design premise; this implementation does not establish comparative superiority or reproduce the paper's experiments. The [project introduction](https://concourses.net/awm-adm.html) explains the motivation and architecture.
+
+### Implementation and verification scope
+
+The finite grammar, bounded algorithms and generated invariant-certificate templates are this implementation's verification profile. It does not implement the paper's complete exploration, transformation and proof pipeline. Lean kernel checks and exhaustive correspondence to executable representations are reported separately; the Python interpreter and translator remain trusted. Small domains and accepted premises do not by themselves establish external truth.
 
 The package owns its finite engine, runtime and test fixtures. Compatibility fixtures retain their exact artifact bytes; they are not a dependency on an external source checkout. [Architecture](ARCHITECTURE.md), [Engine](ENGINE.md) and [Testing](TESTING.md) describe the implemented scope and trusted-code boundary.
 
