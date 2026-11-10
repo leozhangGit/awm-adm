@@ -1,0 +1,306 @@
+{
+  "profile": "awm-adm-v3-fixture-oracle/0.1",
+  "domain": "equipment",
+  "symbol": "equipment.can_borrow",
+  "cases": [
+    {
+      "id": "borrow-0-0",
+      "inputs": {
+        "borrowed": 0,
+        "available": 0
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 0
+            },
+            "available": {
+              "op": "literal",
+              "value": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-0-1",
+      "inputs": {
+        "borrowed": 0,
+        "available": 1
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 0
+            },
+            "available": {
+              "op": "literal",
+              "value": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-0-2",
+      "inputs": {
+        "borrowed": 0,
+        "available": 2
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 0
+            },
+            "available": {
+              "op": "literal",
+              "value": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-1-0",
+      "inputs": {
+        "borrowed": 1,
+        "available": 0
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 1
+            },
+            "available": {
+              "op": "literal",
+              "value": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-1-1",
+      "inputs": {
+        "borrowed": 1,
+        "available": 1
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 1
+            },
+            "available": {
+              "op": "literal",
+              "value": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-1-2",
+      "inputs": {
+        "borrowed": 1,
+        "available": 2
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 1
+            },
+            "available": {
+              "op": "literal",
+              "value": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-2-0",
+      "inputs": {
+        "borrowed": 2,
+        "available": 0
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 2
+            },
+            "available": {
+              "op": "literal",
+              "value": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-2-1",
+      "inputs": {
+        "borrowed": 2,
+        "available": 1
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 2
+            },
+            "available": {
+              "op": "literal",
+              "value": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "borrow-2-2",
+      "inputs": {
+        "borrowed": 2,
+        "available": 2
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "equipment",
+        "expression": {
+          "op": "call",
+          "function": "equipment.can_borrow",
+          "args": {
+            "borrowed": {
+              "op": "literal",
+              "value": 2
+            },
+            "available": {
+              "op": "literal",
+              "value": 2
+            }
+          }
+        }
+      }
+    }
+  ],
+  "ask": {
+    "message": "Can I borrow a camera if I hold one and one is available?",
+    "expected_query": {
+      "op": "evaluate",
+      "module": "equipment",
+      "expression": {
+        "op": "call",
+        "function": "equipment.can_borrow",
+        "args": {
+          "borrowed": {
+            "op": "literal",
+            "value": 1
+          },
+          "available": {
+            "op": "literal",
+            "value": 1
+          }
+        }
+      }
+    },
+    "expected_value": true,
+    "permitted_claims": [
+      "value"
+    ],
+    "forbidden_claims": [
+      "unreachable",
+      "lean_kernel_checked",
+      "external_truth"
+    ]
+  },
+  "clarifications": [
+    {
+      "message": "Can they do it?",
+      "expected": "needs_clarification"
+    },
+    {
+      "message": "Learn this rule.",
+      "missing": [
+        "learning_allowance"
+      ]
+    }
+  ],
+  "teaching": {
+    "goal": "Learn the rule in supplied.md",
+    "initialization": [
+      "empty",
+      "snapshot"
+    ],
+    "expected_complete_admission": "accepted",
+    "wrong_constant_true": "rejected"
+  },
+  "history_expectations": [
+    {
+      "year": 2025,
+      "expected": 2
+    },
+    {
+      "year": 2026,
+      "expected": 1
+    },
+    {
+      "year": 2027,
+      "expected_status": "needs_input"
+    }
+  ]
+}

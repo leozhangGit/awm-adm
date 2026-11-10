@@ -1,0 +1,500 @@
+{
+  "$defs": {
+    "CallLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Max Calls",
+          "type": "integer"
+        },
+        "max_duration_ms": {
+          "default": 60000,
+          "maximum": 600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32000,
+          "maximum": 1050000,
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 8192,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "CallLimits",
+      "type": "object"
+    },
+    "EpisodeLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "default": 3,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Calls",
+          "type": "integer"
+        },
+        "max_duration_ms": {
+          "default": 360000,
+          "maximum": 86400000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 96000,
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 24576,
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_work": {
+          "default": 6000000,
+          "maximum": 1000000000,
+          "minimum": 1,
+          "title": "Max Work",
+          "type": "integer"
+        },
+        "no_progress_attempts": {
+          "default": 2,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "No Progress Attempts",
+          "type": "integer"
+        },
+        "private_draft_bytes": {
+          "default": 2097152,
+          "maximum": 16777216,
+          "minimum": 1024,
+          "title": "Private Draft Bytes",
+          "type": "integer"
+        }
+      },
+      "title": "EpisodeLimits",
+      "type": "object"
+    },
+    "Learning": {
+      "additionalProperties": false,
+      "properties": {
+        "call": {
+          "$ref": "#/$defs/CallLimits"
+        },
+        "default_conflict_mode": {
+          "default": "backward",
+          "enum": [
+            "backward",
+            "forward"
+          ],
+          "title": "Default Conflict Mode",
+          "type": "string"
+        },
+        "episode": {
+          "$ref": "#/$defs/EpisodeLimits"
+        },
+        "publication": {
+          "default": "review",
+          "enum": [
+            "review",
+            "checked_auto"
+          ],
+          "title": "Publication",
+          "type": "string"
+        },
+        "quotas": {
+          "$ref": "#/$defs/Quotas"
+        },
+        "remote_calls_enabled": {
+          "default": false,
+          "title": "Remote Calls Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "Learning",
+      "type": "object"
+    },
+    "Proof": {
+      "additionalProperties": false,
+      "properties": {
+        "fallback": {
+          "const": "forbidden",
+          "default": "forbidden",
+          "title": "Fallback",
+          "type": "string"
+        },
+        "lean_executable": {
+          "default": "/opt/lean/bin/lean",
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Lean Executable",
+          "type": "string"
+        },
+        "required_lean_version": {
+          "const": "4.19.0",
+          "default": "4.19.0",
+          "title": "Required Lean Version",
+          "type": "string"
+        }
+      },
+      "title": "Proof",
+      "type": "object"
+    },
+    "Quotas": {
+      "additionalProperties": false,
+      "properties": {
+        "calls_installation": {
+          "default": 100,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Calls Installation",
+          "type": "integer"
+        },
+        "calls_per_adm": {
+          "default": 20,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Calls Per Adm",
+          "type": "integer"
+        },
+        "input_tokens_installation": {
+          "default": 3200000,
+          "maximum": 1000000000,
+          "minimum": 1,
+          "title": "Input Tokens Installation",
+          "type": "integer"
+        },
+        "input_tokens_per_adm": {
+          "default": 640000,
+          "maximum": 100000000,
+          "minimum": 1,
+          "title": "Input Tokens Per Adm",
+          "type": "integer"
+        },
+        "output_tokens_installation": {
+          "default": 819200,
+          "maximum": 1000000000,
+          "minimum": 1,
+          "title": "Output Tokens Installation",
+          "type": "integer"
+        },
+        "output_tokens_per_adm": {
+          "default": 163840,
+          "maximum": 100000000,
+          "minimum": 1,
+          "title": "Output Tokens Per Adm",
+          "type": "integer"
+        },
+        "period_seconds": {
+          "default": 86400,
+          "maximum": 2592000,
+          "minimum": 60,
+          "title": "Period Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "Quotas",
+      "type": "object"
+    },
+    "RequestLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_duration_ms": {
+          "default": 10000,
+          "maximum": 3600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_search_bytes": {
+          "default": 16000000,
+          "maximum": 256000000,
+          "minimum": 1,
+          "title": "Max Search Bytes",
+          "type": "integer"
+        },
+        "max_states": {
+          "default": 10000,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Max States",
+          "type": "integer"
+        },
+        "max_work": {
+          "default": 1000000,
+          "maximum": 100000000,
+          "minimum": 1,
+          "title": "Max Work",
+          "type": "integer"
+        }
+      },
+      "title": "RequestLimits",
+      "type": "object"
+    },
+    "Retention": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic_cleanup": {
+          "default": false,
+          "title": "Automatic Cleanup",
+          "type": "boolean"
+        },
+        "diagnostic_days": {
+          "default": 14,
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Diagnostic Days",
+          "type": "integer"
+        },
+        "event_days": {
+          "default": 30,
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Event Days",
+          "type": "integer"
+        },
+        "idempotency_days": {
+          "default": 90,
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Idempotency Days",
+          "type": "integer"
+        },
+        "unreferenced_source_days": {
+          "default": 90,
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Unreferenced Source Days",
+          "type": "integer"
+        }
+      },
+      "title": "Retention",
+      "type": "object"
+    },
+    "RuntimeLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "background_processes": {
+          "default": 1,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Background Processes",
+          "type": "integer"
+        },
+        "conversation_check_processes": {
+          "default": 1,
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Conversation Check Processes",
+          "type": "integer"
+        },
+        "installation_storage_bytes": {
+          "default": 5368709120,
+          "maximum": 1099511627776,
+          "minimum": 1048576,
+          "title": "Installation Storage Bytes",
+          "type": "integer"
+        },
+        "instance_storage_bytes": {
+          "default": 536870912,
+          "maximum": 107374182400,
+          "minimum": 1048576,
+          "title": "Instance Storage Bytes",
+          "type": "integer"
+        },
+        "max_adms": {
+          "default": 10,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Adms",
+          "type": "integer"
+        },
+        "provider_concurrency": {
+          "default": 2,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Provider Concurrency",
+          "type": "integer"
+        },
+        "provider_concurrency_per_adm": {
+          "default": 2,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Provider Concurrency Per Adm",
+          "type": "integer"
+        },
+        "queue_bytes_per_adm": {
+          "default": 67108864,
+          "maximum": 1073741824,
+          "minimum": 1024,
+          "title": "Queue Bytes Per Adm",
+          "type": "integer"
+        },
+        "queue_items_per_adm": {
+          "default": 1000,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Queue Items Per Adm",
+          "type": "integer"
+        },
+        "serving_processes": {
+          "default": 2,
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Serving Processes",
+          "type": "integer"
+        }
+      },
+      "title": "RuntimeLimits",
+      "type": "object"
+    },
+    "Server": {
+      "additionalProperties": false,
+      "properties": {
+        "bind_host": {
+          "default": "127.0.0.1",
+          "enum": [
+            "127.0.0.1",
+            "::1"
+          ],
+          "title": "Bind Host",
+          "type": "string"
+        },
+        "data_dir": {
+          "default": ".local/data",
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Data Dir",
+          "type": "string"
+        },
+        "max_body_bytes": {
+          "default": 2097152,
+          "maximum": 2097152,
+          "minimum": 1024,
+          "title": "Max Body Bytes",
+          "type": "integer"
+        },
+        "port": {
+          "default": 8080,
+          "maximum": 65535,
+          "minimum": 1024,
+          "title": "Port",
+          "type": "integer"
+        }
+      },
+      "title": "Server",
+      "type": "object"
+    },
+    "Sources": {
+      "additionalProperties": false,
+      "properties": {
+        "batch_bytes": {
+          "default": 2097152,
+          "maximum": 2097152,
+          "minimum": 1,
+          "title": "Batch Bytes",
+          "type": "integer"
+        },
+        "batch_items": {
+          "default": 100,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Batch Items",
+          "type": "integer"
+        },
+        "feed_enabled_by_default": {
+          "default": false,
+          "title": "Feed Enabled By Default",
+          "type": "boolean"
+        },
+        "item_bytes": {
+          "default": 262144,
+          "maximum": 2097152,
+          "minimum": 1,
+          "title": "Item Bytes",
+          "type": "integer"
+        },
+        "max_claims_per_item": {
+          "default": 100,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Max Claims Per Item",
+          "type": "integer"
+        },
+        "projection_entities": {
+          "default": 128,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Projection Entities",
+          "type": "integer"
+        },
+        "projection_facts": {
+          "default": 4096,
+          "maximum": 65536,
+          "minimum": 1,
+          "title": "Projection Facts",
+          "type": "integer"
+        },
+        "projection_intervals": {
+          "default": 256,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Projection Intervals",
+          "type": "integer"
+        }
+      },
+      "title": "Sources",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:AppConfig",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "config_profile": {
+      "const": "awm-adm-config/2",
+      "default": "awm-adm-config/2",
+      "title": "Config Profile",
+      "type": "string"
+    },
+    "learning": {
+      "$ref": "#/$defs/Learning"
+    },
+    "proof": {
+      "$ref": "#/$defs/Proof"
+    },
+    "request": {
+      "$ref": "#/$defs/RequestLimits"
+    },
+    "retention": {
+      "$ref": "#/$defs/Retention"
+    },
+    "runtime": {
+      "$ref": "#/$defs/RuntimeLimits"
+    },
+    "server": {
+      "$ref": "#/$defs/Server"
+    },
+    "sources": {
+      "$ref": "#/$defs/Sources"
+    }
+  },
+  "title": "AppConfig",
+  "type": "object"
+}

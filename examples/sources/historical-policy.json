@@ -1,0 +1,41 @@
+{
+  "projection": {
+    "profile": "awm-adm-projection/1",
+    "namespace": "history",
+    "entities": [
+      "site"
+    ],
+    "predicates": [
+      {
+        "symbol": "site.capacity",
+        "kind": "integer",
+        "unit": "places",
+        "minimum": 0,
+        "maximum": 20,
+        "values": []
+      }
+    ],
+    "cells": [
+      {
+        "kind": "interval",
+        "granularity": "year",
+        "effective_from": "2020-01-01T00:00:00Z",
+        "effective_to": "2024-01-01T00:00:00Z"
+      },
+      {
+        "kind": "interval",
+        "granularity": "year",
+        "effective_from": "2024-01-01T00:00:00Z",
+        "effective_to": "2026-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "records",
+      "attribution": "Authored historical fixture",
+      "evidence_group": "authored",
+      "allow_external": true
+    }
+  ]
+}

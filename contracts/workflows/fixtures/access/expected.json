@@ -1,0 +1,300 @@
+{
+  "profile": "awm-adm-v3-fixture-oracle/0.1",
+  "domain": "access",
+  "symbol": "access.authorized",
+  "cases": [
+    {
+      "id": "access-closed-none-alice",
+      "inputs": {
+        "permission": {
+          "tag": "closed",
+          "value": {}
+        },
+        "actor": "alice"
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "closed",
+                "value": {}
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "alice",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "access-closed-none-bob",
+      "inputs": {
+        "permission": {
+          "tag": "closed",
+          "value": {}
+        },
+        "actor": "bob"
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "closed",
+                "value": {}
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "bob",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "access-open-alice-alice",
+      "inputs": {
+        "permission": {
+          "tag": "open",
+          "value": "alice"
+        },
+        "actor": "alice"
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "open",
+                "value": "alice"
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "alice",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "access-open-alice-bob",
+      "inputs": {
+        "permission": {
+          "tag": "open",
+          "value": "alice"
+        },
+        "actor": "bob"
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "open",
+                "value": "alice"
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "bob",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "access-open-bob-alice",
+      "inputs": {
+        "permission": {
+          "tag": "open",
+          "value": "bob"
+        },
+        "actor": "alice"
+      },
+      "expected": false,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "open",
+                "value": "bob"
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "alice",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "access-open-bob-bob",
+      "inputs": {
+        "permission": {
+          "tag": "open",
+          "value": "bob"
+        },
+        "actor": "bob"
+      },
+      "expected": true,
+      "query": {
+        "op": "evaluate",
+        "module": "access",
+        "expression": {
+          "op": "call",
+          "function": "access.authorized",
+          "args": {
+            "permission": {
+              "op": "literal",
+              "value": {
+                "tag": "open",
+                "value": "bob"
+              },
+              "type": {
+                "ref": "access.Permission"
+              }
+            },
+            "actor": {
+              "op": "literal",
+              "value": "bob",
+              "type": {
+                "ref": "access.Actor"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "ask": {
+    "message": "The permission names Alice. Is Bob authorized?",
+    "expected_query": {
+      "op": "evaluate",
+      "module": "access",
+      "expression": {
+        "op": "call",
+        "function": "access.authorized",
+        "args": {
+          "permission": {
+            "op": "literal",
+            "value": {
+              "tag": "open",
+              "value": "alice"
+            },
+            "type": {
+              "ref": "access.Permission"
+            }
+          },
+          "actor": {
+            "op": "literal",
+            "value": "bob",
+            "type": {
+              "ref": "access.Actor"
+            }
+          }
+        }
+      }
+    },
+    "expected_value": false,
+    "permitted_claims": [
+      "value"
+    ],
+    "forbidden_claims": [
+      "unreachable",
+      "lean_kernel_checked",
+      "external_truth"
+    ]
+  },
+  "clarifications": [
+    {
+      "message": "Can they do it?",
+      "expected": "needs_clarification"
+    },
+    {
+      "message": "Learn this rule.",
+      "missing": [
+        "learning_allowance"
+      ]
+    }
+  ],
+  "teaching": {
+    "goal": "Learn the rule in supplied.md",
+    "initialization": [
+      "empty",
+      "snapshot"
+    ],
+    "expected_complete_admission": "accepted",
+    "wrong_constant_true": "rejected"
+  },
+  "history_expectations": [],
+  "source_expectation": {
+    "kind": "capability_task",
+    "reason": "Universal authorization rule requires checked definitions, not historical-fact projection."
+  }
+}

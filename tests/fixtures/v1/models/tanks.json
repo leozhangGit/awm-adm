@@ -1,0 +1,694 @@
+{
+  "profile": "finite-v0",
+  "declarations": {
+    "tanks.Left": {
+      "kind": "type",
+      "type": {
+        "kind": "int",
+        "min": 0,
+        "max": 5
+      }
+    },
+    "tanks.Right": {
+      "kind": "type",
+      "type": {
+        "kind": "int",
+        "min": 0,
+        "max": 3
+      }
+    },
+    "tanks.State": {
+      "kind": "type",
+      "type": {
+        "kind": "record",
+        "fields": {
+          "left": {
+            "ref": "tanks.Left"
+          },
+          "right": {
+            "ref": "tanks.Right"
+          }
+        }
+      }
+    },
+    "tanks.capacity": {
+      "kind": "function",
+      "params": {},
+      "returns": {
+        "ref": "tanks.Left"
+      },
+      "body": {
+        "op": "literal",
+        "value": 5
+      }
+    },
+    "tanks.space_left": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "tanks.State"
+        }
+      },
+      "returns": {
+        "ref": "tanks.Left"
+      },
+      "body": {
+        "op": "sub",
+        "args": [
+          {
+            "op": "call",
+            "function": "tanks.capacity",
+            "args": {}
+          },
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "left"
+          }
+        ]
+      }
+    },
+    "tanks.project_left": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "tanks.State"
+        }
+      },
+      "returns": {
+        "ref": "tanks.Left"
+      },
+      "body": {
+        "op": "get",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "field": "left"
+      }
+    },
+    "tanks.project_right": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "tanks.State"
+        }
+      },
+      "returns": {
+        "ref": "tanks.Right"
+      },
+      "body": {
+        "op": "get",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "field": "right"
+      }
+    },
+    "tanks.state_product": {
+      "kind": "presentation",
+      "construction": "product",
+      "carrier": {
+        "ref": "tanks.State"
+      },
+      "left": {
+        "ref": "tanks.Left"
+      },
+      "right": {
+        "ref": "tanks.Right"
+      },
+      "project_left": "tanks.project_left",
+      "project_right": "tanks.project_right"
+    },
+    "tanks.four_litres": {
+      "kind": "goal",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "body": {
+        "op": "eq",
+        "args": [
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "left"
+          },
+          {
+            "op": "literal",
+            "value": 4
+          }
+        ]
+      }
+    },
+    "tanks.capacity_positive": {
+      "kind": "assertion",
+      "params": {},
+      "body": {
+        "op": "gt",
+        "args": [
+          {
+            "op": "call",
+            "function": "tanks.capacity",
+            "args": {}
+          },
+          {
+            "op": "literal",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "tanks.GoalState": {
+      "kind": "type",
+      "type": {
+        "kind": "refined",
+        "base": {
+          "ref": "tanks.State"
+        },
+        "where": {
+          "op": "eq",
+          "args": [
+            {
+              "op": "get",
+              "record": {
+                "op": "var",
+                "name": "value"
+              },
+              "field": "left"
+            },
+            {
+              "op": "literal",
+              "value": 4
+            }
+          ]
+        }
+      }
+    },
+    "tanks.four": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "tanks.State"
+        }
+      },
+      "returns": {
+        "ref": "tanks.Left"
+      },
+      "body": {
+        "op": "literal",
+        "value": 4
+      }
+    },
+    "tanks.include_goal": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "tanks.GoalState"
+        }
+      },
+      "returns": {
+        "ref": "tanks.State"
+      },
+      "body": {
+        "op": "var",
+        "name": "state"
+      }
+    },
+    "tanks.goal_equalizer": {
+      "kind": "presentation",
+      "construction": "equalizer",
+      "carrier": {
+        "ref": "tanks.GoalState"
+      },
+      "source": {
+        "ref": "tanks.State"
+      },
+      "target": {
+        "ref": "tanks.Left"
+      },
+      "first": "tanks.project_left",
+      "second": "tanks.four",
+      "include": "tanks.include_goal"
+    },
+    "tanks.fill_left": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "lt",
+        "args": [
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "left"
+          },
+          {
+            "op": "call",
+            "function": "tanks.capacity",
+            "args": {}
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "left": {
+            "op": "call",
+            "function": "tanks.capacity",
+            "args": {}
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    },
+    "tanks.fill_right": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "lt",
+        "args": [
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "right"
+          },
+          {
+            "op": "literal",
+            "value": 3
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "right": {
+            "op": "literal",
+            "value": 3
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    },
+    "tanks.empty_left": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "gt",
+        "args": [
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "left"
+          },
+          {
+            "op": "literal",
+            "value": 0
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "left": {
+            "op": "literal",
+            "value": 0
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    },
+    "tanks.empty_right": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "gt",
+        "args": [
+          {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "state"
+            },
+            "field": "right"
+          },
+          {
+            "op": "literal",
+            "value": 0
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "right": {
+            "op": "literal",
+            "value": 0
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    },
+    "tanks.pour_left_right": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "gt",
+        "args": [
+          {
+            "op": "min",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "left"
+              },
+              {
+                "op": "sub",
+                "args": [
+                  {
+                    "op": "literal",
+                    "value": 3
+                  },
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "state"
+                    },
+                    "field": "right"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "op": "literal",
+            "value": 0
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "left": {
+            "op": "sub",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "left"
+              },
+              {
+                "op": "min",
+                "args": [
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "state"
+                    },
+                    "field": "left"
+                  },
+                  {
+                    "op": "sub",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "value": 3
+                      },
+                      {
+                        "op": "get",
+                        "record": {
+                          "op": "var",
+                          "name": "state"
+                        },
+                        "field": "right"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "right": {
+            "op": "add",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "right"
+              },
+              {
+                "op": "min",
+                "args": [
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "state"
+                    },
+                    "field": "left"
+                  },
+                  {
+                    "op": "sub",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "value": 3
+                      },
+                      {
+                        "op": "get",
+                        "record": {
+                          "op": "var",
+                          "name": "state"
+                        },
+                        "field": "right"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    },
+    "tanks.pour_right_left": {
+      "kind": "transition",
+      "state": {
+        "ref": "tanks.State"
+      },
+      "parameters": {
+        "kind": "record",
+        "fields": {}
+      },
+      "legal": {
+        "op": "gt",
+        "args": [
+          {
+            "op": "min",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "right"
+              },
+              {
+                "op": "call",
+                "function": "tanks.space_left",
+                "args": {
+                  "state": {
+                    "op": "var",
+                    "name": "state"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "op": "literal",
+            "value": 0
+          }
+        ]
+      },
+      "next": {
+        "op": "update",
+        "record": {
+          "op": "var",
+          "name": "state"
+        },
+        "fields": {
+          "left": {
+            "op": "add",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "left"
+              },
+              {
+                "op": "min",
+                "args": [
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "state"
+                    },
+                    "field": "right"
+                  },
+                  {
+                    "op": "call",
+                    "function": "tanks.space_left",
+                    "args": {
+                      "state": {
+                        "op": "var",
+                        "name": "state"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "right": {
+            "op": "sub",
+            "args": [
+              {
+                "op": "get",
+                "record": {
+                  "op": "var",
+                  "name": "state"
+                },
+                "field": "right"
+              },
+              {
+                "op": "min",
+                "args": [
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "state"
+                    },
+                    "field": "right"
+                  },
+                  {
+                    "op": "call",
+                    "function": "tanks.space_left",
+                    "args": {
+                      "state": {
+                        "op": "var",
+                        "name": "state"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "cost": {
+        "op": "literal",
+        "value": 1
+      }
+    }
+  }
+}

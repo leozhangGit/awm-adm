@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "ContextBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "source_policy_generation": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Policy Generation"
+        },
+        "support_root": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Root"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adm_id",
+        "theory_root",
+        "policy_epoch"
+      ],
+      "title": "ContextBinding",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:WorkerLease",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "control_scope_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Control Scope Id"
+    },
+    "expires_at_ms": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "title": "Expires At Ms",
+      "type": "integer"
+    },
+    "input_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Input Digest",
+      "type": "string"
+    },
+    "issued_at_ms": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "title": "Issued At Ms",
+      "type": "integer"
+    },
+    "job_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "lease_profile": {
+      "const": "awm-adm-worker-lease/2",
+      "default": "awm-adm-worker-lease/2",
+      "title": "Lease Profile",
+      "type": "string"
+    },
+    "lease_token": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Lease Token",
+      "type": "string"
+    },
+    "purpose": {
+      "enum": [
+        "connection_test",
+        "interpretation",
+        "extraction",
+        "acquisition",
+        "ask_interpretation",
+        "ask_narration",
+        "clarification",
+        "task_preparation",
+        "repair",
+        "task_narration"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
+    "worker_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Worker Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "attempt_id",
+    "worker_id",
+    "lease_token",
+    "purpose",
+    "input_digest",
+    "issued_at_ms",
+    "expires_at_ms"
+  ],
+  "title": "WorkerLease",
+  "type": "object"
+}

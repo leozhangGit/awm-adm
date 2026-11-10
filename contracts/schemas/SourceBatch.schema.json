@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "SourceInput": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 2097152,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "item_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "text/plain",
+            "text/markdown",
+            "application/json",
+            "application/x-ndjson"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "origin": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Origin",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "supersedes_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Version"
+        },
+        "version_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "item_id",
+        "version_id",
+        "media_type",
+        "content",
+        "origin"
+      ],
+      "title": "SourceInput",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:SourceBatch",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/SourceInput"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "items"
+  ],
+  "title": "BatchInput",
+  "type": "object"
+}

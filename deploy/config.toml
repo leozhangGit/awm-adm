@@ -1,0 +1,78 @@
+# Finite service, acquisition and source caps. Retention ages are review thresholds; automatic deletion is disabled.
+# No provider credentials are configured by this file.
+config_profile = "awm-adm-config/2"
+
+[server]
+bind_host = "127.0.0.1"
+port = 8080
+data_dir = "/var/lib/awm-adm"
+max_body_bytes = 2097152
+
+[runtime]
+max_adms = 10
+serving_processes = 2
+background_processes = 1
+provider_concurrency = 2
+provider_concurrency_per_adm = 2
+conversation_check_processes = 1
+queue_items_per_adm = 1000
+queue_bytes_per_adm = 67108864
+instance_storage_bytes = 536870912
+installation_storage_bytes = 5368709120
+
+[request]
+max_work = 1000000
+max_duration_ms = 10000
+max_states = 10000
+max_search_bytes = 16000000
+
+[learning]
+remote_calls_enabled = false
+publication = "review"
+default_conflict_mode = "backward"
+
+[learning.call]
+max_calls = 1
+max_input_tokens = 32000
+max_output_tokens = 8192
+max_duration_ms = 60000
+
+[learning.episode]
+max_calls = 3
+max_input_tokens = 96000
+max_output_tokens = 24576
+max_work = 6000000
+max_duration_ms = 360000
+no_progress_attempts = 2
+private_draft_bytes = 2097152
+
+[learning.quotas]
+period_seconds = 86400
+calls_per_adm = 20
+calls_installation = 100
+input_tokens_per_adm = 640000
+input_tokens_installation = 3200000
+output_tokens_per_adm = 163840
+output_tokens_installation = 819200
+
+[sources]
+batch_items = 100
+item_bytes = 262144
+batch_bytes = 2097152
+max_claims_per_item = 100
+projection_entities = 128
+projection_intervals = 256
+projection_facts = 4096
+feed_enabled_by_default = false
+
+[retention]
+event_days = 30
+diagnostic_days = 14
+unreferenced_source_days = 90
+idempotency_days = 90
+automatic_cleanup = false
+
+[proof]
+required_lean_version = "4.19.0"
+lean_executable = "/opt/lean/bin/lean"
+fallback = "forbidden"

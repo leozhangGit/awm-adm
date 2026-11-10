@@ -1,0 +1,269 @@
+{
+  "MessageInput": {
+    "idempotency_key": "message-1",
+    "channel": "teach",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "text": "Learn the borrowing rule. Spend up to two US dollars.",
+    "attachment_ids": [],
+    "profile": "awm-adm-v3-messageinput/0.1"
+  },
+  "Turn": {
+    "id": "turn-1",
+    "conversation_id": "conversation-1",
+    "channel": "teach",
+    "author": "owner",
+    "sequence": 1,
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "text": "Learn the borrowing rule.",
+    "attachment_ids": [],
+    "created_at_ms": 0,
+    "profile": "awm-adm-v3-turn/0.1"
+  },
+  "Proposal": {
+    "id": "proposal-1",
+    "turn_id": "turn-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "kind": "task",
+    "payload_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "expires_at_ms": 600000,
+    "profile": "awm-adm-v3-proposal/0.1"
+  },
+  "DecisionInput": {
+    "idempotency_key": "decision-1",
+    "proposal_id": "proposal-1",
+    "proposal_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "answer": "accept",
+    "profile": "awm-adm-v3-decisioninput/0.1"
+  },
+  "DecisionRecord": {
+    "id": "decision-1",
+    "principal_id": "owner-1",
+    "proposal_id": "proposal-1",
+    "proposal_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "answer": "accept",
+    "status": "accepted",
+    "created_at_ms": 1,
+    "profile": "awm-adm-v3-decisionrecord/0.1"
+  },
+  "TaskSpec": {
+    "id": "task-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "goal": "Learn the independently specified borrowing rule.",
+    "contract_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "decision_id": "decision-1",
+    "allowance_id": "allowance-1",
+    "source_ids": [],
+    "linked_request_ids": [],
+    "max_children": 8,
+    "max_calls": 6,
+    "max_work": 12000000,
+    "deadline_ms": 900000,
+    "publication": "review",
+    "requirements_digest": null,
+    "profile": "awm-adm-v3-taskspec/0.1"
+  },
+  "TaskRecord": {
+    "id": "task-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "spec_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "status": "queued",
+    "generation": 0,
+    "accepted_ids": [],
+    "unresolved_ids": [],
+    "stop_reason": null,
+    "summary_id": null,
+    "profile": "awm-adm-v3-taskrecord/0.1"
+  },
+  "TaskStep": {
+    "id": "step-1",
+    "task_id": "task-1",
+    "spec_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "purpose": "acquisition",
+    "lane": "learning",
+    "operation_id": "operation-1",
+    "reservation_id": "reservation-1",
+    "attempt": 1,
+    "status": "reserved",
+    "outcome_digest": null,
+    "profile": "awm-adm-v3-taskstep/0.1"
+  },
+  "PriceRecord": {
+    "id": "synthetic-rates",
+    "provider": "recorded",
+    "model": "fixture-model",
+    "configuration_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "currency": "USD",
+    "input_micro_per_million": 2000000,
+    "output_micro_per_million": 4000000,
+    "billing_categories": [
+      "input",
+      "output"
+    ],
+    "bound_method": "synthetic",
+    "bound_evidence": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "valid_from_ms": 0,
+    "valid_until_ms": 3600000,
+    "profile": "awm-adm-v3-pricerecord/0.1"
+  },
+  "Allowance": {
+    "id": "allowance-1",
+    "scope_id": "task-1",
+    "lane": "learning",
+    "currency": "USD",
+    "cap_micro_usd": 2000000,
+    "settled_micro_usd": 0,
+    "reserved_micro_usd": 96768,
+    "price_id": "synthetic-rates",
+    "status": "active",
+    "generation": 0,
+    "expires_at_ms": 900000,
+    "profile": "awm-adm-v3-allowance/0.1",
+    "legacy_grant_ids": []
+  },
+  "Presentation": {
+    "id": "presentation-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "subject_kind": "result",
+    "subject_id": "result-1",
+    "outcome_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "packet_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "status": "ready",
+    "text": "Borrowing is permitted under this model.",
+    "support_ids": [
+      "result-1"
+    ],
+    "authoritative": false,
+    "profile": "awm-adm-v3-presentation/0.1"
+  },
+  "AppendScope": {
+    "id": "append-1",
+    "adm_id": "fixture-adm",
+    "source_ids": [
+      "equipment-register"
+    ],
+    "permissions": [
+      "append"
+    ],
+    "source_policy_generation": 0,
+    "items_per_minute": 60,
+    "max_item_bytes": 262144,
+    "expires_at_ms": 86400000,
+    "revoked": false,
+    "profile": "awm-adm-v3-appendscope/0.1"
+  },
+  "DeleteInput": {
+    "idempotency_key": "delete-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "confirmed_name": "Disposable fixture",
+    "decision_id": "decision-delete",
+    "profile": "awm-adm-v3-deleteinput/0.1"
+  },
+  "DeletionOperation": {
+    "id": "delete-1",
+    "context": {
+      "adm_id": "fixture-adm",
+      "revision_id": "revision-1",
+      "theory_root": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "support_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policy_epoch": 0,
+      "vocabulary_generation": 0,
+      "source_policy_generation": 0
+    },
+    "status": "requested",
+    "inventory_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "resume_stage": null,
+    "accounting_ids": [],
+    "content_purged": false,
+    "profile": "awm-adm-v3-deletionoperation/0.1"
+  },
+  "AdminMetadata": {
+    "id": "owner-1",
+    "email": "owner@example.invalid",
+    "session_generation": 1,
+    "setup_complete": true,
+    "profile": "awm-adm-v3-adminmetadata/0.1"
+  }
+}

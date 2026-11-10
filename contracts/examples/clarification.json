@@ -1,0 +1,19 @@
+{
+  "intent_profile": "awm-adm-intent/2",
+  "interpretation_id": "intent-1",
+  "context": {
+    "adm_id": "adm-a",
+    "theory_root": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "policy_epoch": 0,
+    "support_root": null,
+    "source_policy_generation": null
+  },
+  "catalog_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "utterance": "What was the capacity?",
+  "translator": "local",
+  "provider_configuration": null,
+  "status": "needs_clarification",
+  "query": null,
+  "assumptions": [],
+  "clarification": "Which entity and effective date should this query use?"
+}

@@ -1,0 +1,16 @@
+{
+  "entity_id": "camera-kit",
+  "predicate": "equipment.capacity",
+  "value": {
+    "kind": "integer",
+    "value": 2
+  },
+  "unit": "items",
+  "temporal_scope": {
+    "kind": "interval",
+    "granularity": "year",
+    "effective_from": "2025-01-01T00:00:00Z",
+    "effective_to": "2026-01-01T00:00:00Z"
+  },
+  "assertion_kind": "assertion"
+}

@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "Capabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "capabilities",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "Capabilities",
+      "type": "object"
+    },
+    "CheckCertificate": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "enum": [
+            "finite",
+            "lean"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "certificate": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Certificate",
+          "type": "object"
+        },
+        "op": {
+          "const": "check_certificate",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "certificate",
+        "backend"
+      ],
+      "title": "CheckCertificate",
+      "type": "object"
+    },
+    "CheckClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "check_claim",
+          "title": "Op",
+          "type": "string"
+        },
+        "proposition": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Proposition",
+          "type": "object"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "proposition"
+      ],
+      "title": "CheckClaim",
+      "type": "object"
+    },
+    "ContextBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "source_policy_generation": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Policy Generation"
+        },
+        "support_root": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Root"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adm_id",
+        "theory_root",
+        "policy_epoch"
+      ],
+      "title": "ContextBinding",
+      "type": "object"
+    },
+    "Evaluate": {
+      "additionalProperties": false,
+      "properties": {
+        "expression": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Expression",
+          "type": "object"
+        },
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "evaluate",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "expression"
+      ],
+      "title": "Evaluate",
+      "type": "object"
+    },
+    "Explain": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "explain",
+          "title": "Op",
+          "type": "string"
+        },
+        "result_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Result Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "result_id"
+      ],
+      "title": "Explain",
+      "type": "object"
+    },
+    "FactLookup": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective At",
+          "type": "string"
+        },
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "lookup_fact",
+          "title": "Op",
+          "type": "string"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "entity_id",
+        "predicate",
+        "effective_at"
+      ],
+      "title": "FactLookup",
+      "type": "object"
+    },
+    "FindPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Goal",
+          "type": "string"
+        },
+        "initial_state": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "max_depth": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Depth"
+        },
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "find_plan",
+          "title": "Op",
+          "type": "string"
+        },
+        "transitions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "type": "array",
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transitions"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "initial_state",
+        "goal"
+      ],
+      "title": "FindPlan",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ProviderConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Configuration Digest",
+          "type": "string"
+        },
+        "connection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Connection Id",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "recorded",
+            "openai",
+            "anthropic"
+          ],
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "connection_id",
+        "configuration_digest",
+        "provider",
+        "model"
+      ],
+      "title": "ProviderConfiguration",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:IntentDraft",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assumptions": {
+      "items": {
+        "maxLength": 4096,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "catalog_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Catalog Digest",
+      "type": "string"
+    },
+    "clarification": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Clarification"
+    },
+    "context": {
+      "$ref": "#/$defs/ContextBinding"
+    },
+    "intent_profile": {
+      "const": "awm-adm-intent/2",
+      "default": "awm-adm-intent/2",
+      "title": "Intent Profile",
+      "type": "string"
+    },
+    "interpretation_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Interpretation Id",
+      "type": "string"
+    },
+    "provider_configuration": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProviderConfiguration"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "query": {
+      "anyOf": [
+        {
+          "discriminator": {
+            "mapping": {
+              "capabilities": "#/$defs/Capabilities",
+              "check_certificate": "#/$defs/CheckCertificate",
+              "check_claim": "#/$defs/CheckClaim",
+              "evaluate": "#/$defs/Evaluate",
+              "explain": "#/$defs/Explain",
+              "find_plan": "#/$defs/FindPlan",
+              "lookup_fact": "#/$defs/FactLookup"
+            },
+            "propertyName": "op"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Capabilities"
+            },
+            {
+              "$ref": "#/$defs/Evaluate"
+            },
+            {
+              "$ref": "#/$defs/CheckClaim"
+            },
+            {
+              "$ref": "#/$defs/FindPlan"
+            },
+            {
+              "$ref": "#/$defs/CheckCertificate"
+            },
+            {
+              "$ref": "#/$defs/Explain"
+            },
+            {
+              "$ref": "#/$defs/FactLookup"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Query"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "needs_clarification",
+        "unsupported",
+        "needs_learning",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "translator": {
+      "enum": [
+        "local",
+        "external"
+      ],
+      "title": "Translator",
+      "type": "string"
+    },
+    "utterance": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "title": "Utterance",
+      "type": "string"
+    }
+  },
+  "required": [
+    "interpretation_id",
+    "context",
+    "catalog_digest",
+    "utterance",
+    "translator",
+    "status"
+  ],
+  "title": "IntentDraft",
+  "type": "object"
+}

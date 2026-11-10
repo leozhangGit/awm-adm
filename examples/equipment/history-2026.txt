@@ -1,0 +1,1 @@
+Synthetic equipment register: From 2026-01-01T00:00:00Z until 2027-01-01T00:00:00Z (exclusive), camera-kit has equipment.capacity equal to 1 items. This is a historical assertion for that interval only.

@@ -1,0 +1,113 @@
+{
+  "profile": "awm-adm-v3-lifecycle/0.1",
+  "task": {
+    "draft": {
+      "ask": "needs_input",
+      "authorize": "ready",
+      "cancel": "cancelled"
+    },
+    "needs_input": {
+      "clarify": "draft",
+      "cancel": "cancelled"
+    },
+    "ready": {
+      "enqueue": "queued",
+      "cancel": "cancelled"
+    },
+    "queued": {
+      "start": "running",
+      "pause": "paused",
+      "cancel": "cancelled",
+      "deadline": "exhausted"
+    },
+    "running": {
+      "ask": "needs_input",
+      "review": "awaiting_decision",
+      "pause": "paused",
+      "unknown": "paused",
+      "cancel": "cancelled",
+      "fail": "failed",
+      "exhaust": "exhausted",
+      "complete": "succeeded",
+      "partial": "partially_succeeded"
+    },
+    "awaiting_decision": {
+      "accept": "queued",
+      "decline": "failed",
+      "cancel": "cancelled",
+      "invalidate": "needs_input"
+    },
+    "paused": {
+      "resume": "queued",
+      "clarify": "needs_input",
+      "cancel": "cancelled",
+      "exhaust": "exhausted"
+    },
+    "succeeded": {},
+    "partially_succeeded": {},
+    "exhausted": {},
+    "cancelled": {},
+    "failed": {}
+  },
+  "step": {
+    "prepared": {
+      "reserve": "reserved",
+      "cancel": "cancelled"
+    },
+    "reserved": {
+      "dispatch": "dispatched",
+      "release_unissued": "cancelled"
+    },
+    "dispatched": {
+      "response": "known",
+      "lose": "unknown"
+    },
+    "known": {
+      "check": "checked",
+      "reject": "rejected"
+    },
+    "checked": {
+      "admit": "published",
+      "reject": "rejected"
+    },
+    "unknown": {
+      "settle": "known"
+    },
+    "published": {},
+    "rejected": {},
+    "cancelled": {}
+  },
+  "deletion": {
+    "requested": {
+      "fence": "fenced",
+      "fail": "blocked"
+    },
+    "fenced": {
+      "drain": "draining",
+      "fail": "blocked"
+    },
+    "draining": {
+      "purge": "purging",
+      "fail": "blocked"
+    },
+    "purging": {
+      "finish": "deleted",
+      "fail": "blocked"
+    },
+    "blocked": {},
+    "deleted": {}
+  },
+  "deletion_resume_stages": [
+    "requested",
+    "fenced",
+    "draining",
+    "purging"
+  ],
+  "terminal_task": [
+    "succeeded",
+    "partially_succeeded",
+    "exhausted",
+    "cancelled",
+    "failed"
+  ]
+}

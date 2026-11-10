@@ -1,0 +1,94 @@
+{
+  "$id": "urn:awm-adm:m0:SourceRecord",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "byte_count": {
+      "maximum": 2097152,
+      "minimum": 1,
+      "title": "Byte Count",
+      "type": "integer"
+    },
+    "content_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Content Digest",
+      "type": "string"
+    },
+    "item_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "media_type": {
+      "enum": [
+        "text/plain",
+        "text/markdown",
+        "application/json",
+        "application/x-ndjson"
+      ],
+      "title": "Media Type",
+      "type": "string"
+    },
+    "origin": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Origin",
+      "type": "string"
+    },
+    "received_at_ms": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "title": "Received At Ms",
+      "type": "integer"
+    },
+    "source_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_profile": {
+      "const": "awm-adm-source/2",
+      "default": "awm-adm-source/2",
+      "title": "Source Profile",
+      "type": "string"
+    },
+    "supersedes_version": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supersedes Version"
+    },
+    "version_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Version Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "item_id",
+    "version_id",
+    "media_type",
+    "content_digest",
+    "byte_count",
+    "origin",
+    "received_at_ms"
+  ],
+  "title": "SourceRecord",
+  "type": "object"
+}

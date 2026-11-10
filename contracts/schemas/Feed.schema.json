@@ -1,0 +1,291 @@
+{
+  "$defs": {
+    "CallLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Max Calls",
+          "type": "integer"
+        },
+        "max_duration_ms": {
+          "default": 60000,
+          "maximum": 600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32000,
+          "maximum": 1050000,
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 8192,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "CallLimits",
+      "type": "object"
+    },
+    "FeedBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "default": 20,
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Max Calls",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 640000,
+          "maximum": 100000000,
+          "minimum": 0,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_items": {
+          "default": 20,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Max Items",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 163840,
+          "maximum": 100000000,
+          "minimum": 0,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_work": {
+          "default": 60000000,
+          "maximum": 1000000000,
+          "minimum": 1,
+          "title": "Max Work",
+          "type": "integer"
+        }
+      },
+      "title": "FeedBudget",
+      "type": "object"
+    },
+    "Predicate": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "default": 100,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "minimum": {
+          "default": 0,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "symbol": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "kind",
+        "unit"
+      ],
+      "title": "Predicate",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:Feed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "after_sequence": {
+      "default": 0,
+      "minimum": 0,
+      "title": "After Sequence",
+      "type": "integer"
+    },
+    "allow_external": {
+      "default": false,
+      "title": "Allow External",
+      "type": "boolean"
+    },
+    "backoff_seconds": {
+      "default": 2,
+      "maximum": 300,
+      "minimum": 1,
+      "title": "Backoff Seconds",
+      "type": "integer"
+    },
+    "budget": {
+      "$ref": "#/$defs/FeedBudget"
+    },
+    "call_limits": {
+      "$ref": "#/$defs/CallLimits"
+    },
+    "connection_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "connection_version": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Version"
+    },
+    "enabled": {
+      "default": false,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "expected_revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Expected Revision",
+      "type": "string"
+    },
+    "expected_source_generation": {
+      "minimum": 1,
+      "title": "Expected Source Generation",
+      "type": "integer"
+    },
+    "extractor": {
+      "default": "local",
+      "enum": [
+        "local",
+        "external"
+      ],
+      "title": "Extractor",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "max_failures": {
+      "default": 3,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Max Failures",
+      "type": "integer"
+    },
+    "max_pending": {
+      "default": 4,
+      "maximum": 32,
+      "minimum": 1,
+      "title": "Max Pending",
+      "type": "integer"
+    },
+    "name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "publication": {
+      "default": "review",
+      "enum": [
+        "review",
+        "checked_auto"
+      ],
+      "title": "Publication",
+      "type": "string"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/Predicate"
+      },
+      "maxItems": 32,
+      "title": "Requirements",
+      "type": "array"
+    },
+    "retry_limit": {
+      "default": 2,
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Retry Limit",
+      "type": "integer"
+    },
+    "source_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Source Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "name",
+    "expected_revision",
+    "expected_source_generation",
+    "source_ids"
+  ],
+  "title": "FeedInput",
+  "type": "object"
+}

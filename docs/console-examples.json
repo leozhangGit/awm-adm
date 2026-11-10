@@ -1,0 +1,19 @@
+{
+  "profile": "awm-adm-console-examples/1",
+  "entries": [
+    {
+      "source": "tests/fixtures/v1/reference/tanks.adm",
+      "source_sha256": "0b863aaa220e1911388efafde8c22c2d80516ccf24431d714e508ed61a0ac1d1",
+      "destination": "console/public/examples/tanks.snapshot.json",
+      "destination_sha256": "71e0eb2ae630af3ee4a26abd281bb4320ac9c176510904c50be46587fe76eccc",
+      "description": "Authored offline example, converted without semantic changes to public API snapshot transport."
+    },
+    {
+      "source": "tests/fixtures/v1/reference/access.adm",
+      "source_sha256": "656772b18b6d3bf6710409f16d586279529ef478d3270599f0a144512830093c",
+      "destination": "console/public/examples/access.snapshot.json",
+      "destination_sha256": "efc18d65699af35aae2936dbb7cd7cfba447e6fcfb6f42339ff60ea5e0a1756c",
+      "description": "Authored offline example, converted without semantic changes to public API snapshot transport."
+    }
+  ]
+}

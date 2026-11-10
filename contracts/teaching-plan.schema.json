@@ -1,0 +1,410 @@
+{
+  "$defs": {
+    "Child": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "capability",
+            "facts",
+            "correction"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "objective": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "input_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Input Ids",
+          "type": "array"
+        },
+        "interfaces": {
+          "additionalProperties": true,
+          "maxProperties": 32,
+          "title": "Interfaces",
+          "type": "object"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Material"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "objective",
+        "input_ids"
+      ],
+      "title": "Child",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Material": {
+      "additionalProperties": false,
+      "properties": {
+        "projection": {
+          "$ref": "#/$defs/Projection"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourcePermission"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "projection",
+        "sources"
+      ],
+      "title": "Material",
+      "type": "object"
+    },
+    "Predicate": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Symbol",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "minimum": {
+          "default": 0,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "maximum": {
+          "default": 100,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "kind",
+        "unit"
+      ],
+      "title": "Predicate",
+      "type": "object"
+    },
+    "Projection": {
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "const": "awm-adm-projection/1",
+          "default": "awm-adm-projection/1",
+          "title": "Profile",
+          "type": "string"
+        },
+        "namespace": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "entities": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "predicates": {
+          "items": {
+            "$ref": "#/$defs/Predicate"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Predicates",
+          "type": "array"
+        },
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/TemporalScope"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Cells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "namespace",
+        "entities",
+        "predicates",
+        "cells"
+      ],
+      "title": "Projection",
+      "type": "object"
+    },
+    "SourcePermission": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "attribution": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Attribution",
+          "type": "string"
+        },
+        "evidence_group": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Evidence Group",
+          "type": "string"
+        },
+        "allow_external": {
+          "default": false,
+          "title": "Allow External",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_id",
+        "attribution",
+        "evidence_group"
+      ],
+      "title": "SourcePermission",
+      "type": "object"
+    },
+    "TemporalScope": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "unknown",
+            "point",
+            "interval"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "granularity": {
+          "enum": [
+            "second",
+            "day",
+            "year"
+          ],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        }
+      },
+      "required": [
+        "kind",
+        "granularity"
+      ],
+      "title": "TemporalScope",
+      "type": "object"
+    },
+    "Vocabulary": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "maxProperties": 128,
+          "patternProperties": {
+            "^[A-Za-z][A-Za-z0-9 _.-]*$": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "title": "Aliases",
+          "type": "object"
+        },
+        "parameter_units": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "maxProperties": 128,
+          "title": "Parameter Units",
+          "type": "object"
+        },
+        "parameter_roles": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "enum": [
+                "value",
+                "entity",
+                "time"
+              ],
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "maxProperties": 128,
+          "title": "Parameter Roles",
+          "type": "object"
+        },
+        "value_aliases": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "maxProperties": 128,
+          "title": "Value Aliases",
+          "type": "object"
+        }
+      },
+      "title": "Vocabulary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "const": "awm-adm-teaching-plan/1",
+      "default": "awm-adm-teaching-plan/1",
+      "title": "Profile",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "capability",
+        "facts",
+        "correction",
+        "mixed"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "children": {
+      "items": {
+        "$ref": "#/$defs/Child"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "title": "Children",
+      "type": "array"
+    },
+    "vocabulary": {
+      "$ref": "#/$defs/Vocabulary"
+    },
+    "requirements": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Requirements"
+    }
+  },
+  "required": [
+    "kind",
+    "summary",
+    "children"
+  ],
+  "title": "Plan",
+  "type": "object"
+}

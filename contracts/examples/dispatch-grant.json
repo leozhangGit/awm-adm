@@ -1,0 +1,38 @@
+{
+  "grant_profile": "awm-adm-dispatch-grant/2",
+  "grant_id": "grant-1",
+  "reservation_id": "reservation-1",
+  "gateway_id": "gateway-1",
+  "lease": {
+    "lease_profile": "awm-adm-worker-lease/2",
+    "job_id": "job-1",
+    "attempt_id": "attempt-1",
+    "worker_id": "worker-1",
+    "lease_token": "lease-1",
+    "purpose": "acquisition",
+    "context": {
+      "adm_id": "adm-a",
+      "theory_root": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "policy_epoch": 0,
+      "support_root": null,
+      "source_policy_generation": null
+    },
+    "control_scope_id": null,
+    "input_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "issued_at_ms": 1000,
+    "expires_at_ms": 61000
+  },
+  "provider_configuration": {
+    "connection_id": "connection-1",
+    "configuration_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "provider": "recorded",
+    "model": "fixture-recording"
+  },
+  "request_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "limits": {
+    "max_calls": 1,
+    "max_input_tokens": 32000,
+    "max_output_tokens": 8192,
+    "max_duration_ms": 60000
+  }
+}

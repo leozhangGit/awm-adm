@@ -1,0 +1,2 @@
+{"entity_id": "site", "predicate": "site.capacity", "value": {"kind": "integer", "value": 10}, "unit": "places", "temporal_scope": {"kind": "interval", "granularity": "year", "effective_from": "2020-01-01T00:00:00Z", "effective_to": "2024-01-01T00:00:00Z"}, "assertion_kind": "assertion"}
+{"entity_id": "site", "predicate": "site.capacity", "value": {"kind": "integer", "value": 12}, "unit": "places", "temporal_scope": {"kind": "interval", "granularity": "year", "effective_from": "2024-01-01T00:00:00Z", "effective_to": "2026-01-01T00:00:00Z"}, "assertion_kind": "assertion"}

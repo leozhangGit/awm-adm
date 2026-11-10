@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "needs_clarification",
+        "unsupported"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "plan_json": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "status",
+    "message",
+    "plan_json"
+  ],
+  "additionalProperties": false
+}

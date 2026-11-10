@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "Context": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Revision Id",
+          "type": "string"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        },
+        "support_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Support Root",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "vocabulary_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Vocabulary Generation",
+          "type": "integer"
+        },
+        "source_policy_generation": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Source Policy Generation",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "adm_id",
+        "revision_id",
+        "theory_root",
+        "support_root",
+        "policy_epoch",
+        "vocabulary_generation",
+        "source_policy_generation"
+      ],
+      "title": "Context",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Version 0.2 also binds terminal requests that have no successful Result.",
+  "properties": {
+    "profile": {
+      "const": "awm-adm-v3-presentation/0.2",
+      "default": "awm-adm-v3-presentation/0.2",
+      "title": "Profile",
+      "type": "string"
+    },
+    "id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "context": {
+      "$ref": "#/$defs/Context"
+    },
+    "subject_kind": {
+      "enum": [
+        "request",
+        "result"
+      ],
+      "title": "Subject Kind",
+      "type": "string"
+    },
+    "subject_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "outcome_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Outcome Digest",
+      "type": "string"
+    },
+    "packet_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Packet Digest",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "fallback"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "text": {
+      "maxLength": 32768,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "support_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Support Ids",
+      "type": "array"
+    },
+    "authoritative": {
+      "const": false,
+      "default": false,
+      "title": "Authoritative",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "context",
+    "subject_kind",
+    "subject_id",
+    "outcome_digest",
+    "packet_digest",
+    "status",
+    "text",
+    "support_ids"
+  ],
+  "title": "Presentation",
+  "type": "object"
+}

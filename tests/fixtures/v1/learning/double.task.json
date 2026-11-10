@@ -1,0 +1,5 @@
+{
+  "topic": "Finite integer doubling",
+  "objective": "Learn a reusable function named arithmetic.double with parameter n, an integer from 0 through 4, returning an integer from 0 through 8. Doubling means adding n to itself. Construct the function and an assertion that its result equals n+n for every allowed n. Use only the finite-v0 representation.",
+  "basis": "This is an explicitly specified mathematical development example, not a measurement or claim about an external environment."
+}

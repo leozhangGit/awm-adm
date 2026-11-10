@@ -1,0 +1,34 @@
+{
+  "profile": "awm-adm-v3-fixtures/0.1",
+  "provenance": "Authored offline examples, independent of provider output. These specification fixtures do not establish live acquisition or runtime workflow acceptance.",
+  "fixtures": [
+    {
+      "name": "equipment",
+      "files": {
+        "fixtures/equipment/expected-extraction.json": "51be8e65cfd3cc0e3010914f5570ac68409b2048d83fb413cdb246a115d0dcfa",
+        "fixtures/equipment/expected.json": "c475ce2339ebfd2545daaf035803a4497664566ed4bc2649a4fe580be6d22127",
+        "fixtures/equipment/model.json": "14a98b88d664f466eeed0167246ab8f00a2d877f7fac344377ec38fb7ba19367",
+        "fixtures/equipment/owner-requirements.json": "a428049af154a07d00e3325274da3969d8282c7fab5ab8ac396a181f3784762a",
+        "fixtures/equipment/source-policy.json": "7317c4a953ce6dc3a7f24c8b12526fce7c4dbc9d5fbbbaba1a4fd7e76aa22d62",
+        "fixtures/equipment/supplied.md": "98dcb224355633fc333d12cfee2f635d681452bb619f2a23463af5559944560f"
+      }
+    },
+    {
+      "name": "access",
+      "files": {
+        "fixtures/access/expected.json": "d0a7513e92c7c43334aa28d4a08f817cc1c90e9a1513c39aec5edf0b015e47a6",
+        "fixtures/access/model.json": "5a9f5d85bef76aa8710dfb924e69ab4a02b11fdb95b8a7fff030d637499696ac",
+        "fixtures/access/owner-requirements.json": "43c93733f0d5e72b53f891b6536b801b127a15847a2ba9fef6019853f79fa397",
+        "fixtures/access/supplied.md": "a13e7e6374610ef0b4fd1d8ca2dbe1fe31d40fd8257498354adba42f0ff96753"
+      }
+    }
+  ],
+  "source_models": [
+    "examples/equipment/authored-model.json",
+    "tests/fixtures/v1/models/access.json"
+  ],
+  "source_model_hashes": {
+    "examples/equipment/authored-model.json": "14a98b88d664f466eeed0167246ab8f00a2d877f7fac344377ec38fb7ba19367",
+    "tests/fixtures/v1/models/access.json": "5a9f5d85bef76aa8710dfb924e69ab4a02b11fdb95b8a7fff030d637499696ac"
+  }
+}

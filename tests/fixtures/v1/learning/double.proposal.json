@@ -1,0 +1,20 @@
+{
+  "format": "adm-finite-proposal/2",
+  "status": "candidate",
+  "declarations": [
+    {
+      "symbol": "arithmetic.double",
+      "body": {
+        "kind": "function",
+        "params": [{"name": "n", "value": {"kind": "int", "min": 0, "max": 4}}],
+        "returns": {"kind": "int", "min": 0, "max": 8},
+        "body": {
+          "op": "add",
+          "args": [{"op": "var", "name": "n"}, {"op": "var", "name": "n"}]
+        }
+      }
+    }
+  ],
+  "retractions": [],
+  "summary": "Authored wire-format example of mathematical doubling; not a live provider result."
+}

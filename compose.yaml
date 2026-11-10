@@ -1,0 +1,118 @@
+name: awm-adm
+
+x-runtime: &runtime
+  init: true
+  restart: unless-stopped
+  user: "10001:10001"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 64
+  mem_limit: 512m
+  cpus: 1
+  tmpfs: ["/tmp:size=67108864,mode=1777"]
+  stop_grace_period: 20s
+  logging:
+    driver: local
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  app:
+    <<: *runtime
+    image: awm-adm-app:0.3.0
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: app
+    mem_limit: 3g
+    cpus: 2
+    pids_limit: 128
+    tmpfs: ["/tmp:size=268435456,mode=1777"]
+    ports: ["127.0.0.1:8080:8080"]
+    networks: [internal, ingress]
+    security_opt: ["no-new-privileges:true", "seccomp=deploy/app-seccomp.json"]
+    volumes: [adm-data:/var/lib/awm-adm]
+    secrets: [owner-token, worker-token, gateway-token]
+    healthcheck:
+      test: [CMD, python, -c, "import json,time; p=json.load(open('/tmp/awm-adm-health.json')); assert time.monotonic()-p['updated']<15 and p['ready']"]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+      start_period: 10s
+
+  learning-worker:
+    <<: *runtime
+    networks: [internal]
+    image: awm-adm-worker:0.3.0
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: worker
+    secrets: [worker-token]
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+
+  provider-gateway:
+    <<: *runtime
+    image: awm-adm-gateway:0.3.0
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: gateway
+    networks: [internal, egress]
+    volumes: [gateway-data:/var/lib/awm-gateway, "./.local/provider-secrets:/run/provider-secrets:ro"]
+    secrets: [gateway-token, worker-token, gateway-master-key]
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+
+  operator:
+    <<: *runtime
+    networks: [internal]
+    profiles: [tools]
+    image: awm-adm-app:0.3.0
+    restart: "no"
+    secrets: [owner-token]
+    entrypoint: [awm-adm, operator, --url, "http://app:8081"]
+
+  operations:
+    <<: *runtime
+    profiles: [tools]
+    image: awm-adm-app:0.3.0
+    restart: "no"
+    network_mode: none
+    volumes: [adm-data:/var/lib/awm-adm, gateway-data:/var/lib/awm-gateway, "./.local/backups:/backups"]
+    entrypoint: [awm-adm, operations]
+
+networks:
+  internal:
+    internal: true
+  ingress: {}
+  egress: {}
+
+volumes:
+  adm-data: {}
+  gateway-data: {}
+
+secrets:
+  owner-token:
+    file: .local/secrets/owner-token
+  worker-token:
+    file: .local/secrets/worker-token
+  gateway-token:
+    file: .local/secrets/gateway-token
+  gateway-master-key:
+    file: .local/secrets/gateway-master-key

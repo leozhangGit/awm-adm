@@ -1,0 +1,226 @@
+{
+  "$defs": {
+    "FactValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FactValue",
+      "type": "object"
+    },
+    "SourceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Digest",
+          "type": "string"
+        },
+        "end_byte": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "End Byte",
+          "type": "integer"
+        },
+        "item_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "start_byte": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Start Byte",
+          "type": "integer"
+        },
+        "version_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "item_id",
+        "version_id",
+        "content_digest",
+        "start_byte",
+        "end_byte"
+      ],
+      "title": "SourceSpan",
+      "type": "object"
+    },
+    "TemporalScope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "granularity": {
+          "enum": [
+            "second",
+            "day",
+            "year"
+          ],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "unknown",
+            "point",
+            "interval"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "granularity"
+      ],
+      "title": "TemporalScope",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:FactClaim",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assertion_kind": {
+      "enum": [
+        "assertion",
+        "quotation",
+        "hypothetical",
+        "negation"
+      ],
+      "title": "Assertion Kind",
+      "type": "string"
+    },
+    "claim_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "entity_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Entity Id",
+      "type": "string"
+    },
+    "fact_profile": {
+      "const": "awm-adm-facts/0.1",
+      "default": "awm-adm-facts/0.1",
+      "title": "Fact Profile",
+      "type": "string"
+    },
+    "predicate": {
+      "maxLength": 200,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+      "title": "Predicate",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceSpan"
+    },
+    "status": {
+      "default": "candidate",
+      "enum": [
+        "candidate",
+        "needs_evidence",
+        "disputed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "temporal_scope": {
+      "$ref": "#/$defs/TemporalScope"
+    },
+    "unit": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Unit",
+      "type": "string"
+    },
+    "value": {
+      "$ref": "#/$defs/FactValue"
+    }
+  },
+  "required": [
+    "claim_id",
+    "entity_id",
+    "predicate",
+    "value",
+    "unit",
+    "temporal_scope",
+    "source",
+    "assertion_kind"
+  ],
+  "title": "FactClaim",
+  "type": "object"
+}

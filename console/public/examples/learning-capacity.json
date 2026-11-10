@@ -1,0 +1,50 @@
+{
+  "scope": "Authored M5 capacity acquisition fixture; not generic guidance.",
+  "task": {
+    "description": "Define site.capacity as the integer constant ten.",
+    "acquisition_contract": {
+      "profile": "adm-acquisition/1",
+      "required_symbols": [
+        "site.capacity"
+      ],
+      "allowed_helpers": [
+        "site.base"
+      ],
+      "interfaces": {
+        "site.capacity": {
+          "kind": "function",
+          "params": {},
+          "returns": {
+            "kind": "int",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "allowed_retractions": [],
+      "max_declarations": 64,
+      "max_bytes": 131072
+    }
+  },
+  "replies": [
+    {
+      "format": "adm-construction/1",
+      "result": {
+        "status": "draft",
+        "definitions": {
+          "site.capacity": {
+            "body": {
+              "op": "literal",
+              "value": 10,
+              "type": null
+            }
+          }
+        },
+        "declarations": [],
+        "discard": [],
+        "retractions": [],
+        "summary": "Authored test"
+      }
+    }
+  ]
+}

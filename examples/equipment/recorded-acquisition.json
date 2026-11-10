@@ -1,0 +1,47 @@
+{
+  "format": "adm-construction/1",
+  "result": {
+    "status": "draft",
+    "definitions": {
+      "equipment.can_borrow": {
+        "body": {
+          "op": "and",
+          "args": [
+            {
+              "op": "lt",
+              "args": [
+                {
+                  "op": "var",
+                  "name": "borrowed"
+                },
+                {
+                  "op": "literal",
+                  "value": 2,
+                  "type": null
+                }
+              ]
+            },
+            {
+              "op": "gt",
+              "args": [
+                {
+                  "op": "var",
+                  "name": "available"
+                },
+                {
+                  "op": "literal",
+                  "value": 0,
+                  "type": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "declarations": [],
+    "discard": [],
+    "retractions": [],
+    "summary": "Authored recorded test response, not a live acquisition."
+  }
+}

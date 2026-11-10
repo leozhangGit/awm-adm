@@ -1,0 +1,1213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:awm-adm:v3:contracts:0.1",
+  "title": "Core workflow resource contracts; abstract specification checked independently of runtime integration",
+  "$defs": {
+    "Context": {
+      "type": "object",
+      "properties": {
+        "adm_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "revision_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "theory_root": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "support_root": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "policy_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "vocabulary_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "source_policy_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "adm_id",
+        "revision_id",
+        "theory_root",
+        "support_root",
+        "policy_epoch",
+        "vocabulary_generation",
+        "source_policy_generation"
+      ],
+      "additionalProperties": false
+    },
+    "MessageInput": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-messageinput/0.1"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "channel": {
+          "enum": [
+            "ask",
+            "teach"
+          ]
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "attachment_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 8
+        },
+        "reply_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "idempotency_key",
+        "channel",
+        "context",
+        "text",
+        "attachment_ids"
+      ],
+      "additionalProperties": false
+    },
+    "Turn": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-turn/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "channel": {
+          "enum": [
+            "ask",
+            "teach"
+          ]
+        },
+        "author": {
+          "enum": [
+            "owner",
+            "assistant",
+            "system"
+          ]
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "attachment_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 8
+        },
+        "created_at_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "conversation_id",
+        "channel",
+        "author",
+        "sequence",
+        "context",
+        "text",
+        "attachment_ids",
+        "created_at_ms"
+      ],
+      "additionalProperties": false
+    },
+    "Proposal": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-proposal/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "turn_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "kind": {
+          "enum": [
+            "query",
+            "task",
+            "clarification",
+            "allowance",
+            "requirements",
+            "source_policy",
+            "mode",
+            "delete"
+          ]
+        },
+        "payload_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "expires_at_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "turn_id",
+        "context",
+        "kind",
+        "payload_digest",
+        "expires_at_ms"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionInput": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-decisioninput/0.1"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "proposal_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "proposal_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "answer": {
+          "enum": [
+            "accept",
+            "decline"
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "idempotency_key",
+        "proposal_id",
+        "proposal_digest",
+        "context",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionRecord": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-decisionrecord/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "principal_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "proposal_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "proposal_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "answer": {
+          "enum": [
+            "accept",
+            "decline"
+          ]
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "declined",
+            "stale"
+          ]
+        },
+        "created_at_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "principal_id",
+        "proposal_id",
+        "proposal_digest",
+        "context",
+        "answer",
+        "status",
+        "created_at_ms"
+      ],
+      "additionalProperties": false
+    },
+    "TaskSpec": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-taskspec/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "contract_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "decision_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "allowance_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        },
+        "linked_request_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        },
+        "max_children": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "max_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "max_work": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000000
+        },
+        "deadline_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "publication": {
+          "enum": [
+            "review",
+            "checked_auto"
+          ]
+        },
+        "requirements_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "context",
+        "goal",
+        "contract_digest",
+        "decision_id",
+        "allowance_id",
+        "source_ids",
+        "linked_request_ids",
+        "max_children",
+        "max_calls",
+        "max_work",
+        "deadline_ms",
+        "publication",
+        "requirements_digest"
+      ],
+      "additionalProperties": false
+    },
+    "TaskRecord": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-taskrecord/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "spec_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "needs_input",
+            "ready",
+            "queued",
+            "running",
+            "awaiting_decision",
+            "paused",
+            "succeeded",
+            "partially_succeeded",
+            "exhausted",
+            "cancelled",
+            "failed"
+          ]
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "accepted_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        },
+        "unresolved_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        },
+        "stop_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "needs_clarification",
+                "unknown_dispatch",
+                "allowance",
+                "deadline",
+                "no_progress",
+                "conflict",
+                "cancelled",
+                "validation",
+                "context_changed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "context",
+        "spec_digest",
+        "status",
+        "generation",
+        "accepted_ids",
+        "unresolved_ids",
+        "stop_reason",
+        "summary_id"
+      ],
+      "additionalProperties": false
+    },
+    "TaskStep": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-taskstep/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "task_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "spec_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "purpose": {
+          "enum": [
+            "ask_interpretation",
+            "ask_narration",
+            "clarification",
+            "task_preparation",
+            "acquisition",
+            "extraction",
+            "repair",
+            "task_narration",
+            "connection_test"
+          ]
+        },
+        "lane": {
+          "enum": [
+            "interaction",
+            "learning",
+            "control"
+          ]
+        },
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "reservation_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "status": {
+          "enum": [
+            "prepared",
+            "reserved",
+            "dispatched",
+            "known",
+            "checked",
+            "published",
+            "rejected",
+            "unknown",
+            "cancelled"
+          ]
+        },
+        "outcome_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "task_id",
+        "spec_digest",
+        "context",
+        "purpose",
+        "lane",
+        "operation_id",
+        "reservation_id",
+        "attempt",
+        "status",
+        "outcome_digest"
+      ],
+      "additionalProperties": false
+    },
+    "PriceRecord": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-pricerecord/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "provider": {
+          "enum": [
+            "recorded",
+            "openai",
+            "anthropic"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "configuration_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "currency": {
+          "const": "USD"
+        },
+        "input_micro_per_million": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "output_micro_per_million": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "billing_categories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "input",
+              "output"
+            ]
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true
+        },
+        "bound_method": {
+          "enum": [
+            "synthetic",
+            "provider_preflight",
+            "verified_local_counter",
+            "billable_context_ceiling",
+            "unpriced"
+          ]
+        },
+        "bound_evidence": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "valid_from_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "valid_until_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "provider",
+        "model",
+        "configuration_digest",
+        "currency",
+        "input_micro_per_million",
+        "output_micro_per_million",
+        "billing_categories",
+        "bound_method",
+        "bound_evidence",
+        "valid_from_ms",
+        "valid_until_ms"
+      ],
+      "additionalProperties": false
+    },
+    "Allowance": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-allowance/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "scope_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "lane": {
+          "enum": [
+            "interaction",
+            "learning",
+            "control"
+          ]
+        },
+        "currency": {
+          "const": "USD"
+        },
+        "cap_micro_usd": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "settled_micro_usd": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reserved_micro_usd": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "active",
+            "exhausted",
+            "suspended",
+            "expired",
+            "unpriced_legacy"
+          ]
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "expires_at_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "legacy_grant_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 1000,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "scope_id",
+        "lane",
+        "currency",
+        "cap_micro_usd",
+        "settled_micro_usd",
+        "reserved_micro_usd",
+        "price_id",
+        "status",
+        "generation",
+        "expires_at_ms",
+        "legacy_grant_ids"
+      ],
+      "additionalProperties": false
+    },
+    "Presentation": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-presentation/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "subject_kind": {
+          "enum": [
+            "result",
+            "task"
+          ]
+        },
+        "subject_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "outcome_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "packet_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "fallback",
+            "failed"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32768
+        },
+        "support_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 32
+        },
+        "authoritative": {
+          "const": false
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "context",
+        "subject_kind",
+        "subject_id",
+        "outcome_digest",
+        "packet_digest",
+        "status",
+        "text",
+        "support_ids",
+        "authoritative"
+      ],
+      "additionalProperties": false
+    },
+    "AppendScope": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-appendscope/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "adm_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "permissions": {
+          "const": [
+            "append"
+          ]
+        },
+        "source_policy_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "items_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "max_item_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "expires_at_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "revoked": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "adm_id",
+        "source_ids",
+        "permissions",
+        "source_policy_generation",
+        "items_per_minute",
+        "max_item_bytes",
+        "expires_at_ms",
+        "revoked"
+      ],
+      "additionalProperties": false
+    },
+    "DeleteInput": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-deleteinput/0.1"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "confirmed_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "decision_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "profile",
+        "idempotency_key",
+        "context",
+        "confirmed_name",
+        "decision_id"
+      ],
+      "additionalProperties": false
+    },
+    "DeletionOperation": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-deletionoperation/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        },
+        "status": {
+          "enum": [
+            "requested",
+            "fenced",
+            "draining",
+            "purging",
+            "blocked",
+            "deleted"
+          ]
+        },
+        "inventory_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "resume_stage": {
+          "anyOf": [
+            {
+              "enum": [
+                "requested",
+                "fenced",
+                "draining",
+                "purging"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "accounting_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "maxItems": 1000
+        },
+        "content_purged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "context",
+        "status",
+        "inventory_digest",
+        "resume_stage",
+        "accounting_ids",
+        "content_purged"
+      ],
+      "additionalProperties": false
+    },
+    "AdminMetadata": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-adminmetadata/0.1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "setup_complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "profile",
+        "id",
+        "email",
+        "session_generation",
+        "setup_complete"
+      ],
+      "additionalProperties": false
+    },
+    "LoginInput": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-logininput/0.1"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "profile",
+        "email",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "SetupInput": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "const": "awm-adm-v3-setupinput/0.1"
+        },
+        "bootstrap_token": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 256
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "profile",
+        "bootstrap_token",
+        "email",
+        "password"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/MessageInput"
+    },
+    {
+      "$ref": "#/$defs/Turn"
+    },
+    {
+      "$ref": "#/$defs/Proposal"
+    },
+    {
+      "$ref": "#/$defs/DecisionInput"
+    },
+    {
+      "$ref": "#/$defs/DecisionRecord"
+    },
+    {
+      "$ref": "#/$defs/TaskSpec"
+    },
+    {
+      "$ref": "#/$defs/TaskRecord"
+    },
+    {
+      "$ref": "#/$defs/TaskStep"
+    },
+    {
+      "$ref": "#/$defs/PriceRecord"
+    },
+    {
+      "$ref": "#/$defs/Allowance"
+    },
+    {
+      "$ref": "#/$defs/Presentation"
+    },
+    {
+      "$ref": "#/$defs/AppendScope"
+    },
+    {
+      "$ref": "#/$defs/DeleteInput"
+    },
+    {
+      "$ref": "#/$defs/DeletionOperation"
+    },
+    {
+      "$ref": "#/$defs/AdminMetadata"
+    },
+    {
+      "$ref": "#/$defs/LoginInput"
+    },
+    {
+      "$ref": "#/$defs/SetupInput"
+    }
+  ]
+}

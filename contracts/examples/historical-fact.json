@@ -1,0 +1,27 @@
+{
+  "fact_profile": "awm-adm-facts/0.1",
+  "claim_id": "claim-2020",
+  "entity_id": "room-R",
+  "predicate": "fixture.capacity",
+  "value": {
+    "kind": "integer",
+    "value": 10
+  },
+  "unit": "seats",
+  "temporal_scope": {
+    "kind": "interval",
+    "granularity": "year",
+    "effective_from": "2020-01-01T00:00:00Z",
+    "effective_to": "2024-01-01T00:00:00Z"
+  },
+  "source": {
+    "source_id": "history",
+    "item_id": "item-1",
+    "version_id": "v1",
+    "content_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "start_byte": 0,
+    "end_byte": 44
+  },
+  "assertion_kind": "assertion",
+  "status": "candidate"
+}

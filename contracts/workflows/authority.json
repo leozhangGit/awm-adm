@@ -1,0 +1,59 @@
+{
+  "profile": "awm-adm-v3-authority/0.1",
+  "operations": [
+    "read_model",
+    "submit_local",
+    "submit_chat",
+    "decide",
+    "change_policy",
+    "append_source",
+    "issue_grant",
+    "return_proposal",
+    "publish",
+    "delete_model",
+    "begin_recovery"
+  ],
+  "allow": {
+    "owner": [
+      "read_model",
+      "submit_local",
+      "submit_chat",
+      "decide",
+      "change_policy",
+      "append_source",
+      "delete_model"
+    ],
+    "scoped_client": [
+      "read_model",
+      "submit_local"
+    ],
+    "append_client": [
+      "append_source"
+    ],
+    "assistant": [],
+    "source": [],
+    "worker": [
+      "return_proposal"
+    ],
+    "coordinator": [
+      "issue_grant",
+      "publish"
+    ],
+    "operator_recovery": [
+      "begin_recovery"
+    ]
+  },
+  "purpose_lanes": {
+    "ask_interpretation": "interaction",
+    "ask_narration": "interaction",
+    "clarification": "interaction",
+    "task_preparation": "learning",
+    "acquisition": "learning",
+    "extraction": "learning",
+    "repair": "learning",
+    "task_narration": "learning",
+    "connection_test": "control"
+  },
+  "deny_by_default": true,
+  "allow_requires_contextual_checks": true
+}

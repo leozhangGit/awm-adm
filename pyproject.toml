@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "awm-adm"
+version = "0.3.0"
+description = "Local Algebraic Domain Models with checked learning and conversational interaction"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "cryptography>=46,<50",
+  "fastapi>=0.115,<1",
+  "pydantic>=2.10,<3",
+  "uvicorn>=0.34,<1",
+]
+
+[project.scripts]
+awm-adm = "awm_adm.cli:main"
+
+[dependency-groups]
+dev = [
+  "uv==0.13.7",
+  "hatchling>=1.27,<2",
+  "httpx>=0.28,<1",
+  "jsonschema>=4.23,<5",
+  "pytest>=8.3,<10",
+  "ruff>=0.11,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/awm_adm"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.uv]
+required-version = "==0.13.7"
+
+[tool.awm-adm.release]
+status = "local_technical_release"

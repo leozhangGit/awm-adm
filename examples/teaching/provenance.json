@@ -1,0 +1,9 @@
+{
+  "authored_fixture": true,
+  "source": "examples/equipment",
+  "copied_inputs": {
+    "requirements.json": "abda6df84e415016ea44001a76b3a99f7a7fce773fbbc1037f44db70c1e7b3b1",
+    "expected.json": "e2acfabe291c066f9fd3286ff78d709e6d3e3da1dd05a270fb68da224e5a1fde"
+  },
+  "live_calls": 0
+}

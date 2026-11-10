@@ -1,0 +1,397 @@
+{
+  "$defs": {
+    "ContextBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "source_policy_generation": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Policy Generation"
+        },
+        "support_root": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Root"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adm_id",
+        "theory_root",
+        "policy_epoch"
+      ],
+      "title": "ContextBinding",
+      "type": "object"
+    },
+    "ErrorEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_input",
+            "unsupported",
+            "not_found",
+            "unauthorized",
+            "forbidden",
+            "remote_calls_disabled",
+            "connection_unavailable",
+            "purpose_unavailable",
+            "allowance_expired",
+            "allowance_closed",
+            "allowance_exhausted",
+            "allowance_unavailable",
+            "price_unavailable",
+            "spending_disabled",
+            "spending_suspended",
+            "conflict",
+            "quota_exceeded",
+            "provider_unavailable",
+            "outcome_unknown",
+            "resource_exhausted",
+            "needs_evidence",
+            "needs_specification",
+            "cursor_expired",
+            "stale_context",
+            "not_implemented",
+            "internal_error"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "maxProperties": 32,
+          "title": "Details",
+          "type": "object"
+        },
+        "error_profile": {
+          "const": "awm-adm-error/2",
+          "default": "awm-adm-error/2",
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "retry": {
+          "enum": [
+            "never",
+            "after_input",
+            "after_backoff",
+            "reconcile",
+            "resynchronize"
+          ],
+          "title": "Retry",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retry"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Result": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/ResultBinding"
+        },
+        "claims": {
+          "items": {
+            "enum": [
+              "value",
+              "valid_witness",
+              "shortest_action_count",
+              "unreachable",
+              "no_plan_within_bound"
+            ],
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Claims",
+          "type": "array"
+        },
+        "empirical_fidelity": {
+          "default": "not_established",
+          "enum": [
+            "not_established",
+            "conditional_on_declared_sources"
+          ],
+          "title": "Empirical Fidelity",
+          "type": "string"
+        },
+        "exhaustive_finite": {
+          "enum": [
+            "not_checked",
+            "checked",
+            "failed"
+          ],
+          "title": "Exhaustive Finite",
+          "type": "string"
+        },
+        "lean_kernel": {
+          "enum": [
+            "not_requested",
+            "checked",
+            "unavailable",
+            "failed"
+          ],
+          "title": "Lean Kernel",
+          "type": "string"
+        },
+        "result_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "result_id",
+        "binding",
+        "value",
+        "claims",
+        "lean_kernel",
+        "exhaustive_finite"
+      ],
+      "title": "Result",
+      "type": "object"
+    },
+    "ResultBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "context": {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        "query_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Query Digest",
+          "type": "string"
+        },
+        "request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "resolved_actions": {
+          "items": {
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "title": "Resolved Actions",
+          "type": "array"
+        },
+        "selection": {
+          "$ref": "#/$defs/Selection"
+        }
+      },
+      "required": [
+        "context",
+        "request_id",
+        "attempt_id",
+        "query_digest",
+        "selection"
+      ],
+      "title": "ResultBinding",
+      "type": "object"
+    },
+    "Selection": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actions"
+        },
+        "kind": {
+          "enum": [
+            "module_all",
+            "explicit",
+            "not_applicable"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "Selection",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:RequestRecord",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adm_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Adm Id",
+      "type": "string"
+    },
+    "attempt_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attempt Id"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorEnvelope"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "learning_job_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "title": "Learning Job Ids",
+      "type": "array"
+    },
+    "request_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Result"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "enum": [
+        "received",
+        "evaluating",
+        "waiting_for_learning",
+        "needs_input",
+        "succeeded",
+        "inconclusive",
+        "failed",
+        "cancelled"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "adm_id",
+    "request_id",
+    "status"
+  ],
+  "title": "RequestRecord",
+  "type": "object"
+}

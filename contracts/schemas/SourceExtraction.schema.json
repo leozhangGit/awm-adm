@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "FactValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FactValue",
+      "type": "object"
+    },
+    "SpannedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_kind": {
+          "enum": [
+            "assertion",
+            "quotation",
+            "hypothetical",
+            "negation"
+          ],
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "end_byte": {
+          "minimum": 1,
+          "title": "End Byte",
+          "type": "integer"
+        },
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        },
+        "start_byte": {
+          "minimum": 0,
+          "title": "Start Byte",
+          "type": "integer"
+        },
+        "temporal_scope": {
+          "$ref": "#/$defs/TemporalScope"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FactValue"
+        }
+      },
+      "required": [
+        "entity_id",
+        "predicate",
+        "value",
+        "unit",
+        "temporal_scope",
+        "assertion_kind",
+        "start_byte",
+        "end_byte"
+      ],
+      "title": "SpannedFact",
+      "type": "object"
+    },
+    "TemporalScope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "granularity": {
+          "enum": [
+            "second",
+            "day",
+            "year"
+          ],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "unknown",
+            "point",
+            "interval"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "granularity"
+      ],
+      "title": "TemporalScope",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:SourceExtraction",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/SpannedFact"
+      },
+      "maxItems": 100,
+      "title": "Claims",
+      "type": "array"
+    }
+  },
+  "required": [
+    "claims"
+  ],
+  "title": "ExtractionOutput",
+  "type": "object"
+}

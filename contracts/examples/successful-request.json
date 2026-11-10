@@ -1,0 +1,35 @@
+{
+  "adm_id": "adm-a",
+  "request_id": "request-1",
+  "status": "succeeded",
+  "attempt_id": "attempt-1",
+  "result": {
+    "result_id": "result-1",
+    "binding": {
+      "context": {
+        "adm_id": "adm-a",
+        "theory_root": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "policy_epoch": 0,
+        "support_root": null,
+        "source_policy_generation": null
+      },
+      "request_id": "request-1",
+      "attempt_id": "attempt-1",
+      "query_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "selection": {
+        "kind": "not_applicable",
+        "actions": null
+      },
+      "resolved_actions": []
+    },
+    "value": 10,
+    "claims": [
+      "value"
+    ],
+    "lean_kernel": "not_requested",
+    "exhaustive_finite": "not_checked",
+    "empirical_fidelity": "not_established"
+  },
+  "error": null,
+  "learning_job_ids": []
+}

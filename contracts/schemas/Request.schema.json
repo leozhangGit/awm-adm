@@ -1,0 +1,356 @@
+{
+  "$defs": {
+    "Capabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "capabilities",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "Capabilities",
+      "type": "object"
+    },
+    "CheckCertificate": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "enum": [
+            "finite",
+            "lean"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "certificate": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Certificate",
+          "type": "object"
+        },
+        "op": {
+          "const": "check_certificate",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "certificate",
+        "backend"
+      ],
+      "title": "CheckCertificate",
+      "type": "object"
+    },
+    "CheckClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "check_claim",
+          "title": "Op",
+          "type": "string"
+        },
+        "proposition": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Proposition",
+          "type": "object"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "proposition"
+      ],
+      "title": "CheckClaim",
+      "type": "object"
+    },
+    "Evaluate": {
+      "additionalProperties": false,
+      "properties": {
+        "expression": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "minProperties": 1,
+          "title": "Expression",
+          "type": "object"
+        },
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "evaluate",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "expression"
+      ],
+      "title": "Evaluate",
+      "type": "object"
+    },
+    "Explain": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "explain",
+          "title": "Op",
+          "type": "string"
+        },
+        "result_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Result Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "result_id"
+      ],
+      "title": "Explain",
+      "type": "object"
+    },
+    "FactLookup": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_at": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective At",
+          "type": "string"
+        },
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "lookup_fact",
+          "title": "Op",
+          "type": "string"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "entity_id",
+        "predicate",
+        "effective_at"
+      ],
+      "title": "FactLookup",
+      "type": "object"
+    },
+    "FindPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Goal",
+          "type": "string"
+        },
+        "initial_state": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "max_depth": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Depth"
+        },
+        "module": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Module",
+          "type": "string"
+        },
+        "op": {
+          "const": "find_plan",
+          "title": "Op",
+          "type": "string"
+        },
+        "transitions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "type": "array",
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transitions"
+        }
+      },
+      "required": [
+        "op",
+        "module",
+        "initial_state",
+        "goal"
+      ],
+      "title": "FindPlan",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "RequestLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_duration_ms": {
+          "default": 10000,
+          "maximum": 3600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_search_bytes": {
+          "default": 16000000,
+          "maximum": 256000000,
+          "minimum": 1,
+          "title": "Max Search Bytes",
+          "type": "integer"
+        },
+        "max_states": {
+          "default": 10000,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Max States",
+          "type": "integer"
+        },
+        "max_work": {
+          "default": 1000000,
+          "maximum": 100000000,
+          "minimum": 1,
+          "title": "Max Work",
+          "type": "integer"
+        }
+      },
+      "title": "RequestLimits",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:Request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "engine_profile": {
+      "const": "finite-v0",
+      "default": "finite-v0",
+      "title": "Engine Profile",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/RequestLimits"
+    },
+    "on_gap": {
+      "default": "report",
+      "enum": [
+        "report",
+        "learn"
+      ],
+      "title": "On Gap",
+      "type": "string"
+    },
+    "query": {
+      "discriminator": {
+        "mapping": {
+          "capabilities": "#/$defs/Capabilities",
+          "check_certificate": "#/$defs/CheckCertificate",
+          "check_claim": "#/$defs/CheckClaim",
+          "evaluate": "#/$defs/Evaluate",
+          "explain": "#/$defs/Explain",
+          "find_plan": "#/$defs/FindPlan",
+          "lookup_fact": "#/$defs/FactLookup"
+        },
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Capabilities"
+        },
+        {
+          "$ref": "#/$defs/Evaluate"
+        },
+        {
+          "$ref": "#/$defs/CheckClaim"
+        },
+        {
+          "$ref": "#/$defs/FindPlan"
+        },
+        {
+          "$ref": "#/$defs/CheckCertificate"
+        },
+        {
+          "$ref": "#/$defs/Explain"
+        },
+        {
+          "$ref": "#/$defs/FactLookup"
+        }
+      ],
+      "title": "Query"
+    },
+    "request_profile": {
+      "const": "awm-adm-request/2",
+      "default": "awm-adm-request/2",
+      "title": "Request Profile",
+      "type": "string"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "query"
+  ],
+  "title": "Request",
+  "type": "object"
+}

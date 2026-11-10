@@ -1,0 +1,12 @@
+{
+  "version": "4.19.0",
+  "platforms": {
+    "arm64": {
+      "url": "https://github.com/leanprover/lean4/releases/download/v4.19.0/lean-4.19.0-linux_aarch64.tar.zst",
+      "sha256": "f19136d56bc3a5dc9af21edc88e64256c192d3f42c3e872dbeb30e392d7ad206",
+      "root": "lean-4.19.0-linux_aarch64",
+      "bytes": 335030192
+    }
+  },
+  "provenance": "Official GitHub release asset downloaded over HTTPS; SHA-256 measured locally and pinned. The release API did not supply an asset digest."
+}

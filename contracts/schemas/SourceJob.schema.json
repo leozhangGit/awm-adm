@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "CallLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_calls": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Max Calls",
+          "type": "integer"
+        },
+        "max_duration_ms": {
+          "default": 60000,
+          "maximum": 600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32000,
+          "maximum": 1050000,
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 8192,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "CallLimits",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:SourceJob",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowance_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Allowance Id"
+    },
+    "call_limits": {
+      "$ref": "#/$defs/CallLimits"
+    },
+    "connection_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "connection_version": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Version"
+    },
+    "expected_generation": {
+      "minimum": 0,
+      "title": "Expected Generation",
+      "type": "integer"
+    },
+    "expected_revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Expected Revision",
+      "type": "string"
+    },
+    "extractor": {
+      "default": "local",
+      "enum": [
+        "local",
+        "external"
+      ],
+      "title": "Extractor",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "item_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "purpose": {
+      "default": "claims",
+      "enum": [
+        "claims",
+        "schema"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
+    "reprocess_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reprocess Id"
+    },
+    "source_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "version_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Version Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "expected_revision",
+    "expected_generation",
+    "source_id",
+    "item_id",
+    "version_id"
+  ],
+  "title": "JobInput",
+  "type": "object"
+}

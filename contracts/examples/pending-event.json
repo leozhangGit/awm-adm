@@ -1,0 +1,23 @@
+{
+  "event_profile": "awm-adm-event/2",
+  "adm_id": "adm-a",
+  "event_id": "event-1",
+  "sequence": 1,
+  "occurred_at_ms": 1000,
+  "kind": "request.waiting_for_learning",
+  "resource_id": "request-2",
+  "request_id": "request-2",
+  "attempt_id": null,
+  "context": {
+    "adm_id": "adm-a",
+    "theory_root": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "policy_epoch": 0,
+    "support_root": null,
+    "source_policy_generation": null
+  },
+  "data": {
+    "job_ids": [
+      "job-1"
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "scope": "Synthetic advisory expectations derived from the independent equipment fixture. These authored outcomes do not establish live acquisition reliability.",
+  "truth_table": [
+    {
+      "borrowed": 0,
+      "available": 0,
+      "expected": false
+    },
+    {
+      "borrowed": 0,
+      "available": 1,
+      "expected": true
+    },
+    {
+      "borrowed": 0,
+      "available": 2,
+      "expected": true
+    },
+    {
+      "borrowed": 1,
+      "available": 0,
+      "expected": false
+    },
+    {
+      "borrowed": 1,
+      "available": 1,
+      "expected": true
+    },
+    {
+      "borrowed": 1,
+      "available": 2,
+      "expected": true
+    },
+    {
+      "borrowed": 2,
+      "available": 0,
+      "expected": false
+    },
+    {
+      "borrowed": 2,
+      "available": 1,
+      "expected": false
+    },
+    {
+      "borrowed": 2,
+      "available": 2,
+      "expected": false
+    }
+  ],
+  "translation_utterance": "Can I borrow one more item if I already have one and one is available?",
+  "translation_query": {
+    "op": "check_claim",
+    "module": "equipment",
+    "proposition": {
+      "op": "call",
+      "args": {
+        "borrowed": {
+          "op": "literal",
+          "value": 1,
+          "type": {
+            "kind": "int",
+            "min": 0,
+            "max": 2
+          }
+        },
+        "available": {
+          "op": "literal",
+          "value": 1,
+          "type": {
+            "kind": "int",
+            "min": 0,
+            "max": 2
+          }
+        }
+      },
+      "function": "equipment.can_borrow"
+    }
+  },
+  "local_command": "is equipment.can_borrow with {\"borrowed\":1,\"available\":1}?",
+  "history": [
+    {
+      "year": 2025,
+      "expected": 2
+    },
+    {
+      "year": 2026,
+      "expected": 1
+    },
+    {
+      "year": 2027,
+      "expected_status": "needs_input"
+    }
+  ]
+}

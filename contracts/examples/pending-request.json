@@ -1,0 +1,11 @@
+{
+  "adm_id": "adm-a",
+  "request_id": "request-2",
+  "status": "waiting_for_learning",
+  "attempt_id": null,
+  "result": null,
+  "error": null,
+  "learning_job_ids": [
+    "job-1"
+  ]
+}

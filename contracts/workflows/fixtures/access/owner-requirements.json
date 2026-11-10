@@ -1,0 +1,208 @@
+{
+  "profile": "adm-conformance/0.1",
+  "contracts": [
+    {
+      "contract_id": "access-independent-cases",
+      "origin": "Owner-authored expected table, independent of recorded proposal",
+      "required_symbols": [
+        "access.authorized",
+        "access.Actor",
+        "access.Permission"
+      ],
+      "checks": [
+        {
+          "id": "access-closed-none-alice",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "closed",
+                  "value": {}
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "alice",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "access-closed-none-bob",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "closed",
+                  "value": {}
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "bob",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "access-open-alice-alice",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "open",
+                  "value": "alice"
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "alice",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        },
+        {
+          "id": "access-open-alice-bob",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "open",
+                  "value": "alice"
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "bob",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "access-open-bob-alice",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "open",
+                  "value": "bob"
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "alice",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "access-open-bob-bob",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "literal",
+                "value": {
+                  "tag": "open",
+                  "value": "bob"
+                },
+                "type": {
+                  "ref": "access.Permission"
+                }
+              },
+              "actor": {
+                "op": "literal",
+                "value": "bob",
+                "type": {
+                  "ref": "access.Actor"
+                }
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        }
+      ]
+    }
+  ]
+}

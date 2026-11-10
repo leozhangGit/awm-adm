@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "ContextBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "source_policy_generation": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Policy Generation"
+        },
+        "support_root": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Root"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adm_id",
+        "theory_root",
+        "policy_epoch"
+      ],
+      "title": "ContextBinding",
+      "type": "object"
+    },
+    "JsonValue": {}
+  },
+  "$id": "urn:awm-adm:m0:Event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adm_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Adm Id",
+      "type": "string"
+    },
+    "attempt_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attempt Id"
+    },
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "data": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "maxProperties": 32,
+      "title": "Data",
+      "type": "object"
+    },
+    "event_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_profile": {
+      "const": "awm-adm-event/2",
+      "default": "awm-adm-event/2",
+      "title": "Event Profile",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "request.received",
+        "request.evaluating",
+        "request.waiting_for_learning",
+        "request.succeeded",
+        "request.inconclusive",
+        "request.needs_input",
+        "request.failed",
+        "request.cancelled",
+        "source.policy_changed",
+        "source.received",
+        "source.superseded",
+        "source.disputed",
+        "extraction.completed",
+        "episode.queued",
+        "episode.started",
+        "episode.stopped",
+        "candidate.received",
+        "candidate.awaiting_review",
+        "candidate.accepted",
+        "candidate.rejected",
+        "settings.changed",
+        "policy.changed",
+        "language.vocabulary_changed",
+        "interpretation.changed",
+        "interpretation.executed",
+        "teaching.drafted",
+        "teaching.prepared",
+        "teaching.renewed",
+        "teaching.execution",
+        "teaching.completed",
+        "teaching.stopped",
+        "feed.changed",
+        "conversation.turn",
+        "conversation.queued",
+        "conversation.completed",
+        "conversation.decision"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "occurred_at_ms": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "title": "Occurred At Ms",
+      "type": "integer"
+    },
+    "request_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Id"
+    },
+    "resource_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Resource Id",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "adm_id",
+    "event_id",
+    "sequence",
+    "occurred_at_ms",
+    "kind",
+    "resource_id"
+  ],
+  "title": "Event",
+  "type": "object"
+}

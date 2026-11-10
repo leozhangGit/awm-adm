@@ -1,0 +1,426 @@
+{
+  "profile": "finite-v0",
+  "declarations": {
+    "access.Actor": {
+      "kind": "type",
+      "type": {
+        "kind": "enum",
+        "values": [
+          "alice",
+          "bob"
+        ]
+      }
+    },
+    "access.Unit": {
+      "kind": "type",
+      "type": {
+        "kind": "record",
+        "fields": {}
+      }
+    },
+    "access.Permission": {
+      "kind": "type",
+      "type": {
+        "kind": "sum",
+        "variants": {
+          "closed": {
+            "ref": "access.Unit"
+          },
+          "open": {
+            "ref": "access.Actor"
+          }
+        }
+      }
+    },
+    "access.closed": {
+      "kind": "function",
+      "params": {
+        "unit": {
+          "ref": "access.Unit"
+        }
+      },
+      "returns": {
+        "ref": "access.Permission"
+      },
+      "body": {
+        "op": "tag",
+        "type": {
+          "ref": "access.Permission"
+        },
+        "tag": "closed",
+        "value": {
+          "op": "literal",
+          "value": {},
+          "type": {
+            "kind": "record",
+            "fields": {}
+          }
+        }
+      }
+    },
+    "access.open": {
+      "kind": "function",
+      "params": {
+        "actor": {
+          "ref": "access.Actor"
+        }
+      },
+      "returns": {
+        "ref": "access.Permission"
+      },
+      "body": {
+        "op": "tag",
+        "type": {
+          "ref": "access.Permission"
+        },
+        "tag": "open",
+        "value": {
+          "op": "var",
+          "name": "actor"
+        }
+      }
+    },
+    "access.identity": {
+      "kind": "function",
+      "params": {
+        "permission": {
+          "ref": "access.Permission"
+        }
+      },
+      "returns": {
+        "ref": "access.Permission"
+      },
+      "body": {
+        "op": "var",
+        "name": "permission"
+      }
+    },
+    "access.permission_cases": {
+      "kind": "presentation",
+      "construction": "coproduct",
+      "carrier": {
+        "ref": "access.Permission"
+      },
+      "left": {
+        "ref": "access.Unit"
+      },
+      "right": {
+        "ref": "access.Actor"
+      },
+      "inject_left": "access.closed",
+      "inject_right": "access.open"
+    },
+    "access.authorized": {
+      "kind": "function",
+      "params": {
+        "permission": {
+          "ref": "access.Permission"
+        },
+        "actor": {
+          "ref": "access.Actor"
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      },
+      "body": {
+        "op": "match",
+        "value": {
+          "op": "var",
+          "name": "permission"
+        },
+        "cases": {
+          "closed": {
+            "bind": "unit",
+            "body": {
+              "op": "literal",
+              "value": false
+            }
+          },
+          "open": {
+            "bind": "owner",
+            "body": {
+              "op": "eq",
+              "args": [
+                {
+                  "op": "var",
+                  "name": "owner"
+                },
+                {
+                  "op": "var",
+                  "name": "actor"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "access.grant": {
+      "kind": "transition",
+      "state": {
+        "ref": "access.Permission"
+      },
+      "parameters": {
+        "ref": "access.Actor"
+      },
+      "legal": {
+        "op": "match",
+        "value": {
+          "op": "var",
+          "name": "state"
+        },
+        "cases": {
+          "closed": {
+            "bind": "unit",
+            "body": {
+              "op": "literal",
+              "value": true
+            }
+          },
+          "open": {
+            "bind": "owner",
+            "body": {
+              "op": "literal",
+              "value": false
+            }
+          }
+        }
+      },
+      "next": {
+        "op": "tag",
+        "type": {
+          "ref": "access.Permission"
+        },
+        "tag": "open",
+        "value": {
+          "op": "var",
+          "name": "action"
+        }
+      }
+    },
+    "access.revoke": {
+      "kind": "transition",
+      "state": {
+        "ref": "access.Permission"
+      },
+      "parameters": {
+        "ref": "access.Unit"
+      },
+      "legal": {
+        "op": "match",
+        "value": {
+          "op": "var",
+          "name": "state"
+        },
+        "cases": {
+          "closed": {
+            "bind": "unit",
+            "body": {
+              "op": "literal",
+              "value": false
+            }
+          },
+          "open": {
+            "bind": "owner",
+            "body": {
+              "op": "literal",
+              "value": true
+            }
+          }
+        }
+      },
+      "next": {
+        "op": "tag",
+        "type": {
+          "ref": "access.Permission"
+        },
+        "tag": "closed",
+        "value": {
+          "op": "literal",
+          "value": {},
+          "type": {
+            "kind": "record",
+            "fields": {}
+          }
+        }
+      }
+    },
+    "access.bob_access": {
+      "kind": "goal",
+      "state": {
+        "ref": "access.Permission"
+      },
+      "body": {
+        "op": "call",
+        "function": "access.authorized",
+        "args": {
+          "permission": {
+            "op": "var",
+            "name": "state"
+          },
+          "actor": {
+            "op": "literal",
+            "value": "bob",
+            "type": {
+              "ref": "access.Actor"
+            }
+          }
+        }
+      }
+    },
+    "access.Authorization": {
+      "kind": "type",
+      "type": {
+        "kind": "refined",
+        "base": {
+          "kind": "record",
+          "fields": {
+            "permission": {
+              "ref": "access.Permission"
+            },
+            "actor": {
+              "ref": "access.Actor"
+            }
+          }
+        },
+        "where": {
+          "op": "match",
+          "value": {
+            "op": "get",
+            "record": {
+              "op": "var",
+              "name": "value"
+            },
+            "field": "permission"
+          },
+          "cases": {
+            "closed": {
+              "bind": "unit",
+              "body": {
+                "op": "literal",
+                "value": false
+              }
+            },
+            "open": {
+              "bind": "owner",
+              "body": {
+                "op": "eq",
+                "args": [
+                  {
+                    "op": "var",
+                    "name": "owner"
+                  },
+                  {
+                    "op": "get",
+                    "record": {
+                      "op": "var",
+                      "name": "value"
+                    },
+                    "field": "actor"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "access.authorization_permission": {
+      "kind": "function",
+      "params": {
+        "authorization": {
+          "ref": "access.Authorization"
+        }
+      },
+      "returns": {
+        "ref": "access.Permission"
+      },
+      "body": {
+        "op": "get",
+        "record": {
+          "op": "var",
+          "name": "authorization"
+        },
+        "field": "permission"
+      }
+    },
+    "access.authorization_actor": {
+      "kind": "function",
+      "params": {
+        "authorization": {
+          "ref": "access.Authorization"
+        }
+      },
+      "returns": {
+        "ref": "access.Actor"
+      },
+      "body": {
+        "op": "get",
+        "record": {
+          "op": "var",
+          "name": "authorization"
+        },
+        "field": "actor"
+      }
+    },
+    "access.authorization_pullback": {
+      "kind": "presentation",
+      "construction": "pullback",
+      "carrier": {
+        "ref": "access.Authorization"
+      },
+      "left": {
+        "ref": "access.Permission"
+      },
+      "right": {
+        "ref": "access.Actor"
+      },
+      "base": {
+        "ref": "access.Permission"
+      },
+      "left_map": "access.identity",
+      "right_map": "access.open",
+      "project_left": "access.authorization_permission",
+      "project_right": "access.authorization_actor"
+    },
+    "access.closed_is_denied": {
+      "kind": "assertion",
+      "params": {
+        "actor": {
+          "ref": "access.Actor"
+        }
+      },
+      "body": {
+        "op": "not",
+        "args": [
+          {
+            "op": "call",
+            "function": "access.authorized",
+            "args": {
+              "permission": {
+                "op": "tag",
+                "type": {
+                  "ref": "access.Permission"
+                },
+                "tag": "closed",
+                "value": {
+                  "op": "literal",
+                  "value": {},
+                  "type": {
+                    "kind": "record",
+                    "fields": {}
+                  }
+                }
+              },
+              "actor": {
+                "op": "var",
+                "name": "actor"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

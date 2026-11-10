@@ -1,0 +1,221 @@
+{
+  "profile": "adm-conformance/0.1",
+  "contracts": [
+    {
+      "contract_id": "equipment-independent-cases",
+      "origin": "Owner-authored expected table, independent of recorded proposal",
+      "required_symbols": [
+        "equipment.can_borrow"
+      ],
+      "checks": [
+        {
+          "id": "borrow-0-0",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 0
+              },
+              "available": {
+                "op": "literal",
+                "value": 0
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "borrow-0-1",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 0
+              },
+              "available": {
+                "op": "literal",
+                "value": 1
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        },
+        {
+          "id": "borrow-0-2",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 0
+              },
+              "available": {
+                "op": "literal",
+                "value": 2
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        },
+        {
+          "id": "borrow-1-0",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 1
+              },
+              "available": {
+                "op": "literal",
+                "value": 0
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "borrow-1-1",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 1
+              },
+              "available": {
+                "op": "literal",
+                "value": 1
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        },
+        {
+          "id": "borrow-1-2",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 1
+              },
+              "available": {
+                "op": "literal",
+                "value": 2
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": true
+          }
+        },
+        {
+          "id": "borrow-2-0",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 2
+              },
+              "available": {
+                "op": "literal",
+                "value": 0
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "borrow-2-1",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 2
+              },
+              "available": {
+                "op": "literal",
+                "value": 1
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        },
+        {
+          "id": "borrow-2-2",
+          "kind": "value",
+          "params": {},
+          "expression": {
+            "op": "call",
+            "function": "equipment.can_borrow",
+            "args": {
+              "borrowed": {
+                "op": "literal",
+                "value": 2
+              },
+              "available": {
+                "op": "literal",
+                "value": 2
+              }
+            }
+          },
+          "expected": {
+            "op": "literal",
+            "value": false
+          }
+        }
+      ]
+    }
+  ]
+}

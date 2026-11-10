@@ -1,0 +1,16 @@
+{
+  "adm_id": "adm-a",
+  "request_id": "request-3",
+  "status": "inconclusive",
+  "attempt_id": "attempt-3",
+  "result": null,
+  "error": {
+    "error_profile": "awm-adm-error/2",
+    "code": "resource_exhausted",
+    "message": "Local work limit reached; no impossibility claim is established.",
+    "retry": "after_input",
+    "resource_id": null,
+    "details": {}
+  },
+  "learning_job_ids": []
+}

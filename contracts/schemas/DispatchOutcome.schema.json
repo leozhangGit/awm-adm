@@ -1,0 +1,504 @@
+{
+  "$defs": {
+    "ErrorEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_input",
+            "unsupported",
+            "not_found",
+            "unauthorized",
+            "forbidden",
+            "remote_calls_disabled",
+            "connection_unavailable",
+            "purpose_unavailable",
+            "allowance_expired",
+            "allowance_closed",
+            "allowance_exhausted",
+            "allowance_unavailable",
+            "price_unavailable",
+            "spending_disabled",
+            "spending_suspended",
+            "conflict",
+            "quota_exceeded",
+            "provider_unavailable",
+            "outcome_unknown",
+            "resource_exhausted",
+            "needs_evidence",
+            "needs_specification",
+            "cursor_expired",
+            "stale_context",
+            "not_implemented",
+            "internal_error"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "maxProperties": 32,
+          "title": "Details",
+          "type": "object"
+        },
+        "error_profile": {
+          "const": "awm-adm-error/2",
+          "default": "awm-adm-error/2",
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "retry": {
+          "enum": [
+            "never",
+            "after_input",
+            "after_backoff",
+            "reconcile",
+            "resynchronize"
+          ],
+          "title": "Retry",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retry"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ProviderDiagnostics": {
+      "additionalProperties": false,
+      "description": "Allowlisted metadata only; never arbitrary provider messages or reasoning.",
+      "properties": {
+        "http_status": {
+          "anyOf": [
+            {
+              "maximum": 599,
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Status"
+        },
+        "incomplete_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "max_output_tokens",
+                "content_filter",
+                "steered",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Incomplete Reason"
+        },
+        "output_summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderOutputSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider_error_code": {
+          "anyOf": [
+            {
+              "enum": [
+                "insufficient_quota",
+                "rate_limit_exceeded",
+                "invalid_api_key",
+                "model_not_found",
+                "invalid_request_error",
+                "authentication_error",
+                "permission_error",
+                "rate_limit_error",
+                "overloaded_error",
+                "server_error",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Error Code"
+        },
+        "provider_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "completed",
+                "incomplete",
+                "failed",
+                "cancelled",
+                "queued",
+                "in_progress"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Status"
+        },
+        "reasoning_effort": {
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "minimal",
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Effort"
+        },
+        "reasoning_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "standard",
+                "pro",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Mode"
+        },
+        "reported_usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Usage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "token_details": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderTokenDetails"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "usage_assessment": {
+          "anyOf": [
+            {
+              "enum": [
+                "reported",
+                "missing_or_invalid",
+                "zero_unverified"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usage Assessment"
+        }
+      },
+      "title": "ProviderDiagnostics",
+      "type": "object"
+    },
+    "ProviderOutputSummary": {
+      "additionalProperties": false,
+      "description": "Counts only; no message text, reasoning content, signatures or summaries.",
+      "properties": {
+        "item_count": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Item Count",
+          "type": "integer"
+        },
+        "message_items": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Message Items",
+          "type": "integer"
+        },
+        "other_items": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Other Items",
+          "type": "integer"
+        },
+        "reasoning_items": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Reasoning Items",
+          "type": "integer"
+        },
+        "text_items": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Text Items",
+          "type": "integer"
+        },
+        "visible_text_bytes": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Visible Text Bytes",
+          "type": "integer"
+        },
+        "visible_text_parts": {
+          "exclusiveMaximum": 9007199254740992,
+          "minimum": 0,
+          "title": "Visible Text Parts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_count",
+        "message_items",
+        "text_items",
+        "reasoning_items",
+        "other_items",
+        "visible_text_parts",
+        "visible_text_bytes"
+      ],
+      "title": "ProviderOutputSummary",
+      "type": "object"
+    },
+    "ProviderTokenDetails": {
+      "additionalProperties": false,
+      "description": "Optional provider-reported counters, not reconstructed totals or billing.",
+      "properties": {
+        "cache_creation_input_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Creation Input Tokens"
+        },
+        "cache_read_input_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Read Input Tokens"
+        },
+        "cached_input_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Input Tokens"
+        },
+        "reasoning_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens"
+        },
+        "total_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 9007199254740992,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Tokens"
+        }
+      },
+      "title": "ProviderTokenDetails",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "input_tokens": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:DispatchOutcome",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "diagnostics": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProviderDiagnostics"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorEnvelope"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "grant_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Grant Id",
+      "type": "string"
+    },
+    "response_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Digest"
+    },
+    "status": {
+      "enum": [
+        "not_dispatched",
+        "dispatched",
+        "succeeded",
+        "failed",
+        "outcome_unknown"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "usage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Usage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "grant_id",
+    "status"
+  ],
+  "title": "DispatchOutcome",
+  "type": "object"
+}

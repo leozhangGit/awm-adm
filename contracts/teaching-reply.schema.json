@@ -1,0 +1,573 @@
+{
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "enum": [
+        "awm-adm-teaching-reply/2"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "needs_clarification",
+        "unsupported"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "capability",
+                "facts",
+                "correction",
+                "mixed"
+              ]
+            },
+            "summary": {
+              "type": "string"
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "bool",
+                      "int",
+                      "enum",
+                      "record",
+                      "sum",
+                      "vector",
+                      "ref"
+                    ]
+                  },
+                  "minimum": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maximum": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "values": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "members": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "type_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "element_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "length": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "symbol": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "minimum",
+                  "maximum",
+                  "values",
+                  "members",
+                  "element_id",
+                  "length",
+                  "symbol"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "capability",
+                      "facts",
+                      "correction"
+                    ]
+                  },
+                  "objective": {
+                    "type": "string"
+                  },
+                  "input_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "interfaces": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "symbol": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "type",
+                            "function",
+                            "assertion",
+                            "goal",
+                            "transition"
+                          ]
+                        },
+                        "type_id": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "params": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type_id": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type_id"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "returns_id": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "state_id": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "parameters_id": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "symbol",
+                        "kind",
+                        "type_id",
+                        "params",
+                        "returns_id",
+                        "state_id",
+                        "parameters_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "material": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "projection": {
+                            "type": "object",
+                            "properties": {
+                              "profile": {
+                                "type": "string",
+                                "enum": [
+                                  "awm-adm-projection/1"
+                                ]
+                              },
+                              "namespace": {
+                                "type": "string",
+                                "description": "Projection namespace. This does not automatically prefix predicate symbols; each predicate must carry its complete qualified symbol."
+                              },
+                              "entities": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "predicates": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "symbol": {
+                                      "type": "string",
+                                      "description": "Complete qualified predicate symbol, for example domain.measure, not a bare measure name. Use at least two dot-separated identifier segments; each starts with an ASCII letter or underscore and continues with ASCII letters, digits or underscores. Maximum 200 characters. Preserve an existing predicate's exact symbol when supplied."
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "boolean",
+                                        "integer",
+                                        "enum"
+                                      ],
+                                      "description": "Source predicate kind: boolean, integer or enum. These spellings differ from the bool/int kinds in plan.types. Integer bounds define a numeric carrier, not string enum labels."
+                                    },
+                                    "unit": {
+                                      "type": "string"
+                                    },
+                                    "minimum": {
+                                      "type": "integer",
+                                      "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused."
+                                    },
+                                    "maximum": {
+                                      "type": "integer",
+                                      "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused."
+                                    },
+                                    "values": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "description": "For boolean and integer predicates, values must be []. For enum predicates only, provide a nonempty array of unique, nonempty string labels. These are the permitted carrier labels, not observations or a list of numeric bounds converted to strings."
+                                    }
+                                  },
+                                  "required": [
+                                    "symbol",
+                                    "kind",
+                                    "unit",
+                                    "minimum",
+                                    "maximum",
+                                    "values"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "point",
+                                        "interval"
+                                      ]
+                                    },
+                                    "granularity": {
+                                      "type": "string",
+                                      "enum": [
+                                        "second",
+                                        "day",
+                                        "year"
+                                      ]
+                                    },
+                                    "effective_from": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "effective_to": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "granularity",
+                                    "effective_from",
+                                    "effective_to"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "profile",
+                              "namespace",
+                              "entities",
+                              "predicates",
+                              "cells"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source_id": {
+                                  "type": "string"
+                                },
+                                "attribution": {
+                                  "type": "string"
+                                },
+                                "evidence_group": {
+                                  "type": "string"
+                                },
+                                "allow_external": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "source_id",
+                                "attribution",
+                                "evidence_group",
+                                "allow_external"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "projection",
+                          "sources"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "objective",
+                  "input_ids",
+                  "interfaces",
+                  "material"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "aliases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "alias": {
+                    "type": "string"
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "alias",
+                  "targets"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string"
+                  },
+                  "parameter": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "value",
+                          "entity",
+                          "time"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "symbol",
+                  "parameter",
+                  "unit",
+                  "role"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "value_aliases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string"
+                  },
+                  "parameter": {
+                    "type": "string"
+                  },
+                  "alias": {
+                    "type": "string"
+                  },
+                  "value_json": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "symbol",
+                  "parameter",
+                  "alias",
+                  "value_json"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "requirements_json": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "summary",
+            "types",
+            "children",
+            "aliases",
+            "parameters",
+            "value_aliases",
+            "requirements_json"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "profile",
+    "status",
+    "message",
+    "plan"
+  ],
+  "additionalProperties": false
+}

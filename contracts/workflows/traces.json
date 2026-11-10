@@ -1,0 +1,124 @@
+[
+  {
+    "id": "complete",
+    "kind": "task",
+    "start": "draft",
+    "events": [
+      "authorize",
+      "enqueue",
+      "start",
+      "complete"
+    ],
+    "end": "succeeded",
+    "guards": {
+      "authorized": true,
+      "current": true,
+      "all_done": true,
+      "unresolved": false
+    }
+  },
+  {
+    "id": "clarify",
+    "kind": "task",
+    "start": "draft",
+    "events": [
+      "ask",
+      "clarify",
+      "authorize",
+      "enqueue",
+      "start",
+      "partial"
+    ],
+    "end": "partially_succeeded",
+    "guards": {
+      "authorized": true,
+      "current": true,
+      "accepted": true,
+      "unresolved": true
+    }
+  },
+  {
+    "id": "budget",
+    "kind": "task",
+    "start": "running",
+    "events": [
+      "exhaust"
+    ],
+    "end": "exhausted",
+    "guards": {}
+  },
+  {
+    "id": "review",
+    "kind": "task",
+    "start": "running",
+    "events": [
+      "review",
+      "accept",
+      "start",
+      "complete"
+    ],
+    "end": "succeeded",
+    "guards": {
+      "authorized": true,
+      "current": true,
+      "all_done": true,
+      "unresolved": false
+    }
+  },
+  {
+    "id": "unknown",
+    "kind": "step",
+    "start": "prepared",
+    "events": [
+      "reserve",
+      "dispatch",
+      "lose"
+    ],
+    "end": "unknown",
+    "guards": {}
+  },
+  {
+    "id": "late-accounting",
+    "kind": "step",
+    "start": "unknown",
+    "events": [
+      "settle",
+      "reject"
+    ],
+    "end": "rejected",
+    "guards": {
+      "outcome_identified": true
+    }
+  },
+  {
+    "id": "delete",
+    "kind": "deletion",
+    "start": "requested",
+    "events": [
+      "fence",
+      "drain",
+      "purge",
+      "finish"
+    ],
+    "end": "deleted",
+    "guards": {
+      "inventory_purged": true
+    }
+  },
+  {
+    "id": "delete-resume",
+    "kind": "deletion",
+    "start": "draining",
+    "events": [
+      "fail",
+      "resume",
+      "purge",
+      "finish"
+    ],
+    "end": "deleted",
+    "guards": {
+      "resume_stage": "draining",
+      "inventory_purged": true
+    }
+  }
+]

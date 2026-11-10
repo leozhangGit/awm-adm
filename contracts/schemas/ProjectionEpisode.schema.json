@@ -1,0 +1,46 @@
+{
+  "$id": "urn:awm-adm:m0:ProjectionEpisode",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "claim_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Claim Ids",
+      "type": "array"
+    },
+    "expected_generation": {
+      "minimum": 1,
+      "title": "Expected Generation",
+      "type": "integer"
+    },
+    "expected_revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Expected Revision",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "expected_revision",
+    "expected_generation",
+    "claim_ids"
+  ],
+  "title": "ProjectionInput",
+  "type": "object"
+}

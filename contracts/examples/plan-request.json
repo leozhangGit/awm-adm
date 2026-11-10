@@ -1,0 +1,20 @@
+{
+  "request_profile": "awm-adm-request/2",
+  "engine_profile": "finite-v0",
+  "idempotency_key": "demo-plan",
+  "query": {
+    "op": "find_plan",
+    "module": "fixture",
+    "initial_state": 0,
+    "goal": "fixture.done",
+    "max_depth": 10,
+    "transitions": null
+  },
+  "limits": {
+    "max_work": 1000000,
+    "max_duration_ms": 10000,
+    "max_states": 10000,
+    "max_search_bytes": 16000000
+  },
+  "on_gap": "report"
+}

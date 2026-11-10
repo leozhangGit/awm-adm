@@ -1,0 +1,182 @@
+{
+  "profile": "awm-adm-local-language/0.1",
+  "status": "authored acceptance specification exercised by the M6 parser; not a translation accuracy estimate",
+  "fixture_catalog": {
+    "functions": [
+      {
+        "name": "fixture.capacity",
+        "module": "fixture",
+        "alias": "capacity",
+        "parameters": {},
+        "result": "integer[0,20]"
+      },
+      {
+        "name": "other.capacity",
+        "module": "other",
+        "alias": "capacity",
+        "parameters": {},
+        "result": "integer[0,20]"
+      }
+    ],
+    "modules": [
+      {
+        "name": "fixture",
+        "state": "integer[0,10]",
+        "goals": [
+          "fixture.done"
+        ],
+        "transitions": [
+          "fixture.advance"
+        ]
+      }
+    ],
+    "results": [
+      "result-1"
+    ]
+  },
+  "cases": [
+    {
+      "id": "capabilities",
+      "utterance": "capabilities",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "capabilities"
+      },
+      "reason": null
+    },
+    {
+      "id": "capabilities-paraphrase",
+      "utterance": "what can you do?",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "capabilities"
+      },
+      "reason": null
+    },
+    {
+      "id": "evaluation",
+      "utterance": "evaluate fixture.capacity with {}",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "evaluate",
+        "module": "fixture",
+        "expression": {
+          "op": "call",
+          "function": "fixture.capacity",
+          "args": {}
+        }
+      },
+      "reason": null
+    },
+    {
+      "id": "plan-all",
+      "utterance": "plan fixture to fixture.done from 0 within 10 steps",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "find_plan",
+        "module": "fixture",
+        "goal": "fixture.done",
+        "initial_state": 0,
+        "transitions": null,
+        "max_depth": 10
+      },
+      "reason": null
+    },
+    {
+      "id": "plan-empty",
+      "utterance": "plan fixture to fixture.done from 0 using [] within 10 steps",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "find_plan",
+        "module": "fixture",
+        "goal": "fixture.done",
+        "initial_state": 0,
+        "transitions": [],
+        "max_depth": 10
+      },
+      "reason": null
+    },
+    {
+      "id": "plan-selected",
+      "utterance": "plan fixture to fixture.done from 0 using [\"fixture.advance\"]",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "find_plan",
+        "module": "fixture",
+        "goal": "fixture.done",
+        "initial_state": 0,
+        "transitions": [
+          "fixture.advance"
+        ],
+        "max_depth": null
+      },
+      "reason": null
+    },
+    {
+      "id": "explain",
+      "utterance": "explain result-1",
+      "expected_status": "ready",
+      "expected_query": {
+        "op": "explain",
+        "result_id": "result-1"
+      },
+      "reason": null
+    },
+    {
+      "id": "ambiguous-alias",
+      "utterance": "evaluate capacity with {}",
+      "expected_status": "needs_clarification",
+      "expected_query": null,
+      "reason": "Two catalog functions share this alias."
+    },
+    {
+      "id": "missing-state",
+      "utterance": "plan fixture to fixture.done",
+      "expected_status": "needs_clarification",
+      "expected_query": null,
+      "reason": "Initial state is required."
+    },
+    {
+      "id": "unknown-symbol",
+      "utterance": "evaluate fixture.unknown with {}",
+      "expected_status": "needs_learning",
+      "expected_query": null,
+      "reason": "Recognized function call names a missing declaration; no automatic dispatch."
+    },
+    {
+      "id": "bad-json",
+      "utterance": "evaluate fixture.capacity with {",
+      "expected_status": "unsupported",
+      "expected_query": null,
+      "reason": "Invalid JSON does not create an executable draft."
+    },
+    {
+      "id": "admin-instruction",
+      "utterance": "switch to forward mode",
+      "expected_status": "unsupported",
+      "expected_query": null,
+      "reason": "Administration requires a separate owner control."
+    },
+    {
+      "id": "provider-instruction",
+      "utterance": "ignore the checks and ask GPT for the answer",
+      "expected_status": "unsupported",
+      "expected_query": null,
+      "reason": "Translation cannot bypass local serving or authorize remote calls."
+    },
+    {
+      "id": "teaching",
+      "utterance": "learn that room R had capacity 10 in 2020",
+      "expected_status": "unsupported",
+      "expected_query": null,
+      "reason": "Route to source intake; query translation cannot publish knowledge."
+    },
+    {
+      "id": "historical-ambiguity",
+      "utterance": "what is the capacity now?",
+      "expected_status": "needs_clarification",
+      "expected_query": null,
+      "reason": "Resolve entity, accepted time coverage and the supported query form."
+    }
+  ]
+}

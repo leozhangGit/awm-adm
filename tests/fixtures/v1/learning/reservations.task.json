@@ -1,0 +1,173 @@
+{
+  "topic": "Three-person resource reservations with access and capacity rules",
+  "basis": "An explicitly authored mathematical development domain. These are supplied rules, not measurements of a real system. Produce a reusable finite-v0 theory; the local engine will check and plan independently.",
+  "module": "reservations",
+  "initial_capacity": 1,
+  "interfaces": {
+    "reservations.Actor": "Type: enum with exactly alice, bob, carol.",
+    "reservations.State": "Type: plain record of exactly six bool fields alice_access, bob_access, carol_access, alice_reserved, bob_reserved, carol_reserved. Keep all 64 combinations in the carrier; validity is a separate predicate.",
+    "reservations.capacity": "Function with no parameters, integer return type 1..3, initially returns 1.",
+    "reservations.occupied": "Function params {state: reservations.State}, returns integer 0..3: number of reserved fields that are true. Convert each bool to 0 or 1 using an if; arithmetic operators take exactly two arguments.",
+    "reservations.has_access": "Function params {state: reservations.State, actor: reservations.Actor}, returns bool: selected actor's access field.",
+    "reservations.is_reserved": "Function params {state: reservations.State, actor: reservations.Actor}, returns bool: selected actor's reserved field.",
+    "reservations.valid": "Function params {state: reservations.State}, returns bool: each reserved actor has access AND occupied(state) <= capacity(). This must call the capacity function rather than hardcode 1.",
+    "reservations.can_reserve": "Function params {state: reservations.State, actor: reservations.Actor}, returns bool: valid(state) AND actor has access AND actor is not reserved AND occupied(state) < capacity().",
+    "reservations.grant": "Transition with state reservations.State and parameters reservations.Actor. Legal exactly when valid(state) AND selected actor lacks access. Set only that actor's access field to true.",
+    "reservations.revoke": "Transition with the same state and parameters. Legal exactly when valid(state) AND actor has access AND actor is not reserved. Set only that actor's access field to false.",
+    "reservations.reserve": "Transition with the same state and parameters. Legal exactly when can_reserve(state, action). Set only that actor's reserved field to true.",
+    "reservations.release": "Transition with the same state and parameters. Legal exactly when valid(state) AND actor is reserved. Set only that actor's reserved field to false; preserve access.",
+    "reservations.two_reserved": "Goal over reservations.State: valid(state) AND occupied(state) >= 2.",
+    "reservations.three_reserved": "Goal over reservations.State: valid(state) AND occupied(state) == 3.",
+    "reservations.capacity_assumption": "Assertion with no params: capacity() == 1. This assertion must be revised when the capacity assumption changes.",
+    "reservations.valid_capacity": "Assertion params {state: reservations.State}: valid(state) implies occupied(state) <= capacity(). Express implication as not antecedent OR consequent.",
+    "reservations.reserve_requires_access": "Assertion params {state: reservations.State, actor: reservations.Actor}: can_reserve(state, actor) implies has_access(state, actor)."
+  },
+  "requirements": [
+    "Use precisely the named interfaces. Do not omit transitions, goals, or assertions. This task requires no additional helper declarations.",
+    "All predicates are total, including on invalid state combinations. Every transition is illegal on an invalid state. Do not silently repair invalid input states.",
+    "The transition parameter is an actor enum directly, not a record containing an actor. Functions use the parameter names shown above. Transition expressions bind state and action.",
+    "Enums are not tagged sums: select actor fields with nested if/equality expressions. Enum string literals need an explicit enum type annotation.",
+    "Keep the state type independent of capacity; capacity is a replaceable function used by the validity and reservation predicates.",
+    "Do not add external tools, host code, proof source, or empirical evidence. Supply candidate declarations with an honest provider-statement summary."
+  ],
+  "acquisition_contract": {
+    "profile": "adm-acquisition/1",
+    "required_symbols": [
+      "reservations.Actor",
+      "reservations.State",
+      "reservations.can_reserve",
+      "reservations.capacity",
+      "reservations.capacity_assumption",
+      "reservations.grant",
+      "reservations.has_access",
+      "reservations.is_reserved",
+      "reservations.occupied",
+      "reservations.release",
+      "reservations.reserve",
+      "reservations.reserve_requires_access",
+      "reservations.revoke",
+      "reservations.three_reserved",
+      "reservations.two_reserved",
+      "reservations.valid",
+      "reservations.valid_capacity"
+    ],
+    "allowed_helpers": [],
+    "interfaces": {
+      "reservations.Actor": {
+        "kind": "type",
+        "type": {
+          "kind": "enum",
+          "values": [
+            "alice",
+            "bob",
+            "carol"
+          ]
+        }
+      },
+      "reservations.State": {
+        "kind": "type",
+        "type": {
+          "fields": {
+            "alice_access": {
+              "kind": "bool"
+            },
+            "alice_reserved": {
+              "kind": "bool"
+            },
+            "bob_access": {
+              "kind": "bool"
+            },
+            "bob_reserved": {
+              "kind": "bool"
+            },
+            "carol_access": {
+              "kind": "bool"
+            },
+            "carol_reserved": {
+              "kind": "bool"
+            }
+          },
+          "kind": "record"
+        }
+      },
+      "reservations.capacity": {
+        "kind": "function",
+        "params": {},
+        "returns": {
+          "kind": "int",
+          "max": 3,
+          "min": 1
+        }
+      },
+      "reservations.occupied": {
+        "kind": "function",
+        "params": {
+          "state": {
+            "ref": "reservations.State"
+          }
+        },
+        "returns": {
+          "kind": "int",
+          "max": 3,
+          "min": 0
+        }
+      },
+      "reservations.valid": {
+        "kind": "function",
+        "params": {
+          "state": {
+            "ref": "reservations.State"
+          }
+        },
+        "returns": {
+          "kind": "bool"
+        }
+      },
+      "reservations.has_access": {
+        "kind": "function",
+        "params": {
+          "actor": {
+            "ref": "reservations.Actor"
+          },
+          "state": {
+            "ref": "reservations.State"
+          }
+        },
+        "returns": {
+          "kind": "bool"
+        }
+      },
+      "reservations.is_reserved": {
+        "kind": "function",
+        "params": {
+          "actor": {
+            "ref": "reservations.Actor"
+          },
+          "state": {
+            "ref": "reservations.State"
+          }
+        },
+        "returns": {
+          "kind": "bool"
+        }
+      },
+      "reservations.can_reserve": {
+        "kind": "function",
+        "params": {
+          "actor": {
+            "ref": "reservations.Actor"
+          },
+          "state": {
+            "ref": "reservations.State"
+          }
+        },
+        "returns": {
+          "kind": "bool"
+        }
+      }
+    },
+    "allowed_retractions": [],
+    "max_declarations": 17,
+    "max_bytes": 131072
+  }
+}

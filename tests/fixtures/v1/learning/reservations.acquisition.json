@@ -1,0 +1,140 @@
+{
+  "profile": "adm-acquisition/1",
+  "required_symbols": [
+    "reservations.Actor",
+    "reservations.State",
+    "reservations.can_reserve",
+    "reservations.capacity",
+    "reservations.capacity_assumption",
+    "reservations.grant",
+    "reservations.has_access",
+    "reservations.is_reserved",
+    "reservations.occupied",
+    "reservations.release",
+    "reservations.reserve",
+    "reservations.reserve_requires_access",
+    "reservations.revoke",
+    "reservations.three_reserved",
+    "reservations.two_reserved",
+    "reservations.valid",
+    "reservations.valid_capacity"
+  ],
+  "allowed_helpers": [],
+  "interfaces": {
+    "reservations.Actor": {
+      "kind": "type",
+      "type": {
+        "kind": "enum",
+        "values": [
+          "alice",
+          "bob",
+          "carol"
+        ]
+      }
+    },
+    "reservations.State": {
+      "kind": "type",
+      "type": {
+        "fields": {
+          "alice_access": {
+            "kind": "bool"
+          },
+          "alice_reserved": {
+            "kind": "bool"
+          },
+          "bob_access": {
+            "kind": "bool"
+          },
+          "bob_reserved": {
+            "kind": "bool"
+          },
+          "carol_access": {
+            "kind": "bool"
+          },
+          "carol_reserved": {
+            "kind": "bool"
+          }
+        },
+        "kind": "record"
+      }
+    },
+    "reservations.capacity": {
+      "kind": "function",
+      "params": {},
+      "returns": {
+        "kind": "int",
+        "max": 3,
+        "min": 1
+      }
+    },
+    "reservations.occupied": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "reservations.State"
+        }
+      },
+      "returns": {
+        "kind": "int",
+        "max": 3,
+        "min": 0
+      }
+    },
+    "reservations.valid": {
+      "kind": "function",
+      "params": {
+        "state": {
+          "ref": "reservations.State"
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      }
+    },
+    "reservations.has_access": {
+      "kind": "function",
+      "params": {
+        "actor": {
+          "ref": "reservations.Actor"
+        },
+        "state": {
+          "ref": "reservations.State"
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      }
+    },
+    "reservations.is_reserved": {
+      "kind": "function",
+      "params": {
+        "actor": {
+          "ref": "reservations.Actor"
+        },
+        "state": {
+          "ref": "reservations.State"
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      }
+    },
+    "reservations.can_reserve": {
+      "kind": "function",
+      "params": {
+        "actor": {
+          "ref": "reservations.Actor"
+        },
+        "state": {
+          "ref": "reservations.State"
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      }
+    }
+  },
+  "allowed_retractions": [],
+  "max_declarations": 17,
+  "max_bytes": 131072
+}

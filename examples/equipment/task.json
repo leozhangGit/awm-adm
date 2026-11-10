@@ -1,0 +1,33 @@
+{
+  "description": "A shared equipment desk permits one further checkout exactly when the borrower currently holds fewer than two items and at least one item is available. borrowed and available are integer counts from zero through two. Define equipment.can_borrow. This is an advisory decision on supplied counts; no checkout is executed and no inventory is maintained by this function.",
+  "acquisition_contract": {
+    "profile": "adm-acquisition/1",
+    "required_symbols": [
+      "equipment.can_borrow"
+    ],
+    "allowed_helpers": [],
+    "interfaces": {
+      "equipment.can_borrow": {
+        "kind": "function",
+        "params": {
+          "borrowed": {
+            "kind": "int",
+            "min": 0,
+            "max": 2
+          },
+          "available": {
+            "kind": "int",
+            "min": 0,
+            "max": 2
+          }
+        },
+        "returns": {
+          "kind": "bool"
+        }
+      }
+    },
+    "allowed_retractions": [],
+    "max_declarations": 64,
+    "max_bytes": 131072
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "source_profile": "awm-adm-source/2",
+  "source_id": "history",
+  "item_id": "item-1",
+  "version_id": "v1",
+  "media_type": "text/plain",
+  "content_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "byte_count": 44,
+  "origin": "authored fixture",
+  "received_at_ms": 1793894400000,
+  "supersedes_version": null
+}

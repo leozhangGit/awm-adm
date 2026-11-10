@@ -1,0 +1,39 @@
+{
+  "projection": {
+    "namespace": "equipment_history",
+    "entities": [
+      "camera-kit"
+    ],
+    "predicates": [
+      {
+        "symbol": "equipment.capacity",
+        "kind": "integer",
+        "unit": "items",
+        "minimum": 0,
+        "maximum": 2
+      }
+    ],
+    "cells": [
+      {
+        "kind": "interval",
+        "granularity": "year",
+        "effective_from": "2025-01-01T00:00:00Z",
+        "effective_to": "2026-01-01T00:00:00Z"
+      },
+      {
+        "kind": "interval",
+        "granularity": "year",
+        "effective_from": "2026-01-01T00:00:00Z",
+        "effective_to": "2027-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "equipment-register",
+      "attribution": "Synthetic owner-supplied equipment register",
+      "evidence_group": "equipment-owner",
+      "allow_external": false
+    }
+  ]
+}

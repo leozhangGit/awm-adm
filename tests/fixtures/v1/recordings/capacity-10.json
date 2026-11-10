@@ -1,0 +1,15 @@
+{
+  "declarations": {
+    "example.capacity": {
+      "kind": "function", "params": {},
+      "returns": {"kind": "int", "min": 0, "max": 100},
+      "body": {"op": "literal", "value": 10}
+    }
+  },
+  "evidence": [{
+    "artifact_kind": "evidence", "evidence_kind": "synthetic_fixture",
+    "origin": "ADM authored demonstration", "scope": "example.capacity",
+    "content": "An invented capacity value for testing the learning lifecycle.",
+    "checks": [{"expression": {"op": "call", "function": "example.capacity", "args": {}}, "expected": 10}]
+  }]
+}

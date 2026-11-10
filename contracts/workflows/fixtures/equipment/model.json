@@ -1,0 +1,54 @@
+{
+  "profile": "finite-v0",
+  "declarations": {
+    "equipment.can_borrow": {
+      "kind": "function",
+      "params": {
+        "borrowed": {
+          "kind": "int",
+          "min": 0,
+          "max": 2
+        },
+        "available": {
+          "kind": "int",
+          "min": 0,
+          "max": 2
+        }
+      },
+      "returns": {
+        "kind": "bool"
+      },
+      "body": {
+        "op": "and",
+        "args": [
+          {
+            "op": "lt",
+            "args": [
+              {
+                "op": "var",
+                "name": "borrowed"
+              },
+              {
+                "op": "literal",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "op": "gt",
+            "args": [
+              {
+                "op": "var",
+                "name": "available"
+              },
+              {
+                "op": "literal",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

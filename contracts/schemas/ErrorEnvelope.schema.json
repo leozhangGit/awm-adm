@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "$id": "urn:awm-adm:m0:ErrorEnvelope",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "enum": [
+        "invalid_input",
+        "unsupported",
+        "not_found",
+        "unauthorized",
+        "forbidden",
+        "remote_calls_disabled",
+        "connection_unavailable",
+        "purpose_unavailable",
+        "allowance_expired",
+        "allowance_closed",
+        "allowance_exhausted",
+        "allowance_unavailable",
+        "price_unavailable",
+        "spending_disabled",
+        "spending_suspended",
+        "conflict",
+        "quota_exceeded",
+        "provider_unavailable",
+        "outcome_unknown",
+        "resource_exhausted",
+        "needs_evidence",
+        "needs_specification",
+        "cursor_expired",
+        "stale_context",
+        "not_implemented",
+        "internal_error"
+      ],
+      "title": "Code",
+      "type": "string"
+    },
+    "details": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "maxProperties": 32,
+      "title": "Details",
+      "type": "object"
+    },
+    "error_profile": {
+      "const": "awm-adm-error/2",
+      "default": "awm-adm-error/2",
+      "title": "Error Profile",
+      "type": "string"
+    },
+    "message": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Message",
+      "type": "string"
+    },
+    "resource_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resource Id"
+    },
+    "retry": {
+      "enum": [
+        "never",
+        "after_input",
+        "after_backoff",
+        "reconcile",
+        "resynchronize"
+      ],
+      "title": "Retry",
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "retry"
+  ],
+  "title": "ErrorEnvelope",
+  "type": "object"
+}

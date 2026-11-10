@@ -1,0 +1,13 @@
+{
+  "profile": "awm-adm-learning-examples/1",
+  "kind": "authored_offline_fixture",
+  "path": "console/public/examples/learning-capacity.json",
+  "sha256": "bd2f60e7d33c99a8924ecf890527b8f157e073a2c661de2cd4ae4cedc7588a26",
+  "purpose": "Bounded acquisition of site.capacity = 10; instance data, not an engine rule.",
+  "keys": [
+    "scope",
+    "task",
+    "replies"
+  ],
+  "provider_calls": 0
+}

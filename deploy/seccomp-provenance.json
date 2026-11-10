@@ -1,0 +1,21 @@
+{
+  "source": "https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/seccomp/default.json",
+  "source_sha256": "6416b47770785a41ac59073cdc77d9fe98517df2799dc83ef207e622de3053f6",
+  "license": "docker-profiles-LICENSE",
+  "removed_allowances": [
+    "connect",
+    "io_uring_enter",
+    "io_uring_register",
+    "io_uring_setup",
+    "sendmmsg",
+    "sendto",
+    "socket",
+    "socketcall",
+    "socketpair"
+  ],
+  "added_allowance": [
+    "AF_UNIX stream sockets/socketpairs; AF_INET/AF_INET6 TCP stream sockets only (explicit NONBLOCK/CLOEXEC flag combinations)",
+    "sendto only with null destination; baseline sendmsg remains for buffered replies on accepted streams"
+  ],
+  "profile_sha256": "73c866277f14b4a0d8fb5971ff857ff3047af1bdf983f315ec4cad3d02fb04a3"
+}

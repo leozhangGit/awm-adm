@@ -1,0 +1,17 @@
+{
+  "protocol": "adm/0.1",
+  "kind": "request",
+  "idempotency_key": "double-three",
+  "profile": "finite-v0",
+  "query": {
+    "op": "evaluate",
+    "module": "arithmetic",
+    "expression": {
+      "op": "call",
+      "function": "arithmetic.double",
+      "args": {"n": {"op": "literal", "value": 3}}
+    }
+  },
+  "limits": {"max_work": 100000, "max_duration_ms": 2000},
+  "on_gap": "report"
+}

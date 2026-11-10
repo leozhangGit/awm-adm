@@ -1,0 +1,8 @@
+{
+  "error_profile": "awm-adm-error/2",
+  "code": "provider_unavailable",
+  "message": "The configured connection is unavailable; accepted local queries remain available.",
+  "retry": "after_backoff",
+  "resource_id": null,
+  "details": {}
+}

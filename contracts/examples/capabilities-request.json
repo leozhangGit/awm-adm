@@ -1,0 +1,15 @@
+{
+  "request_profile": "awm-adm-request/2",
+  "engine_profile": "finite-v0",
+  "idempotency_key": "demo-capabilities",
+  "query": {
+    "op": "capabilities"
+  },
+  "limits": {
+    "max_work": 1000000,
+    "max_duration_ms": 10000,
+    "max_states": 10000,
+    "max_search_bytes": 16000000
+  },
+  "on_gap": "report"
+}

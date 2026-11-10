@@ -1,0 +1,160 @@
+{
+  "profile": "awm-adm-v3-defaults/0.2",
+  "paid_enabled": false,
+  "default_allowance_micro_usd": null,
+  "currency": "USD",
+  "max_allowance_micro_usd": 1000000000,
+  "message_bytes": {
+    "default": 16384,
+    "hard": 65536
+  },
+  "context_turns": {
+    "default": 6,
+    "hard": 12
+  },
+  "context_bytes": {
+    "default": 16384,
+    "hard": 65536
+  },
+  "task_children": {
+    "default": 8,
+    "hard": 32
+  },
+  "task_calls": {
+    "default": 6,
+    "hard": 20
+  },
+  "no_progress_attempts": {
+    "default": 2,
+    "hard": 3
+  },
+  "task_duration_ms": {
+    "default": 900000,
+    "hard": 3600000
+  },
+  "review_wait_ms": 86400000,
+  "call_input_tokens": {
+    "default": 32000,
+    "hard": 1050000
+  },
+  "call_output_tokens": {
+    "default": 8192,
+    "hard": 16384
+  },
+  "call_duration_ms": {
+    "default": 60000,
+    "hard": 120000
+  },
+  "step_work": {
+    "default": 1000000,
+    "hard": 10000000
+  },
+  "step_duration_ms": {
+    "default": 5000,
+    "hard": 30000
+  },
+  "task_work": {
+    "default": 12000000,
+    "hard": 100000000
+  },
+  "completion_reserved_calls": 1,
+  "completion_output_tokens": 4096,
+  "provider_slots": 2,
+  "interaction_reserved_slots": 1,
+  "background_provider_slots": 1,
+  "background_per_adm": 1,
+  "serving_processes": 2,
+  "conversation_check_slots": 1,
+  "background_processes": 1,
+  "attachment_bytes": {
+    "default": 262144,
+    "hard": 1048576
+  },
+  "attachments": {
+    "default": 4,
+    "hard": 8
+  },
+  "http_body_bytes": 2097152,
+  "source_queue_items": {
+    "default": 100,
+    "hard": 1000
+  },
+  "source_queue_bytes": {
+    "default": 8388608,
+    "hard": 67108864
+  },
+  "source_pending": {
+    "default": 4,
+    "hard": 16
+  },
+  "source_items_per_minute": {
+    "default": 60,
+    "hard": 600
+  },
+  "clarification_questions": {
+    "default": 4,
+    "hard": 12
+  },
+  "retained_tasks": {
+    "default": 100,
+    "hard": 1000
+  },
+  "conversation_turns": {
+    "default": 200,
+    "hard": 1000
+  },
+  "decision_ttl_ms": {
+    "default": 600000,
+    "hard": 3600000
+  },
+  "bootstrap_ttl_ms": 900000,
+  "recovery_ttl_ms": 600000,
+  "session_ttl_ms": 28800000,
+  "login_failed_attempts": 5,
+  "login_window_ms": 900000,
+  "interaction_window_ms": 86400000,
+  "auto_refill": false,
+  "list_page": {
+    "default": 20,
+    "hard": 100
+  },
+  "provider_slots_per_adm": 2,
+  "quota_lanes": {
+    "installation": {
+      "interaction": {
+        "calls": 40,
+        "input_tokens": 1280000,
+        "output_tokens": 327680
+      },
+      "learning": {
+        "calls": 60,
+        "input_tokens": 1920000,
+        "output_tokens": 491520
+      }
+    },
+    "per_adm": {
+      "interaction": {
+        "calls": 8,
+        "input_tokens": 256000,
+        "output_tokens": 65536
+      },
+      "learning": {
+        "calls": 12,
+        "input_tokens": 384000,
+        "output_tokens": 98304
+      }
+    }
+  },
+  "quota_totals": {
+    "installation": {
+      "calls": 100,
+      "input_tokens": 3200000,
+      "output_tokens": 819200
+    },
+    "per_adm": {
+      "calls": 20,
+      "input_tokens": 640000,
+      "output_tokens": 163840
+    }
+  }
+}

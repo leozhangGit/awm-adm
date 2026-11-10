@@ -1,0 +1,19 @@
+{
+  "lease_profile": "awm-adm-worker-lease/2",
+  "job_id": "job-1",
+  "attempt_id": "attempt-1",
+  "worker_id": "worker-1",
+  "lease_token": "lease-1",
+  "purpose": "acquisition",
+  "context": {
+    "adm_id": "adm-a",
+    "theory_root": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "policy_epoch": 0,
+    "support_root": null,
+    "source_policy_generation": null
+  },
+  "control_scope_id": null,
+  "input_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "issued_at_ms": 1000,
+  "expires_at_ms": 61000
+}

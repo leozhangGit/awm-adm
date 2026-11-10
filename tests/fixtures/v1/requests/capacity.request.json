@@ -1,0 +1,7 @@
+{
+  "protocol": "adm/0.1", "kind": "request", "profile": "finite-v0",
+  "idempotency_key": "capacity-demo",
+  "query": {"op": "evaluate", "module": "example", "expression": {"op": "call", "function": "example.capacity", "args": {}}},
+  "limits": {"max_work": 100000, "max_duration_ms": 2000},
+  "on_gap": "learn"
+}

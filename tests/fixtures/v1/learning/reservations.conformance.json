@@ -1,0 +1,3441 @@
+{
+  "contracts": [
+    {
+      "checks": [
+        {
+          "expected": {
+            "kind": "type",
+            "type": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            }
+          },
+          "id": "interface_Actor",
+          "kind": "interface",
+          "symbol": "reservations.Actor"
+        },
+        {
+          "expected": {
+            "kind": "type",
+            "type": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "id": "interface_State",
+          "kind": "interface",
+          "symbol": "reservations.State"
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {},
+            "returns": {
+              "kind": "int",
+              "max": 3,
+              "min": 1
+            }
+          },
+          "id": "interface_capacity",
+          "kind": "interface",
+          "symbol": "reservations.capacity"
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {
+              "state": {
+                "ref": "reservations.State"
+              }
+            },
+            "returns": {
+              "kind": "int",
+              "max": 3,
+              "min": 0
+            }
+          },
+          "id": "interface_occupied",
+          "kind": "interface",
+          "symbol": "reservations.occupied"
+        },
+        {
+          "expected": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "condition": {
+                      "field": "alice_reserved",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    },
+                    "else": {
+                      "op": "literal",
+                      "value": 0
+                    },
+                    "op": "if",
+                    "then": {
+                      "op": "literal",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "condition": {
+                      "field": "bob_reserved",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    },
+                    "else": {
+                      "op": "literal",
+                      "value": 0
+                    },
+                    "op": "if",
+                    "then": {
+                      "op": "literal",
+                      "value": 1
+                    }
+                  }
+                ],
+                "op": "add"
+              },
+              {
+                "condition": {
+                  "field": "carol_reserved",
+                  "op": "get",
+                  "record": {
+                    "name": "state",
+                    "op": "var"
+                  }
+                },
+                "else": {
+                  "op": "literal",
+                  "value": 0
+                },
+                "op": "if",
+                "then": {
+                  "op": "literal",
+                  "value": 1
+                }
+              }
+            ],
+            "op": "add"
+          },
+          "expression": {
+            "args": {
+              "state": {
+                "name": "state",
+                "op": "var"
+              }
+            },
+            "function": "reservations.occupied",
+            "op": "call"
+          },
+          "id": "occupied",
+          "kind": "value",
+          "params": {
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          }
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {
+              "state": {
+                "ref": "reservations.State"
+              }
+            },
+            "returns": {
+              "kind": "bool"
+            }
+          },
+          "id": "interface_valid",
+          "kind": "interface",
+          "symbol": "reservations.valid"
+        },
+        {
+          "expected": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "condition": {
+                              "field": "alice_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          },
+                          {
+                            "condition": {
+                              "field": "bob_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "condition": {
+                          "field": "carol_reserved",
+                          "op": "get",
+                          "record": {
+                            "name": "state",
+                            "op": "var"
+                          }
+                        },
+                        "else": {
+                          "op": "literal",
+                          "value": 0
+                        },
+                        "op": "if",
+                        "then": {
+                          "op": "literal",
+                          "value": 1
+                        }
+                      }
+                    ],
+                    "op": "add"
+                  },
+                  {
+                    "args": {},
+                    "function": "reservations.capacity",
+                    "op": "call"
+                  }
+                ],
+                "op": "le"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "field": "alice_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "not"
+                  },
+                  {
+                    "field": "alice_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                ],
+                "op": "or"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "field": "bob_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "not"
+                  },
+                  {
+                    "field": "bob_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                ],
+                "op": "or"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "field": "carol_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "not"
+                  },
+                  {
+                    "field": "carol_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                ],
+                "op": "or"
+              }
+            ],
+            "op": "and"
+          },
+          "expression": {
+            "args": {
+              "state": {
+                "name": "state",
+                "op": "var"
+              }
+            },
+            "function": "reservations.valid",
+            "op": "call"
+          },
+          "id": "valid",
+          "kind": "value",
+          "params": {
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          }
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {
+              "actor": {
+                "ref": "reservations.Actor"
+              },
+              "state": {
+                "ref": "reservations.State"
+              }
+            },
+            "returns": {
+              "kind": "bool"
+            }
+          },
+          "id": "interface_has_access",
+          "kind": "interface",
+          "symbol": "reservations.has_access"
+        },
+        {
+          "expected": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "field": "carol_access",
+                "op": "get",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "field": "bob_access",
+                "op": "get",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "field": "alice_access",
+              "op": "get",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "expression": {
+            "args": {
+              "actor": {
+                "name": "actor",
+                "op": "var"
+              },
+              "state": {
+                "name": "state",
+                "op": "var"
+              }
+            },
+            "function": "reservations.has_access",
+            "op": "call"
+          },
+          "id": "has_access",
+          "kind": "value",
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          }
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {
+              "actor": {
+                "ref": "reservations.Actor"
+              },
+              "state": {
+                "ref": "reservations.State"
+              }
+            },
+            "returns": {
+              "kind": "bool"
+            }
+          },
+          "id": "interface_is_reserved",
+          "kind": "interface",
+          "symbol": "reservations.is_reserved"
+        },
+        {
+          "expected": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "field": "carol_reserved",
+                "op": "get",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "field": "bob_reserved",
+                "op": "get",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "field": "alice_reserved",
+              "op": "get",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "expression": {
+            "args": {
+              "actor": {
+                "name": "actor",
+                "op": "var"
+              },
+              "state": {
+                "name": "state",
+                "op": "var"
+              }
+            },
+            "function": "reservations.is_reserved",
+            "op": "call"
+          },
+          "id": "is_reserved",
+          "kind": "value",
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          }
+        },
+        {
+          "expected": {
+            "kind": "function",
+            "params": {
+              "actor": {
+                "ref": "reservations.Actor"
+              },
+              "state": {
+                "ref": "reservations.State"
+              }
+            },
+            "returns": {
+              "kind": "bool"
+            }
+          },
+          "id": "interface_can_reserve",
+          "kind": "interface",
+          "symbol": "reservations.can_reserve"
+        },
+        {
+          "expected": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "condition": {
+                  "args": [
+                    {
+                      "name": "actor",
+                      "op": "var"
+                    },
+                    {
+                      "op": "literal",
+                      "type": {
+                        "kind": "enum",
+                        "values": [
+                          "alice",
+                          "bob",
+                          "carol"
+                        ]
+                      },
+                      "value": "alice"
+                    }
+                  ],
+                  "op": "eq"
+                },
+                "else": {
+                  "condition": {
+                    "args": [
+                      {
+                        "name": "actor",
+                        "op": "var"
+                      },
+                      {
+                        "op": "literal",
+                        "type": {
+                          "kind": "enum",
+                          "values": [
+                            "alice",
+                            "bob",
+                            "carol"
+                          ]
+                        },
+                        "value": "bob"
+                      }
+                    ],
+                    "op": "eq"
+                  },
+                  "else": {
+                    "field": "carol_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  },
+                  "op": "if",
+                  "then": {
+                    "field": "bob_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                },
+                "op": "if",
+                "then": {
+                  "field": "alice_access",
+                  "op": "get",
+                  "record": {
+                    "name": "state",
+                    "op": "var"
+                  }
+                }
+              },
+              {
+                "args": [
+                  {
+                    "condition": {
+                      "args": [
+                        {
+                          "name": "actor",
+                          "op": "var"
+                        },
+                        {
+                          "op": "literal",
+                          "type": {
+                            "kind": "enum",
+                            "values": [
+                              "alice",
+                              "bob",
+                              "carol"
+                            ]
+                          },
+                          "value": "alice"
+                        }
+                      ],
+                      "op": "eq"
+                    },
+                    "else": {
+                      "condition": {
+                        "args": [
+                          {
+                            "name": "actor",
+                            "op": "var"
+                          },
+                          {
+                            "op": "literal",
+                            "type": {
+                              "kind": "enum",
+                              "values": [
+                                "alice",
+                                "bob",
+                                "carol"
+                              ]
+                            },
+                            "value": "bob"
+                          }
+                        ],
+                        "op": "eq"
+                      },
+                      "else": {
+                        "field": "carol_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      },
+                      "op": "if",
+                      "then": {
+                        "field": "bob_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    },
+                    "op": "if",
+                    "then": {
+                      "field": "alice_reserved",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    }
+                  }
+                ],
+                "op": "not"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "condition": {
+                              "field": "alice_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          },
+                          {
+                            "condition": {
+                              "field": "bob_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "condition": {
+                          "field": "carol_reserved",
+                          "op": "get",
+                          "record": {
+                            "name": "state",
+                            "op": "var"
+                          }
+                        },
+                        "else": {
+                          "op": "literal",
+                          "value": 0
+                        },
+                        "op": "if",
+                        "then": {
+                          "op": "literal",
+                          "value": 1
+                        }
+                      }
+                    ],
+                    "op": "add"
+                  },
+                  {
+                    "args": {},
+                    "function": "reservations.capacity",
+                    "op": "call"
+                  }
+                ],
+                "op": "lt"
+              }
+            ],
+            "op": "and"
+          },
+          "expression": {
+            "args": {
+              "actor": {
+                "name": "actor",
+                "op": "var"
+              },
+              "state": {
+                "name": "state",
+                "op": "var"
+              }
+            },
+            "function": "reservations.can_reserve",
+            "op": "call"
+          },
+          "id": "can_reserve",
+          "kind": "value",
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          }
+        },
+        {
+          "expected": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "condition": {
+                              "field": "alice_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          },
+                          {
+                            "condition": {
+                              "field": "bob_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "condition": {
+                          "field": "carol_reserved",
+                          "op": "get",
+                          "record": {
+                            "name": "state",
+                            "op": "var"
+                          }
+                        },
+                        "else": {
+                          "op": "literal",
+                          "value": 0
+                        },
+                        "op": "if",
+                        "then": {
+                          "op": "literal",
+                          "value": 1
+                        }
+                      }
+                    ],
+                    "op": "add"
+                  },
+                  {
+                    "op": "literal",
+                    "value": 2
+                  }
+                ],
+                "op": "ge"
+              }
+            ],
+            "op": "and"
+          },
+          "goal": "reservations.two_reserved",
+          "id": "two_reserved",
+          "kind": "goal",
+          "params": {
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          }
+        },
+        {
+          "expected": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "condition": {
+                              "field": "alice_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          },
+                          {
+                            "condition": {
+                              "field": "bob_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "condition": {
+                          "field": "carol_reserved",
+                          "op": "get",
+                          "record": {
+                            "name": "state",
+                            "op": "var"
+                          }
+                        },
+                        "else": {
+                          "op": "literal",
+                          "value": 0
+                        },
+                        "op": "if",
+                        "then": {
+                          "op": "literal",
+                          "value": 1
+                        }
+                      }
+                    ],
+                    "op": "add"
+                  },
+                  {
+                    "op": "literal",
+                    "value": 3
+                  }
+                ],
+                "op": "ge"
+              }
+            ],
+            "op": "and"
+          },
+          "goal": "reservations.three_reserved",
+          "id": "three_reserved",
+          "kind": "goal",
+          "params": {
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          }
+        },
+        {
+          "id": "grant",
+          "kind": "transition",
+          "legal": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "args": [
+                  {
+                    "condition": {
+                      "args": [
+                        {
+                          "name": "actor",
+                          "op": "var"
+                        },
+                        {
+                          "op": "literal",
+                          "type": {
+                            "kind": "enum",
+                            "values": [
+                              "alice",
+                              "bob",
+                              "carol"
+                            ]
+                          },
+                          "value": "alice"
+                        }
+                      ],
+                      "op": "eq"
+                    },
+                    "else": {
+                      "condition": {
+                        "args": [
+                          {
+                            "name": "actor",
+                            "op": "var"
+                          },
+                          {
+                            "op": "literal",
+                            "type": {
+                              "kind": "enum",
+                              "values": [
+                                "alice",
+                                "bob",
+                                "carol"
+                              ]
+                            },
+                            "value": "bob"
+                          }
+                        ],
+                        "op": "eq"
+                      },
+                      "else": {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      },
+                      "op": "if",
+                      "then": {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    },
+                    "op": "if",
+                    "then": {
+                      "field": "alice_access",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    }
+                  }
+                ],
+                "op": "not"
+              }
+            ],
+            "op": "and"
+          },
+          "next": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "fields": {
+                  "carol_access": {
+                    "op": "literal",
+                    "value": true
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "fields": {
+                  "bob_access": {
+                    "op": "literal",
+                    "value": true
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "fields": {
+                "alice_access": {
+                  "op": "literal",
+                  "value": true
+                }
+              },
+              "op": "update",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "parameters": {
+            "name": "actor",
+            "op": "var"
+          },
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          },
+          "transition": "reservations.grant"
+        },
+        {
+          "id": "revoke",
+          "kind": "transition",
+          "legal": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "condition": {
+                  "args": [
+                    {
+                      "name": "actor",
+                      "op": "var"
+                    },
+                    {
+                      "op": "literal",
+                      "type": {
+                        "kind": "enum",
+                        "values": [
+                          "alice",
+                          "bob",
+                          "carol"
+                        ]
+                      },
+                      "value": "alice"
+                    }
+                  ],
+                  "op": "eq"
+                },
+                "else": {
+                  "condition": {
+                    "args": [
+                      {
+                        "name": "actor",
+                        "op": "var"
+                      },
+                      {
+                        "op": "literal",
+                        "type": {
+                          "kind": "enum",
+                          "values": [
+                            "alice",
+                            "bob",
+                            "carol"
+                          ]
+                        },
+                        "value": "bob"
+                      }
+                    ],
+                    "op": "eq"
+                  },
+                  "else": {
+                    "field": "carol_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  },
+                  "op": "if",
+                  "then": {
+                    "field": "bob_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                },
+                "op": "if",
+                "then": {
+                  "field": "alice_access",
+                  "op": "get",
+                  "record": {
+                    "name": "state",
+                    "op": "var"
+                  }
+                }
+              },
+              {
+                "args": [
+                  {
+                    "condition": {
+                      "args": [
+                        {
+                          "name": "actor",
+                          "op": "var"
+                        },
+                        {
+                          "op": "literal",
+                          "type": {
+                            "kind": "enum",
+                            "values": [
+                              "alice",
+                              "bob",
+                              "carol"
+                            ]
+                          },
+                          "value": "alice"
+                        }
+                      ],
+                      "op": "eq"
+                    },
+                    "else": {
+                      "condition": {
+                        "args": [
+                          {
+                            "name": "actor",
+                            "op": "var"
+                          },
+                          {
+                            "op": "literal",
+                            "type": {
+                              "kind": "enum",
+                              "values": [
+                                "alice",
+                                "bob",
+                                "carol"
+                              ]
+                            },
+                            "value": "bob"
+                          }
+                        ],
+                        "op": "eq"
+                      },
+                      "else": {
+                        "field": "carol_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      },
+                      "op": "if",
+                      "then": {
+                        "field": "bob_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    },
+                    "op": "if",
+                    "then": {
+                      "field": "alice_reserved",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    }
+                  }
+                ],
+                "op": "not"
+              }
+            ],
+            "op": "and"
+          },
+          "next": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "fields": {
+                  "carol_access": {
+                    "op": "literal",
+                    "value": false
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "fields": {
+                  "bob_access": {
+                    "op": "literal",
+                    "value": false
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "fields": {
+                "alice_access": {
+                  "op": "literal",
+                  "value": false
+                }
+              },
+              "op": "update",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "parameters": {
+            "name": "actor",
+            "op": "var"
+          },
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          },
+          "transition": "reservations.revoke"
+        },
+        {
+          "id": "reserve",
+          "kind": "transition",
+          "legal": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "condition": {
+                  "args": [
+                    {
+                      "name": "actor",
+                      "op": "var"
+                    },
+                    {
+                      "op": "literal",
+                      "type": {
+                        "kind": "enum",
+                        "values": [
+                          "alice",
+                          "bob",
+                          "carol"
+                        ]
+                      },
+                      "value": "alice"
+                    }
+                  ],
+                  "op": "eq"
+                },
+                "else": {
+                  "condition": {
+                    "args": [
+                      {
+                        "name": "actor",
+                        "op": "var"
+                      },
+                      {
+                        "op": "literal",
+                        "type": {
+                          "kind": "enum",
+                          "values": [
+                            "alice",
+                            "bob",
+                            "carol"
+                          ]
+                        },
+                        "value": "bob"
+                      }
+                    ],
+                    "op": "eq"
+                  },
+                  "else": {
+                    "field": "carol_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  },
+                  "op": "if",
+                  "then": {
+                    "field": "bob_access",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                },
+                "op": "if",
+                "then": {
+                  "field": "alice_access",
+                  "op": "get",
+                  "record": {
+                    "name": "state",
+                    "op": "var"
+                  }
+                }
+              },
+              {
+                "args": [
+                  {
+                    "condition": {
+                      "args": [
+                        {
+                          "name": "actor",
+                          "op": "var"
+                        },
+                        {
+                          "op": "literal",
+                          "type": {
+                            "kind": "enum",
+                            "values": [
+                              "alice",
+                              "bob",
+                              "carol"
+                            ]
+                          },
+                          "value": "alice"
+                        }
+                      ],
+                      "op": "eq"
+                    },
+                    "else": {
+                      "condition": {
+                        "args": [
+                          {
+                            "name": "actor",
+                            "op": "var"
+                          },
+                          {
+                            "op": "literal",
+                            "type": {
+                              "kind": "enum",
+                              "values": [
+                                "alice",
+                                "bob",
+                                "carol"
+                              ]
+                            },
+                            "value": "bob"
+                          }
+                        ],
+                        "op": "eq"
+                      },
+                      "else": {
+                        "field": "carol_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      },
+                      "op": "if",
+                      "then": {
+                        "field": "bob_reserved",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    },
+                    "op": "if",
+                    "then": {
+                      "field": "alice_reserved",
+                      "op": "get",
+                      "record": {
+                        "name": "state",
+                        "op": "var"
+                      }
+                    }
+                  }
+                ],
+                "op": "not"
+              },
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "condition": {
+                              "field": "alice_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          },
+                          {
+                            "condition": {
+                              "field": "bob_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "condition": {
+                          "field": "carol_reserved",
+                          "op": "get",
+                          "record": {
+                            "name": "state",
+                            "op": "var"
+                          }
+                        },
+                        "else": {
+                          "op": "literal",
+                          "value": 0
+                        },
+                        "op": "if",
+                        "then": {
+                          "op": "literal",
+                          "value": 1
+                        }
+                      }
+                    ],
+                    "op": "add"
+                  },
+                  {
+                    "args": {},
+                    "function": "reservations.capacity",
+                    "op": "call"
+                  }
+                ],
+                "op": "lt"
+              }
+            ],
+            "op": "and"
+          },
+          "next": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "fields": {
+                  "carol_reserved": {
+                    "op": "literal",
+                    "value": true
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "fields": {
+                  "bob_reserved": {
+                    "op": "literal",
+                    "value": true
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "fields": {
+                "alice_reserved": {
+                  "op": "literal",
+                  "value": true
+                }
+              },
+              "op": "update",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "parameters": {
+            "name": "actor",
+            "op": "var"
+          },
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          },
+          "transition": "reservations.reserve"
+        },
+        {
+          "id": "release",
+          "kind": "transition",
+          "legal": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "condition": {
+                                  "field": "alice_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              },
+                              {
+                                "condition": {
+                                  "field": "bob_reserved",
+                                  "op": "get",
+                                  "record": {
+                                    "name": "state",
+                                    "op": "var"
+                                  }
+                                },
+                                "else": {
+                                  "op": "literal",
+                                  "value": 0
+                                },
+                                "op": "if",
+                                "then": {
+                                  "op": "literal",
+                                  "value": 1
+                                }
+                              }
+                            ],
+                            "op": "add"
+                          },
+                          {
+                            "condition": {
+                              "field": "carol_reserved",
+                              "op": "get",
+                              "record": {
+                                "name": "state",
+                                "op": "var"
+                              }
+                            },
+                            "else": {
+                              "op": "literal",
+                              "value": 0
+                            },
+                            "op": "if",
+                            "then": {
+                              "op": "literal",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "op": "add"
+                      },
+                      {
+                        "args": {},
+                        "function": "reservations.capacity",
+                        "op": "call"
+                      }
+                    ],
+                    "op": "le"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "alice_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "alice_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "bob_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "bob_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  },
+                  {
+                    "args": [
+                      {
+                        "args": [
+                          {
+                            "field": "carol_reserved",
+                            "op": "get",
+                            "record": {
+                              "name": "state",
+                              "op": "var"
+                            }
+                          }
+                        ],
+                        "op": "not"
+                      },
+                      {
+                        "field": "carol_access",
+                        "op": "get",
+                        "record": {
+                          "name": "state",
+                          "op": "var"
+                        }
+                      }
+                    ],
+                    "op": "or"
+                  }
+                ],
+                "op": "and"
+              },
+              {
+                "condition": {
+                  "args": [
+                    {
+                      "name": "actor",
+                      "op": "var"
+                    },
+                    {
+                      "op": "literal",
+                      "type": {
+                        "kind": "enum",
+                        "values": [
+                          "alice",
+                          "bob",
+                          "carol"
+                        ]
+                      },
+                      "value": "alice"
+                    }
+                  ],
+                  "op": "eq"
+                },
+                "else": {
+                  "condition": {
+                    "args": [
+                      {
+                        "name": "actor",
+                        "op": "var"
+                      },
+                      {
+                        "op": "literal",
+                        "type": {
+                          "kind": "enum",
+                          "values": [
+                            "alice",
+                            "bob",
+                            "carol"
+                          ]
+                        },
+                        "value": "bob"
+                      }
+                    ],
+                    "op": "eq"
+                  },
+                  "else": {
+                    "field": "carol_reserved",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  },
+                  "op": "if",
+                  "then": {
+                    "field": "bob_reserved",
+                    "op": "get",
+                    "record": {
+                      "name": "state",
+                      "op": "var"
+                    }
+                  }
+                },
+                "op": "if",
+                "then": {
+                  "field": "alice_reserved",
+                  "op": "get",
+                  "record": {
+                    "name": "state",
+                    "op": "var"
+                  }
+                }
+              }
+            ],
+            "op": "and"
+          },
+          "next": {
+            "condition": {
+              "args": [
+                {
+                  "name": "actor",
+                  "op": "var"
+                },
+                {
+                  "op": "literal",
+                  "type": {
+                    "kind": "enum",
+                    "values": [
+                      "alice",
+                      "bob",
+                      "carol"
+                    ]
+                  },
+                  "value": "alice"
+                }
+              ],
+              "op": "eq"
+            },
+            "else": {
+              "condition": {
+                "args": [
+                  {
+                    "name": "actor",
+                    "op": "var"
+                  },
+                  {
+                    "op": "literal",
+                    "type": {
+                      "kind": "enum",
+                      "values": [
+                        "alice",
+                        "bob",
+                        "carol"
+                      ]
+                    },
+                    "value": "bob"
+                  }
+                ],
+                "op": "eq"
+              },
+              "else": {
+                "fields": {
+                  "carol_reserved": {
+                    "op": "literal",
+                    "value": false
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              },
+              "op": "if",
+              "then": {
+                "fields": {
+                  "bob_reserved": {
+                    "op": "literal",
+                    "value": false
+                  }
+                },
+                "op": "update",
+                "record": {
+                  "name": "state",
+                  "op": "var"
+                }
+              }
+            },
+            "op": "if",
+            "then": {
+              "fields": {
+                "alice_reserved": {
+                  "op": "literal",
+                  "value": false
+                }
+              },
+              "op": "update",
+              "record": {
+                "name": "state",
+                "op": "var"
+              }
+            }
+          },
+          "parameters": {
+            "name": "actor",
+            "op": "var"
+          },
+          "params": {
+            "actor": {
+              "kind": "enum",
+              "values": [
+                "alice",
+                "bob",
+                "carol"
+              ]
+            },
+            "state": {
+              "fields": {
+                "alice_access": {
+                  "kind": "bool"
+                },
+                "alice_reserved": {
+                  "kind": "bool"
+                },
+                "bob_access": {
+                  "kind": "bool"
+                },
+                "bob_reserved": {
+                  "kind": "bool"
+                },
+                "carol_access": {
+                  "kind": "bool"
+                },
+                "carol_reserved": {
+                  "kind": "bool"
+                }
+              },
+              "kind": "record"
+            }
+          },
+          "state": {
+            "name": "state",
+            "op": "var"
+          },
+          "transition": "reservations.release"
+        }
+      ],
+      "contract_id": "reservation-behavior",
+      "origin": "Locally authored mathematical fixture; exhaustive finite rules, not empirical observations.",
+      "required_symbols": [
+        "reservations.Actor",
+        "reservations.State",
+        "reservations.can_reserve",
+        "reservations.capacity",
+        "reservations.capacity_assumption",
+        "reservations.grant",
+        "reservations.has_access",
+        "reservations.is_reserved",
+        "reservations.occupied",
+        "reservations.release",
+        "reservations.reserve",
+        "reservations.reserve_requires_access",
+        "reservations.revoke",
+        "reservations.three_reserved",
+        "reservations.two_reserved",
+        "reservations.valid",
+        "reservations.valid_capacity"
+      ]
+    }
+  ],
+  "profile": "adm-conformance/0.1"
+}

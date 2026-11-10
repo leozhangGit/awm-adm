@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "Predicate": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "default": 100,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "minimum": {
+          "default": 0,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "symbol": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "kind",
+        "unit"
+      ],
+      "title": "Predicate",
+      "type": "object"
+    },
+    "Projection": {
+      "additionalProperties": false,
+      "properties": {
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/TemporalScope"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Cells",
+          "type": "array"
+        },
+        "entities": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "namespace": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "predicates": {
+          "items": {
+            "$ref": "#/$defs/Predicate"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Predicates",
+          "type": "array"
+        },
+        "profile": {
+          "const": "awm-adm-projection/1",
+          "default": "awm-adm-projection/1",
+          "title": "Profile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "namespace",
+        "entities",
+        "predicates",
+        "cells"
+      ],
+      "title": "Projection",
+      "type": "object"
+    },
+    "TemporalScope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "granularity": {
+          "enum": [
+            "second",
+            "day",
+            "year"
+          ],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "unknown",
+            "point",
+            "interval"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "granularity"
+      ],
+      "title": "TemporalScope",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:CoverageTransition",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "expected_generation": {
+      "minimum": 1,
+      "title": "Expected Generation",
+      "type": "integer"
+    },
+    "expected_revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Expected Revision",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "extend",
+        "window"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "projection": {
+      "$ref": "#/$defs/Projection"
+    },
+    "reason": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "expected_revision",
+    "expected_generation",
+    "kind",
+    "projection",
+    "reason"
+  ],
+  "title": "CoverageInput",
+  "type": "object"
+}
