@@ -18,6 +18,16 @@ Independent ownership, the learning/serving separation, forward/backward conflic
 
 *The Domain models workspace: create an empty ADM, import a checked snapshot or try an example.*
 
+## The idea behind AWM-ADM
+
+I want AI systems to develop knowledge that stays explicit, inspectable and consistently usable over time. As an assistant takes on more work, it should be clear which rules it has accepted, what evidence supports them and how new information can change them.
+
+Context and harness engineering help organize information, tools and checks around an LLM. I want to complement that work with a maintained domain model: one whose supported consequences can be computed and checked independently of how the LLM interprets a conversation on any particular turn.
+
+AWM-ADM is my first step toward that architecture. It combines the breadth and flexibility of an LLM with explicit domain knowledge, controlled learning and inspectable execution. The model can acquire new capabilities while proposed changes remain subject to independent owner requirements. It can also preserve a gap when the available knowledge does not support an answer.
+
+The longer-term aim is for an ADM to become a **logic guide for an LLM-driven system**, supplying accepted rules and checked results that help shape its decisions. Possible future applications include software agents, workflow automation and robotic systems. Turning guidance into control would require application-specific integration that makes the relevant checks mandatory before an action can execute.
+
 ## What you can do
 
 - **Ask** questions in a durable chat. A funded provider translates the request; the local model computes the answer. Optional AI explanations remain separate from the authoritative result.
