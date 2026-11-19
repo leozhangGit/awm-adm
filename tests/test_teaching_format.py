@@ -14,11 +14,11 @@ from awm_adm.teaching.compute import compute
 from awm_adm.teaching.prompt import specification
 from awm_adm.teaching.provider_format import PROFILE, response_schema
 
+from .interaction_support import material, plan, respond
 from .teaching_wire import native_reply
 from .test_application import app_runtime as app_runtime
-from .test_conversations import message
+from .test_direct_ask import recorded, work
 from .test_learning_service import rig as rig
-from .test_teaching import funded, material, plan, respond
 
 ROOT = Path(__file__).parents[1]
 
@@ -195,7 +195,7 @@ def test_error_diagnostics_do_not_echo_untrusted_values_or_map_keys():
 
 def test_preparation_guidance_is_model_and_domain_neutral():
     spec = specification({"objective": "owner request", "inputs": []}, {}, {}, {})
-    assert spec["prompt_version"] == "adm-teaching-preparation/4"
+    assert spec["prompt_version"] == "adm-teaching-preparation/6"
     assert "local_plan_schema" not in spec["context"]
     assert "plan_json" not in dumps(spec["schema"]).decode()
     assert all(
@@ -205,9 +205,11 @@ def test_preparation_guidance_is_model_and_domain_neutral():
 
 def test_failure_reason_is_durable_and_preserves_paid_usage_without_retry(rig):
     rt, gw = rig
-    key, cid = funded(rt, gw)
+    key = rt.create("Preparation regression")["id"]
+    recorded(rt, gw, {})
     before = rt.store.info(key)
-    rt.conversations.message(key, cid, message(rt, key, cid, "Teach a bounded numeric capability."))
+    item = rt.interactions.submit(key, "teach", {"text": "Teach a bounded numeric capability."})
+    cid = work(rt, key, item["id"])["conversation_id"]
     rt.conversations.tick()
     value = proposed()
     value["plan"]["types"][0]["element_id"] = "malicious-unused-reference"

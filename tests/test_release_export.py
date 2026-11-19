@@ -23,6 +23,30 @@ def test_export_is_self_contained_and_verification_detects_change(tmp_path):
         "console/node_modules/module.js",
         "config/.env",
         "src/state.db",
+        "src/state.db-journal",
+        "src/state.sqlite-journal",
+        "src/state.sqlite3-journal",
+        "src/.codex/config.toml",
+        "config/.npmrc",
+        "config/.git-credentials",
+        "config/.netrc",
+        "config/.mcp.json",
+        "config/secrets/value",
+        "config/credentials/value",
+        "config/provider-secrets/value",
+        "config/admin-credentials/value",
+        "config/backups/archive.zip",
+        "config/id_ed25519",
+        "config/id_rsa",
+        "config/client.p12",
+        "config/client.pfx",
+        "config/client.jks",
+        "config/owner-token",
+        "config/gateway-master-key",
+        "config/openai-key",
+        "config/anthropic-key",
+        "config/credentials.json",
+        "config/service-account-private.json",
         "unknown-secret.txt",
     ]:
         file = root / path
@@ -37,6 +61,15 @@ def test_export_is_self_contained_and_verification_detects_change(tmp_path):
     (target / "src/code.py").write_text("changed")
     with pytest.raises(ValueError, match="differs"):
         exporter.verify(target)
+
+
+def test_public_npm_build_configuration_is_retained(tmp_path):
+    root = tmp_path / "source"
+    (root / "console").mkdir(parents=True)
+    (root / "pyproject.toml").write_text('[project]\nversion = "0.3.0"\n')
+    (root / "console/.npmrc").write_text("engine-strict=true\n")
+    result = exporter.export(root, tmp_path / "export")
+    assert set(result["files"]) == {"pyproject.toml", "console/.npmrc"}
 
 
 def test_export_rejects_symlinks_and_recursive_destination_without_partial_package(tmp_path):

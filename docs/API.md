@@ -1,28 +1,38 @@
-# Authenticated local application API
+# Application API
 
-The service exposes model, learning, source, administrator, spending and conversational resources under `/api/v1` within AWM-ADM 0.3.0. See [administrator access](ADMINISTRATOR.md), [priced allowances](PRICED_ALLOWANCES.md), [conversations](CONVERSATIONS.md) and [OpenAPI](../contracts/openapi.json).
+The service exposes model, learning, source, administrator, connection and conversational resources under `/api/v1` within AWM-ADM 0.3.0. See [administrator access](ADMINISTRATOR.md), [connection and usage](CONNECTION.md), [conversations](CONVERSATIONS.md) and [OpenAPI](../contracts/openapi.json).
 
 The public API runs at `http://127.0.0.1:8080/api/v1`. It exposes independent ADM initialization, durable local requests, exact result bindings, owner settings/requirements, bounded model operations and retained events. The [browser console](CONSOLE.md) uses these same routes for owner workflows. [Bounded learning and provider dispatch](LEARNING.md) use separate owner-authorized resources. A gap alone does not create a provider grant: an explicit episode can attach eligible requests, retain their learning interests, and trigger a new local attempt after checked publication. Provider output is never substituted for a request result.
 
-## Resource names and versioning
+## Direct interaction resources
+
+Historical structured queries support `lookup_fact` with `effective_at`, and `lookup_fact_period` with inclusive `effective_from` and exclusive `effective_to`. Both use canonical UTC instants, an `entity_id` and a `predicate`. Automatic Ask preserves calendar-date precision using the captured system timezone unless the user specifies one. See [temporal semantics](TEMPORAL_INTERPRETATION.md) and [sources](SOURCES.md) for full-period support requirements. Existing instant queries and stored artifact profiles are unchanged.
+
+All paths below are relative to `/api/v1`. The connection and direct chat mutations require administrator authority.
 
 | Resource | Purpose |
 | --- | --- |
-| `/adms/{adm}/conversations` | Durable Ask/Teach chats, turns, setup and decisions |
-| `/adms/{adm}/interpretation-sessions` | Manual preview history and unaccepted teaching drafts in Local debug |
-| `/adms/{adm}/interpretations` | Individual interpreted requests, clarification and explicit local execution |
-| `POST /adms` | Create an empty model or import a snapshot supplied in the body |
-| `/adms/{adm}/attachments` | Upload and list retained material with actual stored content |
+| `GET /connection` | Saved configuration and enabled/testing/disabled state, without its secret |
+| `POST /connection/enable`, `/connection/disable` | Idempotent test-and-enable, or disable retaining the key |
+| `GET /connection/operations/{id}`, `/connection/usage` | Activation progress and known/unknown call usage |
+| `POST /adms/{adm}/ask`, `/teach` | Direct input: `text`, optional `attachments`, `reply_to` and `idempotency_key` |
+| `GET /adms/{adm}/chat/{ask|teach}` | Stable paginated channel history |
+| `GET /adms/{adm}/interactions/{id}` | Readable progress, local outcome and explanation |
+| `POST /adms/{adm}/interactions/{id}/cancel` | Stop active work; preserve accepted knowledge and completed outcomes |
+| `GET /adms/{adm}/activity` | Time/type/origin-filtered console/API history |
+| `GET /adms/{adm}/knowledge` | Current accepted declaration/evidence search, revision-bound pages |
+| `POST /adms/{adm}/source-queues` | Explicit managed source-only intake using direct-message input |
+| `/adms/{adm}/conversations` | Retained exchange internals and legacy history reads |
+| `/adms/{adm}/interpretation-sessions`, `/interpretations` | Explicit preview, clarification and confirmation APIs |
+| `/adms/{adm}/attachments`, `/intake` | Immutable upload, selected originals and bounded producer routes |
 | `/auth/login`, `/auth/me`, `/auth/logout` | Administrator password sessions |
-| `/auth/tokens` | Issue/revoke scoped programmatic credentials |
+| `/auth/tokens` | Existing scoped local-request and producer credentials |
 
-The public service has no `/api/v2` or `/api/v3` aliases or redirects. The session-bootstrap, metadata-only attachment and duplicate snapshot-import endpoints are not exposed. Clients must use the paths above. Existing serialized profile identifiers, database schema 15 and snapshot encodings are independent of URL versions and remain unchanged. Health checks stay at `/health/live` and `/health/ready`; private operator/worker routes are separate from the public API.
+For example, send `{"text":"Can one more item be borrowed when one is already borrowed and one is available?","idempotency_key":"question-1"}` to the model's Ask endpoint. Read the returned interaction until its outcome is ready. Teach accepts the same shape and automatically checks and publishes clear requests; `reply_to` associates a clarification with its original exchange. Ask cannot silently teach.
 
-## Historical lookup and preparation renewal
+`GET /adms/{adm}/history-options` retains revision-bound historical lookup metadata. Existing structured requests, requirements, snapshots, sources, feeds, proofs and diagnostic APIs remain available. Manual chat setup/decisions/renewal, separate connection-test/global-enable controls and financial mutation routes are retired. Historical price/allowance reads remain for retained accounting, not permission to issue new work.
 
-Under `/api/v1/adms/{adm}`, `GET /history-options` returns revision-bound metadata for accepted historical lookup, including independently imported snapshots. It exposes no source-intake permission and requires scoped read authority. Owner-only `GET /tasks/{task}/renewal` previews a bounded unchanged-preparation time extension; `POST` confirms its exact retained task, allowance and configuration bindings. It changes no cap or consumed usage, starts no execution and uses a durable recovery journal. See [execution](TEACHING_EXECUTION.md).
-
-Conversation reads expose typed readiness issues for remote access, connection purpose, supported pricing and allowance state. Message submission rechecks these before creating work. Browser drafts survive tab-local reload/navigation; credentials are never stored with them. Existing local requests remain available through the `/api/v1` API without remote interpretation.
+URL versioning remains `/api/v1` with no v2/v3 aliases. Core serialized profiles and snapshots are unchanged; owned operational schema is 16. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
 
 ## Start and authenticate
 
@@ -152,31 +162,27 @@ Request and revision lists accept `order=asc` (default) or `order=desc`, rejecti
 
 ## Managed learning resources
 
-The [learning API](LEARNING.md#api-resources) adds owner-only `/learning`, `/connections`, `/dispatches`, per-ADM `/episodes` and candidate review routes. [OpenAPI](../contracts/openapi.json) contains the complete implemented schemas. No scoped request token can grant provider authority. Pending requests expose durable learning job IDs; a successful publication may repin a new local attempt only for explicitly authorized learning interests. `initial_revision_id` and each attempt's `revision` preserve historical pins. Interruption never retries an uncertain provider call.
+The [learning API](LEARNING.md#api-resources) retains owner-only learning diagnostics, `/dispatches`, per-ADM `/episodes` and candidate review routes alongside the single `/connection` controls. [OpenAPI](../contracts/openapi.json) contains the complete implemented schemas. No scoped request token can grant provider authority. Pending requests expose durable learning job IDs; a successful publication may repin a new local attempt only for explicitly authorized learning interests. `initial_revision_id` and each attempt's `revision` preserve historical pins. Interruption never retries an uncertain provider call.
 
 The [language API](LANGUAGE.md#api-resources) adds local/optional external interpretations, explicit confirmation, vocabulary and bounded conversations. Local interpretation accepts scoped submit authority; provider interpretation, vocabulary edits and teaching proposals require owner authority. Interpretation confirmation creates a normal request with the same local result and lifecycle contracts.
 
 ## Manual sources and historical facts
 
-The [source guide](SOURCES.md) defines the implemented immutable intake, explicit extraction, owner projection policy, reviewed admission, corrections/support holds and durable `lookup_fact` interface. Source text remains untrusted data. The [feed guide](FEEDS.md) defines implemented standing policies, lifetime allowances, explicit reprocessing, bounded history and coverage transitions. See [release scope](RELEASE.md) for supported capabilities and limits.
+The [source guide](SOURCES.md) defines the implemented immutable intake, explicit extraction, owner projection policy, reviewed admission, corrections/support holds and durable `lookup_fact` interface. Source text remains untrusted data. The [feed guide](FEEDS.md) defines implemented standing policies, finite processing reservations, explicit reprocessing, bounded history and coverage transitions. See [release scope](RELEASE.md) for supported capabilities and limits.
 
 ## Service operations
+
+`GET /api/v1/operations` returns up to 50 operation summaries without payloads. Optional `since_ms` is an inclusive receipt-time lower bound in Unix milliseconds, applied before the limit; optional `include_deletions=true` combines deletion status with create/export records and sorts newest first by receipt time (operation identity breaks ties). Summaries include `created_at_ms`. Defaults preserve the unfiltered create/export list. The console requests the preceding seven days; older records remain stored and readable by ID. Deletion responses also include `created_at_ms`; `/deletions?scope=active` retains older unfinished operations and their existing explicit retry path. Reading these lists does not advance or retry work.
 
 `GET /api/v1/operations/diagnostics` returns an owner-only report capped at 1 MiB: process timing/work counters, persistent queue/status counts, app-store bytes, provider accounting and retention eligibility. `GET /api/v1/operations/retention` returns the retention preview. Instance-scoped tokens cannot access either endpoint. Neither includes raw source/model/query/credential content. Metric counters reset at process start; persistent accounting does not.
 
 Service backup and restore use an offline operator CLI, never public API filesystem paths. They require stopped storage owners and a fresh destination. [Operations contract](OPERATIONS.md)
 
-## Provider error detail
+## Provider failures and intake
 
-The service returns HTTP 403 with code `remote_calls_disabled` when a ready, otherwise-authorized remote connection is blocked by the installation allowance. The message points the owner to Connections. Generic permission failures remain `forbidden`; neither response authorizes retries, enables calls or proves a provider key/model works. Generated error schemas include this code.
+Connection failures, malformed or incomplete output, transport errors and unknown usage are retained with bounded diagnostics. These do not imply insufficient credit or a free call. A stopped or unavailable connection prevents new provider work; accepted local execution remains independent. No automatic retry is issued for an uncertain call.
 
-## Ask
-
-[Ask contracts](ASK.md) add explicit `purpose=ask` interaction options/setup, optional `narrate_results`, immutable `GET /api/v1/adms/{adm}/presentations/{id}` and idempotent `POST /api/v1/adms/{adm}/ask/{work}/teach`. All are owner-only. A confirmed Ask setup permits automatic checked read-only local execution; AWM-ADM preview/execution semantics are unchanged. The generated OpenAPI records the closed setup and gap inputs.
-
-## managed intake
-
-[INTAKE.md](INTAKE.md) defines the implemented owner upload and append-only producer routes, exact disclosure/start authority, shared parent accounting and refusal/replay semantics. [OpenAPI](../contracts/openapi.json) includes `Upload`, `AppendInput`, `AppendCredential`, optional message/setup flags and the `finish` task command. The receipt lookup path uses the original producer idempotency key.
+[Ask](ASK.md) defines checked interpretation, local result bindings and separately labeled narration. [Intake](INTAKE.md) defines uploads, automatic source checking and append-only producer routes. Exact technical records remain inspectable through authenticated endpoints; the console presents readable outcomes.
 
 ## owner model lifecycle
 

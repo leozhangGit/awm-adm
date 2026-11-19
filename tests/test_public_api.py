@@ -9,6 +9,9 @@ from tests.test_admin import browser, csrf, setup
 from tests.test_application import app_runtime as app_runtime
 from tests.test_application import client
 
+from .test_direct_ask import recorded, work
+from .test_learning_service import rig as rig
+
 
 def test_public_contract_is_current_and_unambiguous(app_runtime):
     with client(app_runtime) as c:
@@ -56,8 +59,9 @@ def test_retired_routes_are_absent_and_do_not_mutate(app_runtime):
             assert db.execute("SELECT count(*) FROM chat_attachments").fetchone()[0] == 0
 
 
-def test_preview_and_chat_histories_are_separate_and_survive_restart(app_runtime):
-    rt = app_runtime
+def test_preview_and_chat_histories_are_separate_and_survive_restart(rig):
+    rt, gw = rig
+    recorded(rt, gw, {})
     key = rt.create("Separate histories")["id"]
     base = f"/api/v1/adms/{key}"
     with browser(rt) as c:
@@ -70,12 +74,13 @@ def test_preview_and_chat_histories_are_separate_and_survive_restart(app_runtime
             headers=headers,
         )
         chat = c.post(
-            base + "/conversations",
-            json={"idempotency_key": "same-id", "title": "Chat", "channel": "ask"},
+            base + "/ask",
+            json={"idempotency_key": "same-id", "text": "What can this model do?"},
             headers=headers,
         )
-        assert preview.status_code == chat.status_code == 201
-        preview_id, chat_id = preview.json()["id"], chat.json()["id"]
+        assert preview.status_code == 201 and chat.status_code == 202
+        preview_id = preview.json()["id"]
+        chat_id = work(rt, key, chat.json()["id"])["conversation_id"]
         assert preview_id != chat_id
         token = c.post(
             "/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read", "submit"]}, headers=headers

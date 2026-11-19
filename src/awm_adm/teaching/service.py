@@ -1,8 +1,7 @@
-"""Durable, funded teaching preparation. No episode, source job or publication."""
+"""Durable teaching preparation followed by checked automatic execution."""
 
 import base64
 import threading
-from uuid import uuid4
 
 from ..contracts import CallLimits
 from ..learning.service import fault, fingerprint
@@ -21,9 +20,6 @@ class Teaching:
         from .execution import Execution
 
         self.execution = Execution(self)
-        from .renewal import Renewal
-
-        self.renewal = Renewal(self)
 
     def get(self, key, uid):
         with self.store.db(key) as db:
@@ -71,62 +67,46 @@ class Teaching:
             "UPDATE teaching_tasks SET status=?,body=? WHERE id=?", (task["status"], dumps(task), task["id"])
         )
 
-    def allocated(self, db, key, conv, payload, allowance):
-        uid = payload["task_id"]
-        if db.execute("SELECT 1 FROM teaching_tasks WHERE id=?", (uid,)).fetchone():
-            return
-        task = {
-            "profile": "awm-adm-teaching-task/1",
-            "id": uid,
-            "conversation_id": conv["id"],
-            "context": self.s.context(key),
-            "status": "preparing",
-            "objective": None,
-            "inputs": [],
-            "allowance_id": allowance["id"],
-            "budget": {
-                k: payload[k]
-                for k in (
-                    "cap_micro_usd",
-                    "price_id",
-                    "expires_at_ms",
-                    "max_calls",
-                    "max_input_tokens",
-                    "max_output_tokens",
-                    "max_children",
-                    "max_work",
-                )
-            },
-            "source_queue": bool(payload.get("source_queue")),
-            "created_at_ms": self.s.now(),
-            "ask_gap": conv.get("ask_gap"),
-            "specification": None,
-            "execution_authorized": False,
-        }
-        db.execute(
-            "INSERT INTO teaching_tasks(id,conversation,status,body) VALUES(?,?,?,?)",
-            (uid, conv["id"], task["status"], dumps(task)),
-        )
-
-    def begin(self, db, key, conv, turn, question):
-        task = loads(self.s._one(db, "teaching_tasks", conv["preferences"]["task_id"])["body"])
-        if task["specification"] is not None or task["status"] not in {"preparing", "needs_input"}:
-            fault("conflict", "This task is already prepared or stopped; set up a new teaching task")
-        if task["context"] != turn["context"]:
-            fault("stale_context", "Teaching scope changed; set up a fresh task")
-        if len(task["inputs"]) >= 4 or sum(len(dumps(i)) for i in task["inputs"]) + len(dumps(turn)) > 24576:
-            fault("quota_exceeded", "Teaching preparation is limited to four input turns and 24 KiB")
-        task["inputs"].append(
+    def direct_task(self, db, key, conv, work, turn, previous):
+        prior = None
+        if previous and work.get("question"):
+            prior = self.get(key, previous["preferences"]["task_id"])
+        inputs = list(prior["inputs"]) if prior else []
+        inputs.append(
             {
                 "id": turn["id"],
                 "text": turn["text"],
                 **({"attachments": self.s.intake.inputs(db, key, turn)} if turn["attachment_ids"] else {}),
             }
         )
-        task["objective"] = task["objective"] or turn["text"]
-        task["question"] = question["question"] if question else None
-        task["status"] = "preparing"
-        self.save(db, task)
+        if len(inputs) > 4 or len(dumps(inputs)) > 24576:
+            fault(
+                "needs_specification",
+                "Please restate the teaching request with its necessary details in one message",
+            )
+        task = {
+            "profile": "awm-adm-teaching-task/2",
+            "direct": True,
+            "id": work["id"],
+            "conversation_id": conv["id"],
+            "context": work["context"],
+            "status": "preparing",
+            "objective": prior["objective"] if prior else turn["text"],
+            "inputs": inputs,
+            "question": work.get("question"),
+            "source_queue": work["preferences"].get("source_queue", False),
+            "preferences": work["preferences"],
+            "created_at_ms": self.s.now(),
+            "ask_gap": None,
+            "specification": None,
+            "execution_authorized": False,
+            "intent_authority": "authenticated_teach_submission",
+            "previous_task_id": prior["id"] if prior else None,
+        }
+        db.execute(
+            "INSERT INTO teaching_tasks(id,conversation,status,body) VALUES(?,?,?,?)",
+            (task["id"], conv["id"], task["status"], dumps(task)),
+        )
 
     def stop(self, key, work, status, code=None):
         task = self.get(key, work["preferences"]["task_id"])
@@ -217,7 +197,7 @@ class Teaching:
                             key,
                             work,
                             "failed",
-                            "Teaching preparation stopped: the proposal, model context, provider or allowance could not pass local checks. No configuration was installed and no learning started. Review Details; a new preparation needs a fresh explicit setup.",
+                            "Teaching could not start: " + str(error) + ". No new knowledge was accepted.",
                         )
                         return True
             return False
@@ -226,63 +206,37 @@ class Teaching:
 
     def prepare(self, key, work):
         task = self.get(key, work["preferences"]["task_id"])
-        self.s.finance.child(
-            task["allowance_id"],
-            {
-                "operation_id": work["id"] + "-check",
-                "kind": "local_check",
-                "max_work": 2000000,
-                "max_duration_ms": 10000,
-                "payload_digest": fingerprint(
-                    {"task": task["id"], "context": work["context"], "inputs": task["inputs"]}
-                ),
-            },
-        )
         checked = self.compute(key, work, "teaching_catalog")
         spec = specification(task, checked["catalog"], checked["requirements"], self.rt.sources.policy(key))
+        work["temporal_context"] = spec["context"]["temporal_context"]
         spec["context"]["supplied_material"] = self.s.intake.disclosed(key, task)
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
-            with self.store.db() as db:
-                allowance, price = self.s.finance.valid(db, task["allowance_id"])
-            if (
-                allowance["scope"] != ("source" if task.get("source_queue") else "task")
-                or allowance["scope_id"] != task["id"]
-                or allowance["adm_id"] != key
-            ):
-                fault("forbidden", "Teaching allowance belongs to another task")
-            conn = self.rt.learning._usable(
-                price["connection_id"], price["connection_version"], "task_preparation"
-            )
-            raw, estimate = make_wire(conn, spec, 8192)
+            conn = self.rt.interactions.connection_for(work, "task_preparation")
+            limits = self.rt.config.learning.call.model_dump()
+            limits["max_output_tokens"] = min(8192, limits["max_output_tokens"])
+            raw, estimate = make_wire(conn, spec, limits["max_output_tokens"])
+            if len(raw) > self.rt.config.server.max_body_bytes:
+                fault("resource_exhausted", "The teaching context is too large for one preparation")
+            limits["max_input_tokens"] = max(limits["max_input_tokens"], estimate)
             prov = provenance(spec, raw)
-            self.s.finance.child(
-                allowance["id"],
-                {
-                    "operation_id": work["id"],
-                    "kind": "preparation",
-                    "max_work": 0,
-                    "payload_digest": prov["request_hash"],
-                },
-            )
             gid = self.rt.learning.reserve(
                 {
                     "purpose": "task_preparation",
                     "conversation_work_id": work["id"],
                     "operation_id": work["id"],
-                    "allowance_id": allowance["id"],
                     "base_revision": work["context"]["revision_id"],
                     "connection_id": conn["id"],
                     "connection_version": conn["version"],
                     "configuration_digest": conn["configuration_digest"],
                     "wire": base64.b64encode(raw).decode(),
                     "input_estimate": estimate,
-                    "limits": CallLimits(
-                        max_input_tokens=max(32000, price["input_bound"]), max_output_tokens=8192
-                    ).model_dump(),
+                    "limits": CallLimits.model_validate(limits).model_dump(),
                     "provenance": prov,
                     "recorded_index": 0,
-                    "deadline": min(work["deadline_ms"] / 1000, self.rt.learning.now() + 60),
+                    "deadline": min(
+                        work["deadline_ms"] / 1000, self.rt.learning.now() + limits["max_duration_ms"] / 1000
+                    ),
                 },
                 adm=key,
             )
@@ -292,16 +246,12 @@ class Teaching:
             work["links"].append({"kind": "provider_grant", "id": gid})
             with self.store.db(key) as db, self.store.transaction(db):
                 self.s._save_work(db, key, work, "conversation.queued")
-        # The remainder stays reserved until proposal validation or a failure.
 
     def reject(self, key, work, task, checked):
         # A known checked rejection settles only measured local work. Provider
         # charges have their separate durable outcome; no second call is made.
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
-            self.s.finance.settle_work(
-                task["allowance_id"], work["id"] + "-check", checked["work"] + work["catalog_work"]
-            )
             work["failure_code"] = "invalid_preparation"
             work["failure_diagnostics"] = checked["failure"]
             self.stop(key, work, "failed", "invalid_preparation")
@@ -310,16 +260,15 @@ class Teaching:
                 work,
                 "failed",
                 checked["failure"]["message"] + " No configuration was installed and no learning started. "
-                "This call's usage remains recorded. No automatic retry; review Details before a new explicit setup.",
+                "The call usage is recorded. Please clarify or rephrase the request before trying again.",
             )
 
     def complete(self, key, work, task, checked):
         reply = checked["reply"]
+        if work.get("temporal_context"):
+            task["temporal_context"] = work["temporal_context"]
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
-            self.s.finance.settle_work(
-                task["allowance_id"], work["id"] + "-check", checked["work"] + work["catalog_work"]
-            )
             if reply["status"] != "ready":
                 status = "needs_input" if reply["status"] == "needs_clarification" else "unsupported"
                 self.stop(key, work, status)
@@ -327,7 +276,7 @@ class Teaching:
                     key,
                     work,
                     status,
-                    "Preparation only; no model change or learning has started.",
+                    reply["message"],
                     {
                         "kind": "clarification" if status == "needs_input" else "unavailable",
                         "text": reply["message"],
@@ -336,7 +285,7 @@ class Teaching:
                 return
             plan = checked["plan"]
             spec = {
-                "profile": "awm-adm-teaching-specification/1",
+                "profile": "awm-adm-teaching-specification/2",
                 "task_id": task["id"],
                 "context": task["context"],
                 "objective": task["objective"],
@@ -358,8 +307,6 @@ class Teaching:
                         zip(plan["children"], checked["contracts"], strict=True)
                     )
                 ],
-                "allowance_id": task["allowance_id"],
-                "budget": task["budget"],
                 "repair_policy": {
                     "max_attempts": 2,
                     "automatic_retry_unknown": False,
@@ -370,102 +317,71 @@ class Teaching:
                 "source_policy_authority": "uninstalled_proposal",
                 "execution_authorized": False,
             }
-            payload = {
-                "operation": "teaching_specification",
-                "task_id": task["id"],
-                "specification": spec,
-                "authority_generation": self.s._authority(),
-                "spending_generation": self.s.finance.settings()["generation"],
+            if plan.get("requirements") is not None:
+                self.stop(key, work, "needs_input", "independent_requirements")
+                self.s._finish(
+                    key,
+                    work,
+                    "needs_input",
+                    "Independent acceptance requirements need an explicit policy decision. This teaching request has not changed them.",
+                    {
+                        "kind": "clarification",
+                        "text": "Should I teach the domain rules without changing the model’s independent acceptance requirements?",
+                    },
+                )
+                return
+            task.update(
+                status="prepared",
+                summary=plan["summary"],
+                specification=spec,
+                specification_digest=fingerprint(spec),
+                prepared_at_ms=self.s.now(),
+                preparation_assurance="local_structure_and_scope_checked",
+            )
+            # Verify selected-material scope before changing the exchange state.
+            task["execution"] = {
+                "connection_id": task["preferences"]["connection_id"],
+                "connection_version": task["preferences"]["connection_version"],
             }
-            proposal = {
-                "profile": "awm-adm-v3-proposal/0.1",
-                "id": str(uuid4()),
-                "turn_id": work["turn_id"],
-                "context": work["context"],
-                "kind": "task",
-                "payload_digest": fingerprint(payload),
-                "expires_at_ms": min(self.s.now() + 600000, task["budget"]["expires_at_ms"]),
-                "payload": payload,
-            }
-            self.store.capacity(len(dumps(payload)) * 3 + 32768)
-            task.update(status="awaiting_review", summary=plan["summary"], proposal_id=proposal["id"])
+            try:
+                self.s.intake.start_check(key, task, {"source_consent": True})
+            except RuntimeFault as error:
+                task.pop("execution")
+                task.update(
+                    status="unsupported" if error.code == "unsupported" else "needs_input",
+                    specification=None,
+                    failure_code=error.code,
+                )
+                with self.store.db(key) as db:
+                    self.save(db, task)
+                self.s._finish(
+                    key,
+                    work,
+                    task["status"],
+                    str(error),
+                    {
+                        "kind": "unavailable" if task["status"] == "unsupported" else "clarification",
+                        "text": str(error),
+                    },
+                )
+                return
+            task.pop("execution")
             with self.store.db(key) as db, self.store.transaction(db):
                 self.save(db, task)
-                db.execute(
-                    "INSERT INTO chat_proposals VALUES(?,?,?,?)",
-                    (proposal["id"], task["conversation_id"], "pending", dumps(proposal)),
-                )
-                conv = self.s._conversation(db, task["conversation_id"])
-                self.s._turn(
-                    db,
-                    key,
-                    conv,
-                    "system",
-                    "The teaching specification passed structural and finite-scope checks. Review the proposed meaning and coverage below. Saving it does not install requirements, disclose sources, start learning or change the model.",
-                )
-                work.update(status="awaiting_review", task_id=task["id"], finished_at_ms=self.s.now())
+                work.update(status="prepared", task_id=task["id"], finished_at_ms=self.s.now())
                 self.s._save_work(db, key, work, "conversation.completed")
-
-    def apply(self, key, decision, proposal, cid):
-        payload = proposal["payload"]
-        task = self.get(key, payload["task_id"])
-        status = "declined"
-        try:
-            if decision["answer"] == "accept":
-                self.s._current(key, decision["context"])
-                if (
-                    self.s.now() >= proposal["expires_at_ms"]
-                    or self.s._authority() != payload["authority_generation"]
-                    or self.s.finance.settings()["generation"] != payload["spending_generation"]
-                ):
-                    fault("stale_context", "Teaching decision expired")
-                with self.store.db() as db:
-                    self.s.finance.valid(db, task["allowance_id"])
-                if task["status"] != "awaiting_review" or task["proposal_id"] != proposal["id"]:
-                    fault("stale_context", "Teaching proposal changed")
-                task.update(
-                    status="prepared",
-                    specification=payload["specification"],
-                    specification_digest=fingerprint(payload["specification"]),
-                    decision_id=decision["id"],
-                    prepared_at_ms=self.s.now(),
-                )
-                task["source_review"] = self.s.intake.scope_review(task)
-                status = "accepted"
-        except RuntimeFault:
-            status = "stale"
-        if status != "accepted":
-            task["status"] = status
-        decision = {**decision, "status": status}
-        with self.store.db(key) as db, self.store.transaction(db):
-            self.save(db, task)
-            for row in db.execute(
-                "SELECT body FROM chat_work WHERE conversation=? AND status='awaiting_review'", (cid,)
-            ).fetchall():
-                work = loads(row[0])
-                if work.get("task_id") == task["id"]:
-                    work["status"] = "prepared" if status == "accepted" else status
-                    self.s._save_work(db, key, work, "conversation.completed")
-            db.execute(
-                "UPDATE chat_decisions SET status=?,body=? WHERE id=?",
-                (status, dumps(decision), decision["id"]),
-            )
-            db.execute("UPDATE chat_proposals SET status=? WHERE id=?", (status, proposal["id"]))
-            conv = self.s._conversation(db, cid)
-            self.s._turn(
-                db,
+            # The authenticated Teach submission authorizes ordinary execution;
+            # no fabricated human review or independent owner policy is recorded.
+            self.execution.command(
                 key,
-                conv,
-                "system",
-                "Teaching task prepared and saved. Choose Start teaching to review and authorize execution within the remaining task allowance. The model, owner requirements and source permissions are unchanged. Preparation costs remain in this task's learning allowance."
-                if status == "accepted"
-                else "The teaching specification was not approved with current authority. No learning started; reserved usage remains accounted for.",
-            )
-            self.store.emit(
-                db,
-                key,
-                "teaching.prepared" if status == "accepted" else "teaching.stopped",
                 task["id"],
-                data={"status": task["status"]},
+                {
+                    "idempotency_key": "direct-start:" + task["id"],
+                    "specification_digest": task["specification_digest"],
+                    "context": task["context"],
+                    "expected_version": 0,
+                    "action": "start",
+                    "source_consent": True,
+                },
+                "authenticated_teach_submission",
             )
-        return decision

@@ -1,0 +1,19 @@
+{
+  "$id": "urn:awm-adm:m0:DisableConnection",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    }
+  },
+  "required": [
+    "idempotency_key"
+  ],
+  "title": "DisableConnection",
+  "type": "object"
+}

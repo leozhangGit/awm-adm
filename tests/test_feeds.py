@@ -529,12 +529,12 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         assert new.store.run_info(key, result["execution"]["run_id"])["result"] == result
         assert new.sources.feeds.overview(key)["feeds"] == []
         with new.store.db(key) as db:
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 15
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 16
     finally:
         new.close()
 
 
-def test_concurrent_feed_global_cap_survives_unknown_period_rollover(rig, monkeypatch):
+def test_removed_global_spending_quota_does_not_block_other_feed_or_retry_unknown(rig, monkeypatch):
     from awm_adm.config import AppConfig
 
     rt, gateway = rig
@@ -559,7 +559,7 @@ def test_concurrent_feed_global_cap_survives_unknown_period_rollover(rig, monkey
     for _ in range(12):
         rt.sources.tick()
     with rt.store.db() as db:
-        assert db.execute("SELECT count(*) FROM grants").fetchone()[0] == 1
+        assert db.execute("SELECT count(*) FROM grants").fetchone()[0] == 2
     job = rt.learning.claim()
     assert job
     rt.learning.authorize(job["grant_id"], job["lease"])
@@ -568,14 +568,14 @@ def test_concurrent_feed_global_cap_survives_unknown_period_rollover(rig, monkey
     rt.learning.tick()
     for _ in range(10):
         rt.sources.tick()
+    assert rt.learning.claim() is None
     assert rt.learning.usage()["calls"] == 1
     assert rt.learning.usage()["unresolved"] == 1
-    assert rt.learning.claim() is None
     assert all(rt.sources.feeds.overview(k)["feeds"][0]["reserved"]["calls"] == 1 for k in keys)
     reasons = {i["reason"] for k in keys for i in rt.sources.feeds.overview(k)["items"]}
-    assert "quota_exceeded" in reasons
+    assert "quota_exceeded" not in reasons
     with rt.store.db() as db:
-        assert db.execute("SELECT count(*) FROM grants").fetchone()[0] == 1
+        assert db.execute("SELECT count(*) FROM grants").fetchone()[0] == 2
 
 
 @pytest.mark.parametrize("approve", [True, False])

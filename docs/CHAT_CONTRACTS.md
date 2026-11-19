@@ -1,51 +1,36 @@
 # Conversation and task contracts
 
-These contracts describe the administrator, financial and conversational resources of AWM-ADM 0.3.0. Current storage schema is 15. Versioned routes and serialized identifiers are compatibility contracts. [OpenAPI](../contracts/openapi.json) specifies actual inputs; [`contracts/workflows/`](../contracts/workflows/) contains independent finite specification oracles, not runtime authorization code.
+AWM-ADM 0.3.0 exposes direct Ask/Teach exchanges under `/api/v1`. The current operational storage schema is 16; core artifact and snapshot formats are unchanged. [OpenAPI](../contracts/openapi.json) specifies the request shapes.
 
-## Identity and authority
-
-Each resource has an opaque server identity and an ADM scope where applicable. Revision, theory/support roots, owner epoch, source-policy and vocabulary generations bind meaning. Task/proposal digests refer to retained validated artifacts; possession of a digest alone grants no authority. Timestamps are integer UTC milliseconds and money is integer micro-US dollars.
+## Meaning and authority
 
 | Resource | Binding |
 | --- | --- |
-| Conversation and input | ADM, Ask/Teach channel, owner turn, selected attachment IDs and current context |
-| Question/proposal | Triggering input, exact proposed meaning, context, payload digest and finite expiry |
-| Decision | Authenticated owner, exact proposal/context/digest, idempotency identity and accept/decline |
-| Allowance | Owner-chosen scope, exact provider/configuration/price, lane, finite dollar/call/token/work caps and expiry |
-| Teaching specification | Immutable checked goal/interfaces/children/disclosure; no execution authority by itself |
-| Execution/review | Exact specification, retained version/context, parent fence and candidate digest when reviewing |
-| Presentation | Original request/result or task subject, exact context and supported narrative references |
+| Exchange | ADM, Ask/Teach channel, authenticated input, selected attachments, origin and current context |
+| Clarification | Exact preceding exchange and unresolved question; a reply is checked against current context |
+| Teaching specification | Checked intent, finite interfaces, children, selected evidence and task-owned acquisition contracts |
+| Execution | Exact specification, current revision/requirements, parent cancellation fence and receiver receipt order |
+| Presentation | Original request/result or task, exact context and locally supported explanation references |
+| Provider grant | One call identity, exact connection version, purpose, payload and finite execution limits |
 
-LLM output, source documents, attachments and ordinary chat cannot select their own authenticated principal, change protected settings, issue grants or confer publication authority. An ambiguous reply can create a clarification or proposal; a generic yes to an expired/unrelated proposal is not acceptance.
+An authenticated clear Teach submission authorizes automatic checked learning. This authority comes from the application accepting the request, never from provider output or an attachment. Provider-proposed owner requirements cannot install themselves. Ambiguous requests ask a question; ordinary clarification has no financial expiry. A model/configuration change still requires checking meaning again.
 
-## Roles
+Ask is read-only model use. It cannot silently create a teaching task. A provider interpretation is checked before local execution; a provider explanation cannot replace or upgrade a local outcome. Accepted theory is independent of chat history.
 
-The owner can manage accounts, models, spending and exact decisions. Scoped read/submit clients retain only explicit model API permissions. Append clients can push bounded source items to named scopes and inspect their acknowledgments; they cannot read the model or choose providers, alter policy, fund work or publish. Worker and gateway credentials have separate private roles. Public owner-token compatibility ends after administrator setup.
+Clear references in linked owner messages resolve conversational inputs without routine confirmation. Explicit current inputs override earlier scenario values; unrelated subjects, conflicting references and genuinely absent values require clarification. Reported unresolved assumptions still block execution. Interpretation remains fallible even when its command is well typed.
 
-## HTTP families
+Successful simple results use conversational explanations with independently generated compact outcome labels. Historical values carry a Historical evidence qualifier; partial teaching, missing/disputed evidence, within-period changes and execution limits remain visible. Shared [meaning and representation rules](TEMPORAL_INTERPRETATION.md) supply a captured system timezone without per-question setup. Full summaries and exact bindings stay in the API; a compact label does not validate the explanation's prose. Narration receives only the current question and bounded owner context already selected for the exchange, alongside its checked outcome.
 
-| Paths | Purpose |
-| --- | --- |
-| `/api/v1/auth/*` | Local setup, password sessions, recovery and CSRF metadata |
-| `/api/v1/spending`, `/prices`, `/allowances` | Owner financial configuration and conservative reservations |
-| `/api/v1/adms/{adm}/conversations/*`, `/decisions/*` | Durable scoped messages and exact owner decisions |
-| `/api/v1/adms/{adm}/tasks/*` | Checked preparation, execution, review and time-only renewal |
-| `/api/v1/adms/{adm}/attachments/*`, `/intake/*` | Immutable supplied material and managed source intake |
-| `/api/v1/adms/{adm}/name`, `/api/v1/adms/{adm}`, `/deletions/*` | Naming and durable deletion |
-| `/api/v1/*` | Existing explicit model/query, preview, learning, source/feed, snapshot and operational resources |
+## Context and disclosure
 
-The table groups route families; use OpenAPI and the feature guides for exact endpoint spelling and closed request models. Model operations, grant identities and old idempotency values are not reinterpreted to create broader chat permission.
+The service selects bounded prior owner turns and exact result references from the same model/channel. Unrelated API calls, other models, assistant prose and unselected files are not silently added as premises. Teach includes the original bytes of explicitly selected attachments in preparation; uploading alone does not disclose or teach them. Source extraction uses the checked task's selected source scope. No credential, unrestricted log or hidden provider reasoning is included.
 
-## Persistence and recovery
+Each durable exchange has an idempotency identity. Replaying unchanged input returns the same work; a changed body under that identity conflicts. An idle user question does not authorize repeated calls. Active execution retains finite call duration, attempts, no-progress stopping and compute/storage limits.
 
-Immutable turns, questions, proposals, decisions, work and outcomes persist in per-model stores. Registry reservations and per-model work use durable handoff intents across separate transactions. Same identity with changed meaning is a conflict. Restart reconciles acknowledgments and retains uncertain calls without automatic dispatch.
+## Access and recovery
 
-Backup/restore preserves supported schema-7–15 content while disabling remote financial authority and revoking operational credentials. Startup migrations are transactional per owned database and reconcile the installation before dispatch. Unknown or foreign stores are refused; missing established state is not silently adopted as empty.
+Administrator sessions authorize direct remote Ask/Teach, connections and model management. Scoped read/submit clients retain their existing explicit local-query permissions; they do not acquire administrator powers. Append clients can submit to one checked source queue and read their own receipts, not read the model, change policy or publish. Worker and gateway credentials remain separate.
 
-## Disclosure and presentation
+Turns, questions, tasks and outcomes persist. Registry, model and gateway handoffs use durable intents rather than an assumed cross-database transaction. Restart retains accepted knowledge and known outcomes; uncertain provider dispatches are never automatically repeated. A paired restore disables the connection, pauses feeds and revokes operational credentials. Historical financial records remain inspectable but do not gate new exchanges.
 
-Owner setup explicitly permits bounded input/catalog/user context and, separately, outcome narration. Attachments and evidence excerpts require their own disclosure. Existing preview consent does not gain result/source disclosure implicitly. Keys, account secrets, other models' conversations, hidden provider reasoning and unrestricted logs are excluded.
-
-Main chat uses readable outcomes; Details provides exact technical artifacts. Readiness reasons are application-authored and checked before work and again at dispatch. Tab-local drafts do not authorize work. Provider narration is fallible; checked local results retain independent bindings and labels.
-
-See [Conversations](CONVERSATIONS.md), [Ask](ASK.md), [Teaching](TEACHING.md), [Execution](TEACHING_EXECUTION.md), [Intake](INTAKE.md), [Limits](LIMITS.md) and [Model lifecycle](MODEL_LIFECYCLE.md).
+The console shows readable outcomes and progress. Exact technical artifacts remain in authenticated APIs for investigation, without routine setup or Details panels. See [Conversations](CONVERSATIONS.md), [Ask](ASK.md), [Teaching](TEACHING.md), [Intake](INTAKE.md) and [Limits](LIMITS.md).

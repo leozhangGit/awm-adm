@@ -145,6 +145,7 @@ class Lifecycle:
             "stage": row["stage"],
             "resume_stage": row["resume_stage"],
             "version": row["version"],
+            "created_at_ms": int(row["created"] * 1000),
             "inventory": loads(row["inventory"]),
             "gateway_pending": waiting,
             "message": "Cleanup needs attention. Retry this operation after resolving the storage or gateway issue."

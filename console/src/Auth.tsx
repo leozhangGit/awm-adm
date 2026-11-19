@@ -238,7 +238,7 @@ export function Login({
   );
 }
 
-export function Account({ onSignedOut }: { onSignedOut: () => void }) {
+export function LoginSettings({ onSignedOut }: { onSignedOut: () => void }) {
   const [email, setEmail] = useState("");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -274,7 +274,7 @@ export function Account({ onSignedOut }: { onSignedOut: () => void }) {
   }
   return (
     <section className="panel login-card">
-      <h1>Administrator account</h1>
+      <h1>Login</h1>
       <p>{email}</p>
       <h2>Change password</h2>
       <p>

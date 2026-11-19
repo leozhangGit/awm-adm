@@ -10,7 +10,7 @@ from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from ..wire import decode
 from . import history
-from .models import GapInput, Presentation
+from .models import Presentation
 from .presentation import packet, readable, validate
 from .presentation import specification as narrate_spec
 
@@ -119,7 +119,7 @@ class Ask:
                                         "purpose_unavailable",
                                         "allowance_unavailable",
                                     }
-                                    else "The question could not be interpreted under the current model, provider or allowance. No local request or learning task was started. Check Details; there is no automatic retry."
+                                    else "The question could not be interpreted. No local query or learning was started. Please check the connection or rephrase your question."
                                 ),
                             )
                         return True
@@ -128,6 +128,8 @@ class Ask:
             self.lock.release()
 
     def prepare(self, key, work):
+        from ..temporal import context
+
         meta = self.rt.language.vocabulary(key)
         checked = self.rt.language._compute(
             key,
@@ -141,17 +143,9 @@ class Ask:
         with self.store.db(key) as db:
             conv = self.s._conversation(db, work["conversation_id"])
         ids = [x["resource_id"] for x in conv.get("links", []) if x["kind"] == "result"][:32]
-        spec = interpret_spec(work["text"], checked["catalog"], work["selected_context"], ids)
-        spec["name"] = "adm_ask_intent"
-        spec["prompt_version"] = "adm-ask-interpretation/2"
-        spec["instructions"] = (
-            spec["instructions"]
-            .replace(
-                "typed intent preview. Only an explicitly confirmed preview runs locally.",
-                "checked intent. The owner has authorized automatic read-only local execution in this Ask conversation. Return ready only when meaning and all slots are explicit; any uncertainty must ask for clarification.",
-            )
-            .replace("for the owner's review", "without silently filling missing slots")
-        )
+        spec = interpret_spec(work["text"], checked["catalog"], work["selected_context"], ids, automatic=True)
+        work.setdefault("temporal_context", context())
+        spec["context"]["temporal_context"] = work["temporal_context"]
         spec["context"]["pending_question"] = work["question"]
         spec["context"]["pending_intent"] = work.get("pending_intent")
         if work["preferences"].get("historical_lookup"):
@@ -170,38 +164,20 @@ class Ask:
     def reserve(self, key, work, purpose, spec):
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
-            from .readiness import require
-
-            require(self.s, {"preferences": work["preferences"]})
-            with self.store.db() as db:
-                allowance, price = self.s.finance.valid(db, work["preferences"]["allowance_id"])
-            if (
-                allowance["adm_id"] != key
-                or allowance["scope"] != "interaction"
-                or allowance["scope_id"] != work["conversation_id"]
-            ):
-                fault("forbidden", "Ask allowance is bound to another conversation")
+            conn = self.rt.interactions.connection_for(work, purpose)
             if purpose == "ask_narration" and not work["preferences"].get("narrate_results"):
-                fault("forbidden", "Result disclosure is not authorized")
-            conn = self.rt.learning._usable(price["connection_id"], price["connection_version"], purpose)
-            raw, estimate = make_wire(conn, spec, 4096)
+                fault("forbidden", "Result explanation is not part of this interaction")
+            output_limit = min(4096, self.rt.config.learning.call.max_output_tokens)
+            raw, estimate = make_wire(conn, spec, output_limit)
+            if len(raw) > self.rt.config.server.max_body_bytes:
+                fault("resource_exhausted", "This interpretation context exceeds the request size limit")
             prov = provenance(spec, raw)
             operation = work["id"] + ("-narration" if purpose == "ask_narration" else "-interpretation")
-            self.s.finance.child(
-                allowance["id"],
-                {
-                    "operation_id": operation,
-                    "kind": "narration" if purpose == "ask_narration" else "preparation",
-                    "max_work": 1,
-                    "payload_digest": prov["request_hash"],
-                },
-            )
             gid = self.rt.learning.reserve(
                 {
                     "purpose": purpose,
                     "conversation_work_id": work["id"],
                     "operation_id": operation,
-                    "allowance_id": allowance["id"],
                     "base_revision": work["context"]["revision_id"],
                     "connection_id": conn["id"],
                     "connection_version": conn["version"],
@@ -209,12 +185,16 @@ class Ask:
                     "wire": base64.b64encode(raw).decode(),
                     "input_estimate": estimate,
                     "limits": CallLimits(
-                        max_input_tokens=work["preferences"].get("call_input_bound", 32000),
-                        max_output_tokens=4096,
+                        max_input_tokens=max(estimate, self.rt.config.learning.call.max_input_tokens),
+                        max_output_tokens=output_limit,
+                        max_duration_ms=self.rt.config.learning.call.max_duration_ms,
                     ).model_dump(),
                     "provenance": prov,
                     "recorded_index": 0,
-                    "deadline": min(work["deadline_ms"] / 1000, self.rt.learning.now() + 60),
+                    "deadline": min(
+                        work["deadline_ms"] / 1000,
+                        self.rt.learning.now() + self.rt.config.learning.call.max_duration_ms / 1000,
+                    ),
                 },
                 adm=key,
             )
@@ -224,11 +204,15 @@ class Ask:
             )
             work["links"].append({"kind": "provider_grant", "id": gid})
             self.save(key, work)
-            self.s.finance.settle_work(allowance["id"], operation, 1)
 
     def interpreted(self, key, work, text):
         historical = (
-            history.parse(text, work.get("fact_projection"), work.get("accepted_fact_projections", ()))
+            history.parse(
+                text,
+                work.get("fact_projection"),
+                work.get("accepted_fact_projections", ()),
+                temporal_context=work.get("temporal_context"),
+            )
             if "fact_projection" in work
             else None
         )
@@ -254,8 +238,10 @@ class Ask:
             status = (
                 "needs_input" if parsed["status"] in {"ready", "needs_clarification"} else parsed["status"]
             )
-            text = parsed["clarification"] or "Please clarify the missing or assumed details: " + "; ".join(
-                parsed["assumptions"]
+            text = parsed["clarification"] or (
+                "Before I check, can you confirm this detail? " + "; ".join(parsed["assumptions"])
+                if parsed["assumptions"]
+                else "What would you like the model to check? Please include the missing details."
             )
             if status == "needs_input":
                 with self.store.lock, self.store.db(key) as db, self.store.transaction(db):
@@ -318,7 +304,15 @@ class Ask:
 
     def local_done(self, key, work, request):
         if not work.get("local_outcome"):
-            work["packet"], work["local_outcome"] = packet(work["context"], request)
+            work["packet"], work["local_outcome"] = packet(
+                work["context"],
+                request,
+                question=work["text"],
+                user_turns=work["selected_context"],
+                temporal_resolution=(work.get("interpretation") or {})
+                .get("parsed", {})
+                .get("temporal_resolution"),
+            )
             work["outcome_digest"] = fingerprint(request.get("result") or work["local_outcome"])
         self.save(key, work)
         if work.get("skip_narration") or not work["preferences"].get("narrate_results") or not work["packet"]:
@@ -340,7 +334,9 @@ class Ask:
             request = self.store.request(key, work["request_id"])
             if request["status"] not in TERMINAL_LOCAL:
                 return
-            work["packet"], work["local_outcome"] = packet(work["context"], request)
+            work["packet"], work["local_outcome"] = packet(
+                work["context"], request, question=work["text"], user_turns=work["selected_context"]
+            )
             work["outcome_digest"] = fingerprint(request.get("result") or work["local_outcome"])
         value, body = work["packet"], work["local_outcome"]
         text = readable(body)
@@ -413,49 +409,3 @@ class Ask:
             }
             for r in records
         ]
-
-    def gap(self, key, uid, body):
-        body = GapInput.model_validate(body).model_dump()
-        with self.store.lock:
-            with self.store.db(key) as db:
-                work = loads(self.s._one(db, "chat_work", uid)["body"])
-            if work["status"] != "needs_learning" and work.get("local_status") != "needs_input":
-                fault("conflict", "This exchange does not report a learning gap")
-            self.s._current(key, body["context"])
-            if body["context"] != work["context"]:
-                fault("stale_context", "The original Ask meaning changed; start a fresh question")
-            conv = self.s.create(
-                key,
-                {
-                    "idempotency_key": "gap:" + body["idempotency_key"],
-                    "channel": "teach",
-                    "title": "Learning from an Ask gap",
-                },
-            )
-            with self.store.db(key) as db, self.store.transaction(db):
-                current = self.s._conversation(db, conv["id"])
-                reference = {
-                    "work_id": uid,
-                    "context": work["context"],
-                    "text": work["text"],
-                    "request_id": work.get("request_id"),
-                    "interpretation": work.get("interpretation"),
-                    "authority": "none",
-                }
-                if current.get("ask_gap"):
-                    if current["ask_gap"] != reference:
-                        fault("conflict", "Gap identity belongs to a different Ask")
-                    return current
-                current["ask_gap"] = reference
-                db.execute("UPDATE chat_conversations SET body=? WHERE id=?", (dumps(current), conv["id"]))
-                self.s._turn(
-                    db,
-                    key,
-                    current,
-                    "system",
-                    "Original Ask: "
-                    + work["text"]
-                    + "\nThe original query and context are preserved in Details. Set up a separate Teach allowance to prepare this objective. No learning task, provider call or publication was created by this transfer.",
-                    context=work["context"],
-                )
-            return current

@@ -9,7 +9,7 @@ The application stores accepted models and account data. The gateway owns encryp
 - Keep `.local/`, service tokens, the gateway encryption key, credentials, cookies, databases and paired backups private. Provider keys belong in the secure Connections form, not chat or committed files.
 - Use a unique administrator passphrase. Bootstrap/recovery credentials are short-lived and single-use; remove their files after redemption.
 - Preserve gateway encryption material separately from paired backups. A snapshot of a model is not a service backup.
-- Source text and provider output are untrusted. They cannot change spending, install owner requirements or bypass local admission.
+- Source text and provider output are untrusted. They cannot configure the provider, install owner requirements or bypass local admission.
 - Unknown provider usage remains reserved. Cleanup, restart or restoring an old backup cannot establish that an external charge did not occur.
 
 ## Reporting an issue

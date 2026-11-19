@@ -18,7 +18,7 @@ def carrier(spec):
         )
     if kind == "vector":
         return f"{spec['length']} entries of {carrier(spec['element'])}"
-    return "See the exact carrier in Details"
+    return "Finite carrier: " + kind + ""
 
 
 def headers(plan):
@@ -44,13 +44,13 @@ def headers(plan):
 
 
 def candidate(preview):
-    """Bounded plain expressions for a semantic decision; full IR remains in Details."""
+    """Bounded plain expressions for a semantic decision; the exact IR remains available through the API."""
     remaining = [128]
 
     def expression(value, depth=0):
         remaining[0] -= 1
         if remaining[0] < 0 or depth > 8 or not isinstance(value, dict):
-            return "(see Details)"
+            return "(expression abbreviated)"
         op = value.get("op", "expression")
         if op == "literal":
             return str(value.get("value"))[:100]
@@ -71,14 +71,14 @@ def candidate(preview):
             return "(" + symbols[op].join(args) + ")"
         if args:
             return op + "(" + ", ".join(args) + ")"
-        return op + " (see Details for its fields)"
+        return op + " (structured expression)"
 
     return [
         {
             "symbol": symbol,
             "behavior": expression(body["body"])
             if "body" in body
-            else "A " + body["kind"] + " declaration; review its exact carrier or action in Details.",
+            else "A " + body["kind"] + " declaration with its own finite carrier or action.",
         }
         for symbol, body in list(preview["declarations"].items())[:32]
     ]

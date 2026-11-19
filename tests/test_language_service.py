@@ -337,7 +337,7 @@ def test_stale_external_result_is_never_promoted_to_ready(rig, change):  # noqa:
     elif change == "mode":
         rt.store.change(key, 0, mode="forward")
     elif change == "disable":
-        rt.learning.configure({"expected_generation": 0, "remote_calls_enabled": False})
+        rt.learning.connection_manager.disable({"idempotency_key": "disable-during-interpretation"})
     else:
         rt.language.set_vocabulary(
             key, {"expected_revision": item["revision_id"], "expected_generation": 0, "vocabulary": {}}
@@ -459,7 +459,7 @@ def test_schema_four_migration_preserves_models_requests_and_learning(tmp_path):
         rt.close()
 
 
-def test_shared_translation_quota_exhaustion_leaves_local_serving_available(rig):  # noqa: F811
+def test_obsolete_aggregate_quota_does_not_block_translation_or_local_serving(rig):  # noqa: F811
     rt, gateway = rig
     c = translation_connection(rt, gateway, proposal())
     rt.learning.config = rt.config.model_copy(
@@ -481,9 +481,9 @@ def test_shared_translation_quota_exhaustion_leaves_local_serving_available(rig)
         connection_version=c["version"],
         disclose_catalog=True,
     )
-    stopped = finish(rt, key, remote["id"])
-    assert stopped["status"] == "failed" and stopped["error"] == "quota_exceeded"
-    assert rt.learning.usage()["calls"] == 1
+    rt.language.tick()
+    assert rt.learning.usage()["calls"] == 2
+    rt.language.cancel(key, remote["id"])
     local = finish(rt, key, interpret(rt, key, conv)["id"])
     consent(rt, key, local)
     assert execute(rt, key)["status"] == "succeeded"

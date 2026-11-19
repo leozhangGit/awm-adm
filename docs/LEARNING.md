@@ -2,15 +2,13 @@
 
 Managed learning adds bounded knowledge acquisition to the local AWM-ADM service. A provider proposes definitions or a complete candidate; a receiving ADM checks and publishes a complete theory before answering any attached request locally. The [language service](LANGUAGE.md), [source extraction](SOURCES.md) and [standing feeds](FEEDS.md) share the gateway and aggregate accounting.
 
-## Owner workflow
+## Learning entry points
 
-1. Open **Connections**. Create an offline recorded connection or select OpenAI/Anthropic with an explicit model identifier. Connections start disabled. An enabled connection also needs gateway synchronization before use.
-2. For a remote provider, supply a gateway-managed key or mount its static secret. Enable remote calls separately in the installation controls. Saving a connection never tests it or spends a call.
-3. Select an ADM in **Learning**. Supply a task with a receiver-owned acquisition contract, select a connection version, choose publication policy and finite budgets. The authored capacity example supplies a small test task and recorded replies; its rules are fixture data, not engine behavior.
-4. Optionally attach pending request IDs. Their local query intent remains unchanged. A successful publication creates a new local execution attempt on the new revision. Original revision pins and attempt history remain available.
-5. Review complete candidates under the current revision, or use `checked_auto` after installing nonempty independent owner requirements. Approval removes the review hold; it cannot bypass admission.
+The normal console entry is Teach: send a clear request and optionally select supplied material. The coordinator prepares finite interfaces, asks only for necessary clarification, then starts bounded acquisition and automatic checked admission. Independently installed requirements remain mandatory. Policy-free models can learn without first inventing an owner policy; they make no independent domain-conformance claim.
 
-A request with missing knowledge does not implicitly authorize a provider call. **Learn for this request** opens the episode form. The owner supplies the acquisition task, connection, disclosure choice and budget. Supplying multiple request IDs shares one episode. A request can also be interested in multiple explicitly authorized episodes. Cancelling all request interests stops request-owned work; an episode created without request interests is manual owner work until completion, exhaustion or cancellation.
+Advanced clients can create explicit episodes with receiver-owned acquisition contracts, selected connection version, publication policy and operating limits. `review` holds complete candidates for an explicit decision; `checked_auto` admits through the same local checks. These API controls remain available without a manual Learning console.
+
+A missing capability alone does not issue a provider call. Explicit episode request interests can wake a new local attempt after publication, preserving the original query and historical pins. Cancelling all request interests stops request-owned work; independently requested learning continues within its own finite scope.
 
 ## Provider and credential boundary
 
@@ -26,7 +24,7 @@ UI-managed credentials use RSA-OAEP with SHA-256 for browser-to-gateway sealing,
 
 Static keys live at `.local/provider-secrets/openai-key` or `anthropic-key`, mounted read-only only into the gateway. Their parent `.local/` and secret directory should be accessible only to the owner on the host, with mount permissions allowing the container UID to read the files. Static keys are owner-managed files; update the connection version after replacing a mounted key so outstanding work is fenced. The gateway never accepts an arbitrary credential path or provider URL.
 
-Connections explicitly allow acquisition, connection tests and/or interpretation. Enabling interpretation is an owner choice; existing permissions are preserved. Connection updates and rotations create new versions. Disabling a connection or changing its version revokes old dispatch and publication authority. Disabling installation remote access advances its authority generation; old episodes cannot revive when access is enabled again. Completed historical decisions are unchanged. A lost or invalid established gateway store fails startup rather than becoming an empty ledger.
+The single connection enables acquisition, interpretation, extraction and narration together after one successful test. Updates and rotations create new versions. Disable fences old dispatch and publication authority; enabling again does not revive stale work. Completed historical decisions are unchanged. A lost or invalid established gateway store fails startup rather than becoming an empty ledger.
 
 Managed keys are write-only. The API exposes names, versions, model IDs, declared purposes/capabilities and synchronization state. It never returns decrypted credentials or sealed credential envelopes. Provider HTTP errors are reduced to safe codes. Raw headers, exception messages and hidden reasoning are not retained; direct and JSON-escaped credential reflections are rejected. Final structured output is bounded and untrusted.
 
@@ -44,9 +42,9 @@ Connections declare `json_schema` and `recursive_refs` capabilities; incompatibl
 
 An episode uses either receiver-owned interfaces plus provider definition slots (`construction=true`) or a complete structured proposal. The first attempt receives the learning role, task and exact acquisition contract. The provider context includes the task, interface contract, private draft and bounded checked failure feedback. The accepted model document is included only with `disclose_model=true`. Selecting false does not suppress task or draft disclosure. Independent owner requirements never originate from provider assertions and are not editable by a candidate.
 
-## Budgets, leases and uncertainty
+## Execution bounds, leases and uncertainty
 
-Limits are nested: installation/per-ADM quotas → episode totals → one-call caps. The service reserves a call plus estimated input and maximum output before exposing work to a worker. Input estimation uses UTF-8 request bytes plus 4,096 framing/schema overhead. This is a conservative operational estimate, not a proven tokenizer bound or a dollar-cost guarantee. Reported usage exceeding its reservation is charged in full, blocks publication and disables further remote dispatch until owner intervention.
+Limits combine configured process/storage capacity, finite episode totals and one-call caps; aggregate financial/period quotas do not gate new work. The service reserves a call plus estimated input and maximum output before exposing work to a worker. Input estimation uses UTF-8 request bytes plus 4,096 framing/schema overhead. This is a conservative operational estimate, not a proven tokenizer bound or a dollar-cost guarantee. Reported usage exceeding its reservation is charged in full, blocks publication and disables further remote dispatch until owner intervention.
 
 The gateway records `dispatched` durably before sending one HTTPS request. It does not follow redirects, retry HTTP failures or automatically repeat an expired lease. Each grant carries a validated `awm-adm-dispatch-grant/2` and worker lease binding purpose, exact wire digest, connection, ADM context or installation control scope, attempt and expiry. Public client credentials cannot issue grants or change learning controls.
 
@@ -57,10 +55,10 @@ The gateway records `dispatched` durably before sending one HTTPS request. It do
 | Remote response reporting zero input and zero output tokens | Preserve the report as `diagnostics.reported_usage`, mark `zero_unverified`, and retain the full token reservation with unsettled `usage: null`. Recorded offline fixtures retain ordinary zero-cost accounting. |
 | Refusal, incomplete output or provider error | Stop the episode without executable salvage. Preserve safe structured diagnostics; settle only validated, non-suspicious usage and otherwise retain the reservation. |
 | Rate limit | Stop with `rate_limited`; no hidden backoff retry or model fallback. A new bounded owner action is required. |
-| Timeout, lost connection, expired dispatch lease or interrupted dispatch | `outcome_unknown`; retain full reservation, including across quota windows. Never automatically repeat the call. |
+| Timeout, lost connection, expired dispatch lease or interrupted dispatch | `outcome_unknown`; retain full reservation, across restart and calendar boundaries. Never automatically repeat the call. |
 | Cached gateway outcome with a lost app acknowledgment | Deliver the same outcome again; never send the provider request again. Late known usage may settle accounting, but revoked work cannot publish. |
 
-Quotas use a rolling configured period with a persisted clock high-water mark. Unresolved reservations count across periods. In-process authority expiry also advances with monotonic elapsed time. Per-call and aggregate input/output/call limits are independent of local checking work. Local work is reserved before a child starts; a completed child reports consumed work, while an interrupted child keeps its full reservation. Private drafts and retained histories have finite byte/item bounds and receive storage backpressure rather than unbounded growth.
+Per-call and task input/output/call limits are separate from local checking work. Local work is reserved before a child starts; interrupted work retains its reservation. Private drafts and histories have finite capacity and explicit backpressure. Historical monetary charges remain for reconciliation but do not authorize or block new calls.
 
 The gateway runs at most two dispatches concurrently, and each remote call runs in a separate child with a whole-call wall deadline and process-group termination. App configuration may impose a smaller admission cap. Local background checking is fairly scheduled across ADMs by one coordinator, separate from the serving pool.
 
@@ -68,11 +66,11 @@ Only the explicit owner-reviewed publication hold may outlive acquisition's dead
 
 ## Provider diagnostics and usage assurance
 
-Provider diagnostics retain only bounded, allowlisted metadata: HTTP status, response status, supported incomplete reasons, recognized provider error codes and validated token counters. An OpenAI incomplete response can identify `max_output_tokens`, `content_filter` or `steered`; absent or unsupported reasons are `unknown`. Anthropic `max_tokens` maps to the same output-limit reason. HTTP 429 with `insufficient_quota` is distinct from a rate-limit response. Arbitrary error messages, headers, hidden reasoning and partial output are not retained. Acquisition, Sources and Ask display these diagnostics without suggesting that incomplete output implies exhausted credit. The [official response guidance](https://developers.openai.com/api/docs/guides/reasoning#allocating-space-for-reasoning) describes output-limit incompleteness; it does not establish the cause of a particular response whose reason is unavailable.
+Provider diagnostics retain only bounded, allowlisted metadata: HTTP status, response status, supported incomplete reasons, recognized provider error codes and validated token counters. An OpenAI incomplete response can identify `max_output_tokens`, `content_filter` or `steered`; absent or unsupported reasons are `unknown`. Anthropic `max_tokens` maps to the same output-limit reason. HTTP 429 with `insufficient_quota` is distinct from a rate-limit response. Arbitrary error messages, headers, hidden reasoning and partial output are not retained. Acquisition, source and Ask API records expose these diagnostics; the console presents readable outcomes. Incomplete output alone does not imply exhausted credit. The [official response guidance](https://developers.openai.com/api/docs/guides/reasoning#allocating-space-for-reasoning) describes output-limit incompleteness; it does not establish the cause of a particular response whose reason is unavailable.
 
 Optional `token_details` preserve individually validated provider counters: OpenAI total, cached-input and reasoning tokens, or Anthropic cache-creation/read tokens. Missing, malformed, negative, Boolean and unsafe-integer values are omitted rather than replaced with zero or reconstructed from other counters. These details are reported evidence, not independently verified billing, and do not settle an otherwise unknown call.
 
-For OpenAI, `reasoning_effort` and `reasoning_mode` retain allowlisted settings returned in the response. Missing settings remain unknown; unsupported non-null values are labeled `unknown`. Neither requested settings nor model defaults are substituted for response-side evidence. `output_summary` counts top-level message, text, reasoning and other items, plus recognized visible-text parts and their UTF-8 byte lengths. OpenAI `output` and Anthropic `content` use their respective item structures. Missing or malformed structures produce no summary; an explicit empty array produces measured zero counts. Unknown item type names, reasoning text, reasoning summaries/signatures and partial message content are never copied into diagnostics. Summary collection runs before incomplete output is discarded, so it can describe a partial response without admitting or displaying its content. The console shows returned reasoning settings and output size; full numeric details remain expandable. Existing historical outcomes are not backfilled with guessed metadata.
+For OpenAI, `reasoning_effort` and `reasoning_mode` retain allowlisted settings returned in the response. Missing settings remain unknown; unsupported non-null values are labeled `unknown`. Neither requested settings nor model defaults are substituted for response-side evidence. `output_summary` counts top-level message, text, reasoning and other items, plus recognized visible-text parts and their UTF-8 byte lengths. OpenAI `output` and Anthropic `content` use their respective item structures. Missing or malformed structures produce no summary; an explicit empty array produces measured zero counts. Unknown item type names, reasoning text, reasoning summaries/signatures and partial message content are never copied into diagnostics. Summary collection runs before incomplete output is discarded, so it can describe a partial response without admitting or displaying its content. Readable failure summaries appear in chat; exact structured diagnostics remain available through authenticated APIs. Existing historical outcomes are not backfilled with guessed metadata.
 
 On startup, earlier terminal remote calls that settled a zero/zero report regain their original token reservations. Their stored outcomes, response identities, terminal statuses and model publications remain unchanged; repeated startup does not add reservations or dispatch again. Read views label these historical reports as unverified and distinguish reported counters from reserved counters. This conservative accounting adjustment does not reconstruct missing provider diagnostics or verify an account bill. Diagnostics exports exclude unresolved records from settled measured-usage totals.
 
@@ -80,7 +78,7 @@ On startup, earlier terminal remote calls that settled a zero/zero report regain
 
 ```mermaid
 flowchart LR
-  T[Owner task and budget] --> Q[Durable episode]
+  T[Authenticated task and finite scope] --> Q[Durable episode]
   Q --> R[Reserve call]
   R --> W[Worker lease]
   W --> G[Gateway dispatch ledger]
@@ -111,17 +109,17 @@ All routes below require owner authority, including reads of connection and lear
 
 | Route under `/api/v1` | Operation |
 | --- | --- |
-| `GET/PUT /learning` | Inspect caps/usage/gateway sealing key; change remote-call authority with expected generation |
-| `GET/POST /connections` | List safe metadata; create a versioned connection |
-| `GET/PUT /connections/{id}` | Inspect safe configuration including recorded fixtures; update/rotate with expected version |
-| `POST /connections/{id}/test` | Explicit one-call connection test with idempotency key and caps |
+| `GET /learning` | Inspect internal operating bounds and retained usage |
+| `GET /connections` | Retained safe configuration metadata |
+| `GET /connections/{id}` | Retained safe configuration version |
+| `GET /connection`, `POST /connection/enable`, `POST /connection/disable` | Current single-connection controls; Enable includes its test |
 | `GET /dispatches/{id}` | Dispatch state, safe outcome and retained/settled usage |
 | `GET/POST /adms/{id}/episodes` | Recent episode summaries; create a bounded episode with expected revision |
 | `GET /adms/{id}/episodes/{episode}` | Immutable task, private draft, history, diagnostics, receipts and usage |
 | `POST /adms/{id}/episodes/{episode}/cancel` | Revoke future dispatch/publication; retain spent or uncertain usage |
 | `POST /adms/{id}/candidates/{receipt}/review` | Approve or decline against exact current revision |
 
-Collection sizes are bounded; the console shows the latest 100 episodes and direct IDs remain addressable. Final structured outputs are limited to 256 KiB, provider HTTP responses to 2 MiB, gateway state to 64 MiB, and retained connection versions/dispatches to 1,000/10,000. Current retention has explicit capacity backpressure. The [operations guide](OPERATIONS.md) defines paired backup/restore and preserved unknown reservations; automatic evidence/idempotency cleanup remains disabled. There is no public raw dispatch, arbitrary URL, raw Lean source or provider-powered answer endpoint.
+Collection sizes are bounded; the episode listing returns the latest 100 summaries and direct IDs remain addressable. Final structured outputs are limited to 256 KiB, provider HTTP responses to 2 MiB, gateway state to 64 MiB, and retained connection versions/dispatches to 1,000/10,000. Current retention has explicit capacity backpressure. The [operations guide](OPERATIONS.md) defines paired backup/restore and preserved unknown reservations; automatic evidence/idempotency cleanup remains disabled. There is no public raw dispatch, arbitrary URL, raw Lean source or provider-powered answer endpoint.
 
 ## Technical references
 

@@ -103,10 +103,8 @@ class Gateway:
         config, key = self.store.connection(
             body["connection_id"], body["connection_version"], body["configuration_digest"]
         )
-        if checked.lease.purpose != body["purpose"] or body["purpose"] not in config["purposes"]:
+        if checked.lease.purpose != body["purpose"]:
             raise ValueError("Grant purpose does not match the exact connection authority")
-        if config["provider"] != "recorded" and not body.get("price_binding"):
-            raise ValueError("Remote dispatch requires priced authority")
         wire = base64.b64decode(body["wire"], validate=True)
         digest = "sha256:" + hashlib.sha256(wire).hexdigest()
         if digest != body["provenance"]["request_hash"] or body["expires"] <= time.time():

@@ -1,12 +1,12 @@
 # Task and operation lifecycle
 
-This normative finite specification is exercised by [`lifecycle.json`](../contracts/workflows/lifecycle.json) and authored traces. It is not a runtime refinement proof. The implemented service uses durable SQLite records and the authority checks in [chat contracts](CHAT_CONTRACTS.md) and [teaching execution](TEACHING_EXECUTION.md).
+This abstract finite lifecycle specification is exercised by [`lifecycle.json`](../contracts/workflows/lifecycle.json) and authored traces. It is not a runtime refinement proof. The implemented service uses durable SQLite records and the authority checks in [chat contracts](CHAT_CONTRACTS.md) and [teaching execution](TEACHING_EXECUTION.md).
 
 ## Teaching task
 
 | From | Event → next | Required meaning |
 | --- | --- | --- |
-| draft | ask → needs_input; authorize → ready; cancel → cancelled | Preparation cannot acquire knowledge until scope and allowance exist |
+| draft | ask → needs_input; authorize → ready; cancel → cancelled | Preparation cannot acquire knowledge until authenticated intent and a checked finite scope exist |
 | needs_input | clarify → draft; cancel → cancelled | A new checked interpretation incorporates the owner's answer |
 | ready | enqueue → queued; cancel → cancelled | Durable task and child reservations precede dispatch |
 | queued | start → running; pause → paused; cancel → cancelled; deadline → exhausted | Queued never means a worker is executing |
@@ -15,7 +15,7 @@ This normative finite specification is exercised by [`lifecycle.json`](../contra
 | paused | resume → queued; clarify → needs_input; cancel → cancelled; exhaust → exhausted | Resume needs current authority and no unknown dispatched child; an explicit new attempt has a new identity and reservation |
 | succeeded / partially_succeeded / exhausted / cancelled / failed | none | Terminal records are immutable; continuation is a new task linked to prior evidence |
 
-Semantic guards accompany the shape/state table. `authorize` needs a current owner decision, valid independent policy/required review mode, priced allowance and bounded immutable contract. `complete` requires all intended children done and no unresolved outcome. `partial` requires at least one accepted result and at least one unresolved objective. If nothing was accepted, exhaustion/failure cannot be called partial success. `cancel` fences future publication and never rolls back already accepted knowledge or refunds spent/unknown calls.
+Semantic guards accompany the shape/state table. `authorize` needs authenticated request authority, a checked bounded contract and current independent policy. In direct Teach, a clear submission supplies that authority and advances automatically; explicit API review remains available. `complete` requires all intended children done and no unresolved outcome. `partial` requires at least one accepted result and at least one unresolved objective. If nothing was accepted, exhaustion/failure cannot be called partial success. `cancel` fences future publication and never rolls back already accepted knowledge or refunds spent/unknown calls.
 
 A held complete candidate may await owner review beyond the active task deadline, up to the bounded review expiry. Accepting it then queues only a fresh bounded local admission check with remaining reserved work; it cannot dispatch another provider call. An expired incomplete task needs a new authorized continuation. If an unknown call remains unresolved, an explicit owner decision can create a new separately reserved task/attempt linked to the old task; it cannot relabel the old call undispatched or clear its reservation to make `resume` pass.
 
@@ -47,7 +47,7 @@ A late outcome cannot publish after parent cancellation, expired authority or mo
 | Current source evidence superseded | Hold dependent answers until fresh admitted support; preserve historical result bindings |
 | Several independently valid candidates | Check each against current accepted state in receiver receipt order; individual consistency is not joint consistency |
 
-Task progress is an aggregate of its durable children, not an LLM-authored status. Parent scope contains every child ADM, purpose and spending lane. A child's completion event and its durable outcome are committed together within the owning store; registry/per-ADM/gateway coordination uses reconciliation intents rather than a fictitious distributed transaction.
+Task progress is an aggregate of its durable children, not an LLM-authored status. Parent scope contains every child ADM and purpose. A child's completion event and its durable outcome are committed together within the owning store; registry/per-ADM/gateway coordination uses reconciliation intents rather than a fictitious distributed transaction.
 
 ## Deletion
 
@@ -59,4 +59,4 @@ Tests inject interruption before/after every phase, owner decision races, attemp
 
 ## Implemented language mapping
 
-[Teaching execution](TEACHING_EXECUTION.md) binds learning prepared specifications to exact Start commands. Stable child creation intents reconcile registry and ADM handoffs; accepted publication and the parent context advance atomically. Unknown dispatches stop without repetition. External context changes conservatively terminate as needs input for a new task decision. Source-bearing children use the [source intake workflow](INTAKE.md), including exact disclosure, source consent and parent-controlled admission. The completion record preserves deterministic accepted/unresolved outcomes even when optional explanation fails.
+[Teaching execution](TEACHING_EXECUTION.md) binds checked prepared specifications to authenticated direct submissions (or exact explicit API commands). Stable child creation intents reconcile registry and ADM handoffs; accepted publication and the parent context advance atomically. Unknown dispatches stop without repetition. External context changes conservatively terminate as needs input for a new task decision. Source-bearing children use the [source intake workflow](INTAKE.md), including selected material disclosure, checked source scope and parent-controlled admission. The completion record preserves deterministic accepted/unresolved outcomes even when optional explanation fails.

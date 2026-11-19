@@ -1,0 +1,90 @@
+{
+  "$id": "urn:awm-adm:m0:EnableConnection",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "expected_generation": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Generation"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 200,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:/-]+$",
+      "title": "Model",
+      "type": "string"
+    },
+    "provider": {
+      "enum": [
+        "openai",
+        "anthropic"
+      ],
+      "title": "Provider",
+      "type": "string"
+    },
+    "retained_connection_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retained Connection Id"
+    },
+    "sealed_credential": {
+      "anyOf": [
+        {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sealed Credential"
+    },
+    "sealing_key_id": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sealing Key Id"
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "provider",
+    "model"
+  ],
+  "title": "EnableConnection",
+  "type": "object"
+}

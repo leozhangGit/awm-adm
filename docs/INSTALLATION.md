@@ -35,9 +35,9 @@ Subsequent login uses email/password. Email is only a local identifier; no mail 
 
 ## Configure models and providers
 
-Create an empty model or import a snapshot in **Domain models**. Local debug can serve supported structured queries without an LLM. **Connections** stores provider credentials through the gateway's encrypted workflow; no committed `.env` key is required.
+In **Connections**, select the provider, enter its model identifier and API key, then click **Enable**. This sends one bounded connection test; success enables remote capabilities. Failure leaves the connection disabled with a reason. **Disable** retains the configuration and private key for later reuse.
 
-Remote calls and spending default disabled. For Ask/Teach, select connection purposes, install a supported current price profile, set installation interaction/learning limits, enable remote calls explicitly and authorize the conversation/task allowance. Saving a connection is local; pressing **Test** is a separate paid operation. Models without supported pricing cannot dispatch priced chat. See [Spending](PRICED_ALLOWANCES.md).
+Create an empty model or import a snapshot in **Domain models**. Ask and Teach are ready to use when the connection is enabled; there is no interaction setup, pricing installation or allowance. Supported structured requests remain available through the API without a provider. See [Connection](CONNECTION.md) and [Console](CONSOLE.md).
 
 ## Configuration and data
 
@@ -56,6 +56,8 @@ Named volumes and existing secrets are reused. `docker compose down` removes con
 
 For updates, take a consistent paired backup, build the new images, and recreate services with `docker compose up -d --no-build --wait`. Recheck health and retained state. Existing schema migrations remain transactional; downgrade to incompatible code requires a compatible backup rather than opening newer stores. [Operations](OPERATIONS.md) contains backup and restore commands.
 
+System timezone: Docker setup captures the host default automatically; native execution uses the service system default. Explicit user/source timezones take precedence. See [temporal interpretation](TEMPORAL_INTERPRETATION.md) for date precision and replay semantics.
+
 ## Troubleshooting
 
 | Symptom | Check |
@@ -64,8 +66,8 @@ For updates, take a consistent paired backup, build the new images, and recreate
 | Build/start reports no space | Check both host and Docker VM free space. Remove only identified disposable build artifacts; preserve volumes and recovery keys. |
 | Port 8080 is occupied | Stop the conflicting service or configure an isolated project/port consistently. |
 | Setup credential expires | Issue a new credential and complete setup within its window. |
-| Remote calls unavailable | Check connection enablement/purposes, global remote switch, supported price validity, spending configuration and conversation allowance. |
-| Known local query works but chat is unavailable | Local execution and provider-funded interaction have separate prerequisites. |
+| Remote calls unavailable | Check the single connection state and its reported failure, plus gateway health. |
+| Known local query works but chat is unavailable | Structured local execution is independent of the provider used for chat interpretation and explanation. |
 | A provider outcome is unknown | Inspect retained diagnostics/reservations; do not assume a free call or automatic safe retry. |
 
 Use `docker compose ps` and `docker compose logs --tail 100` for service diagnostics. Avoid sharing logs or private stores without checking for sensitive content. For a separate rehearsal use a distinct project, hostname/port and empty volumes; see [Contributing](../CONTRIBUTING.md).

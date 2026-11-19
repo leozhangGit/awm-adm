@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from awm_adm.engine import Instance
 from awm_adm.gateway.service import Gateway
 from awm_adm.gateway.store import LABEL, GatewayStore
-from awm_adm.runtime.protocol import RuntimeFault, dumps, pack
+from awm_adm.runtime.protocol import dumps, pack
 from awm_adm.runtime.service import Runtime
 
 from .ported.helpers import literal
@@ -318,23 +318,20 @@ def test_credential_sealing_rotation_ciphertext_binding_and_no_plaintext(rig):
         gateway.store.connection(c2["id"], 2, c2["configuration_digest"])
 
 
-def test_public_authority_validation_budgeted_test_and_metadata(rig):
+def test_public_authority_validation_and_dispatch_metadata(rig):
     rt, gateway = rig
     c = connection(rt, gateway, [{"ok": True}])
     with client(rt) as http:
-        response = http.post(
-            f"/api/v1/connections/{c['id']}/test", json={"idempotency_key": "test", "expected_version": 1}
-        )
-        assert response.status_code == 202
+        # The obsolete separate test endpoint cannot bypass Enable.
+        assert http.post(f"/api/v1/connections/{c['id']}/test", json={}).status_code in (404, 405)
+        grant = rt.learning.test_connection(c["id"], {"idempotency_key": "test", "expected_version": 1})
         assert rt.learning.usage()["calls"] == 1
         dispatch(rt, gateway)
-        result = http.get("/api/v1/dispatches/" + response.json()["id"]).json()
+        result = http.get("/api/v1/dispatches/" + grant["id"]).json()
         assert result["status"] == "succeeded" and "text" not in result["outcome"]
         assert (
-            http.post(
-                f"/api/v1/connections/{c['id']}/test", json={"idempotency_key": "test", "expected_version": 1}
-            ).json()["id"]
-            == result["id"]
+            rt.learning.test_connection(c["id"], {"idempotency_key": "test", "expected_version": 1})["id"]
+            == grant["id"]
         )
         key = rt.create("owner")["id"]
         token = http.post(
@@ -356,13 +353,16 @@ def test_public_authority_validation_budgeted_test_and_metadata(rig):
         assert invalid.status_code == 422
 
 
-def test_no_auto_publication_without_independent_requirements(rig):
+def test_checked_auto_publication_allows_policy_free_instances(rig):
     rt, gateway = rig
     c = connection(rt, gateway)
     key = rt.create("policy-free")["id"]
     ep = episode(rt, key, c, publication="checked_auto")
-    stopped = advance(rt, key, ep["id"], "stopped")
-    assert stopped["reason"] == "admission_rejected" and rt.learning.usage()["calls"] == 0
+    advance(rt, key, ep["id"], "acquiring")
+    dispatch(rt, gateway)
+    accepted = advance(rt, key, ep["id"], "accepted")
+    assert accepted["status"] == "accepted"
+    assert rt.query(key, value_query())["result"]["value"] == 10
 
 
 def test_mode_switch_is_prospective_and_requires_fresh_review(rig):
@@ -449,7 +449,7 @@ def test_rotation_and_remote_disable_revoke_existing_work(rig):
     key = rt.create("revoke")["id"]
     ep = episode(rt, key, c)
     advance(rt, key, ep["id"], "acquiring")
-    rt.learning.configure({"expected_generation": 0, "remote_calls_enabled": False})
+    rt.learning.connection_manager.disable({"idempotency_key": "disable-existing-work"})
     assert rt.learning.claim() is None
     assert advance(rt, key, ep["id"], "stopped")["reason"] == "stale_context"
     assert rt.learning.usage()["calls"] == 0
@@ -508,7 +508,7 @@ def test_private_partial_construction_survives_only_same_context(rig):
     assert rt.query(key, value_query())["result"]["value"] == 10
 
 
-def test_aggregate_reservation_counts_unresolved_even_after_period_and_clock_rollback(rig, monkeypatch):
+def test_removed_financial_quota_does_not_block_new_work_or_erase_uncertainty(rig, monkeypatch):
     rt, gateway = rig
     c = connection(rt, gateway, [{"ok": True}])
     rt.learning.config = rt.config.model_copy(
@@ -522,8 +522,9 @@ def test_aggregate_reservation_counts_unresolved_even_after_period_and_clock_rol
     with rt.store.db() as db:
         db.execute("UPDATE grants SET created=0")
     monkeypatch.setattr(time, "time", lambda: 1)
-    with pytest.raises(RuntimeFault, match="aggregate"):
-        rt.learning.test_connection(c["id"], {"idempotency_key": "quota-b", "expected_version": 1})
+    second = rt.learning.test_connection(c["id"], {"idempotency_key": "quota-b", "expected_version": 1})
+    assert second["id"] != first["id"]
+    assert rt.learning.usage()["calls"] == 2
     assert rt.learning.grant_view(first["id"])["unresolved"]
 
 

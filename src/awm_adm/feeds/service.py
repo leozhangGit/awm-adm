@@ -214,16 +214,6 @@ class FeedService:
             )
         old = db.execute("SELECT id FROM feed_runs WHERE pipeline=?", (pipeline,)).fetchone()
         rid = old[0] if old else str(uuid4())
-        if feed.get("allowance_id"):
-            self.sources.learning.allowances.child(
-                feed["allowance_id"],
-                {
-                    "operation_id": "source-item:" + pipeline,
-                    "kind": "extraction",
-                    "max_work": reservation["work"],
-                    "payload_digest": pipeline,
-                },
-            )
         self.sources.room(db, 8192, additional_items=2)
         if not old:
             run = {

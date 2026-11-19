@@ -265,7 +265,7 @@ def test_migration_journal_resumes_before_runtime_starts(tmp_path):
         remove_conversations(db)
         db.execute("PRAGMA user_version=7")
     with sqlite3.connect(root / f"{key}.db") as db:
-        db.execute("PRAGMA user_version=16")
+        db.execute("PRAGMA user_version=17")
     with pytest.raises(RuntimeFault, match="Unsupported database"):
         Runtime(configuration(root), start_scheduler=False)
     with sqlite3.connect(root / "registry.db") as db:
@@ -279,7 +279,7 @@ def test_migration_journal_resumes_before_runtime_starts(tmp_path):
     try:
         assert rt.store.info(key)["status"] == "ready"
         with rt.store.db() as db:
-            assert db.execute("SELECT status,target FROM installation_upgrade").fetchone()[:] == ("ready", 15)
+            assert db.execute("SELECT status,target FROM installation_upgrade").fetchone()[:] == ("ready", 16)
     finally:
         rt.close()
 

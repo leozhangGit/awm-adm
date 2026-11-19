@@ -5,7 +5,7 @@ import json
 import time
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi import Request as HTTPRequest
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -277,13 +277,37 @@ def attach(app, runtime, owner):
         return coordinator.operation_info(uid)
 
     @router.get("/operations")
-    def operations(request: HTTPRequest):
+    def operations(
+        request: HTTPRequest,
+        since_ms: int = Query(default=0, ge=0, le=9_007_199_254_740_991),
+        include_deletions: bool = False,
+    ):
         auth.require(request, owner=True)
         with store.db() as db:
-            rows = db.execute(
-                "SELECT id AS operation_id,kind,adm AS adm_id,status FROM operations ORDER BY rowid DESC LIMIT 50"
-            ).fetchall()
-        return {"items": [dict(row) for row in rows]}
+            if include_deletions:
+                rows = db.execute(
+                    "SELECT id AS operation_id,kind,adm AS adm_id,status,created FROM operations "
+                    "WHERE created>=? UNION ALL "
+                    "SELECT id AS operation_id,'delete' AS kind,adm AS adm_id,stage AS status,created "
+                    "FROM deletions WHERE created>=? "
+                    "ORDER BY created DESC,operation_id DESC LIMIT 50",
+                    (since_ms / 1000, since_ms / 1000),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT id AS operation_id,kind,adm AS adm_id,status,created FROM operations "
+                    "WHERE created>=? ORDER BY rowid DESC LIMIT 50",
+                    (since_ms / 1000,),
+                ).fetchall()
+        return {
+            "items": [
+                {
+                    **{k: row[k] for k in row.keys() if k != "created"},
+                    "created_at_ms": int(row["created"] * 1000),
+                }
+                for row in rows
+            ]
+        }
 
     @router.get("/adms/{adm}")
     def info(request: HTTPRequest, adm: str):
@@ -523,6 +547,9 @@ def attach(app, runtime, owner):
     from ..learning.http import public as learning_routes
 
     learning_routes(router, auth, runtime.learning)
+    from ..interaction.http import attach as interaction_routes
+
+    interaction_routes(router, auth, runtime)
     from ..language.http import public as language_routes
 
     language_routes(router, auth, runtime.language)

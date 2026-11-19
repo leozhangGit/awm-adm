@@ -127,6 +127,11 @@ def response_schema():
     # Unknown is a query result, never an owner projection time cell.
     cell = projection["cells"]["items"]
     cell["properties"]["kind"]["enum"] = ["point", "interval"]
+    from ..temporal import INSTANT, SCOPE
+
+    cell["description"] = SCOPE
+    for name in ("effective_from", "effective_to"):
+        cell["properties"][name]["description"] = INSTANT
     return result
 
 

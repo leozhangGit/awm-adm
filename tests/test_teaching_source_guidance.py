@@ -14,12 +14,13 @@ from awm_adm.teaching import service
 from awm_adm.teaching.prompt import specification
 from awm_adm.teaching.provider_format import response_schema
 from awm_adm.teaching.source_guidance import BOUNDS, KIND, NAMESPACE, SYMBOL, VALUES
+from awm_adm.temporal import INSTANT, MEANING, SCOPE
 
+from .interaction_support import plan
 from .teaching_wire import native_reply
 from .test_application import app_runtime as app_runtime
-from .test_conversations import message
+from .test_direct_ask import recorded, work
 from .test_learning_service import rig as rig
-from .test_teaching import funded, plan
 from .test_teaching_format import ROOT, check, task
 
 SAVED_REPLY = ROOT / "tests/fixtures/teaching/invalid-native-source-reply.json"
@@ -148,6 +149,34 @@ def test_source_descriptions_reach_ordered_wire_without_model_specific_guidance(
     assert all(s not in dumps(spec).decode().lower() for s in ("equipment", "camera-kit", "gpt-", "claude"))
 
 
+def test_source_time_representation_is_described_without_weakening_validation(monkeypatch):
+    monkeypatch.setenv("TZ", "America/New_York")
+    spec = specification({"objective": "owner request", "inputs": []}, {}, {}, {})
+    assert spec["context"]["temporal_context"] == {"system_timezone": "America/New_York"}
+    for guidance in (INSTANT, MEANING, SCOPE):
+        assert guidance in spec["instructions"]
+    projection = spec["schema"]["properties"]["plan"]["anyOf"][0]["properties"]["children"]["items"][
+        "properties"
+    ]["material"]["anyOf"][0]["properties"]["projection"]["properties"]
+    cell = projection["cells"]["items"]
+    assert cell["properties"]["effective_from"]["description"] == INSTANT
+    assert cell["properties"]["effective_to"]["description"] == INSTANT
+    reply = authored_control()
+    before = copy.deepcopy(reply)
+    assert (
+        check(reply, input_ids=[INPUT_ID])["plan"]["children"][1]["material"]
+        == before["plan"]["children"][1]["material"]
+    )
+    # Source UTC bounds remain UTC even with another system default. Date-only output
+    # still fails locally; the instructions do not create an implicit coercion path.
+    for c in reply["plan"]["children"][1]["material"]["projection"]["cells"]:
+        for bound in ("effective_from", "effective_to"):
+            c[bound] = c[bound][:10]
+    result = check(reply, input_ids=[INPUT_ID])
+    assert "plan" not in result
+    assert all(i["code"] == "string_pattern_mismatch" for i in result["failure"]["issues"])
+
+
 def settle(rt, reply):
     job = rt.learning.claim()
     assert job is not None
@@ -166,9 +195,11 @@ def settle(rt, reply):
 
 def test_source_failure_is_durable_settles_known_usage_and_never_retries(rig):
     rt, gw = rig
-    key, cid = funded(rt, gw)
+    key = rt.create("Preparation regression")["id"]
+    recorded(rt, gw, {})
     before = rt.conversations.context(key)
-    rt.conversations.message(key, cid, message(rt, key, cid, "Prepare a capability and supplied history."))
+    item = rt.interactions.submit(key, "teach", {"text": "Prepare a capability and supplied history."})
+    cid = work(rt, key, item["id"])["conversation_id"]
     assert rt.conversations.tick()
     settle(rt, saved())
     details = rt.conversations.details(key, cid)
@@ -182,7 +213,7 @@ def test_source_failure_is_durable_settles_known_usage_and_never_retries(rig):
     assert usage["input_tokens"] == 3195 and usage["output_tokens"] == 956
     assert rt.conversations.context(key) == before
     assert not [p for p in details["proposals"] if p["kind"] == "task"]
-    assert not rt.conversations.tick() and rt.learning.claim() is None
+    assert rt.learning.claim() is None
     assert rt.learning.usage() == usage
 
 
@@ -209,14 +240,17 @@ def test_retained_prompt_provenance_selects_decoder_without_content_fallback(
 
     monkeypatch.setattr(service, "specification", dispatched_spec)
     rt, gw = rig
-    key, cid = funded(rt, gw)
+    key = rt.create("Preparation regression")["id"]
+    recorded(rt, gw, {})
     before = rt.store.info(key)
-    turn = rt.conversations.message(key, cid, message(rt, key, cid, "Teach a bounded doubling capability."))
+    item = rt.interactions.submit(key, "teach", {"text": "Teach a bounded doubling capability."})
+    current = work(rt, key, item["id"])
+    cid, turn = current["conversation_id"], {"id": current["turn_id"]}
     assert rt.conversations.tick()
     reply = {"status": "ready", "message": "Review.", "plan_json": dumps(plan([turn["id"]])).decode()}
     settle(rt, reply if legacy else native_reply(reply))
     details = rt.conversations.details(key, cid)
     assert details["work"][0]["provenance"]["prompt_version"] == f"adm-teaching-preparation/{version}"
-    assert details["tasks"][0]["status"] == ("awaiting_review" if valid else "failed")
+    assert details["tasks"][0]["status"] == ("queued" if valid else "failed")
     assert rt.store.info(key) == before
-    assert not rt.conversations.tick() and rt.learning.claim() is None
+    assert rt.learning.claim() is None

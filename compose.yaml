@@ -33,7 +33,9 @@ services:
     ports: ["127.0.0.1:8080:8080"]
     networks: [internal, ingress]
     security_opt: ["no-new-privileges:true", "seccomp=deploy/app-seccomp.json"]
-    volumes: [adm-data:/var/lib/awm-adm]
+    environment:
+      AWM_ADM_TIMEZONE_FILE: /run/system-timezone
+    volumes: [adm-data:/var/lib/awm-adm, "./.local/system-timezone:/run/system-timezone:ro"]
     secrets: [owner-token, worker-token, gateway-token]
     healthcheck:
       test: [CMD, python, -c, "import json,time; p=json.load(open('/tmp/awm-adm-health.json')); assert time.monotonic()-p['updated']<15 and p['ready']"]

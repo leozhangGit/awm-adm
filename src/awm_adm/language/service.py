@@ -472,7 +472,7 @@ class LanguageService:
                 "status": "draft",
                 "created": self.learning.now(),
                 "authority": "none",
-                "next_step": "Open the Teach workspace to prepare a checked task with its own learning allowance. Preparation does not start learning. Attach supplied material in Teach or use Advanced model tools for explicit source extraction.",
+                "next_step": "Open Teach and describe what the model should learn; attach supplied material if needed. Clear requests proceed through local checking automatically.",
             }
             self._room(db, conversation, len(dumps(item)))
             db.execute(

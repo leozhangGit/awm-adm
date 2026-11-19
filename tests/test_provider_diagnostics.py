@@ -3,7 +3,6 @@
 # ruff: noqa: F811
 
 import json
-from uuid import uuid4
 
 import pytest
 
@@ -206,24 +205,13 @@ def test_http_quota_is_distinct_from_rate_limit_without_error_body_disclosure(co
 
 
 def remote_connection(rt, gateway, tmp_path, output):
-    gateway.store.static_dir = tmp_path
-    (tmp_path / "openai-key").write_text("authored-test-credential")
-    rt.learning.configure(
-        {"expected_generation": rt.learning.settings()["generation"], "remote_calls_enabled": True}
-    )
-    c = rt.learning.save_connection(
-        {
-            "idempotency_key": str(uuid4()),
-            "name": "Simulated diagnostics",
-            "provider": "openai",
-            "model": "gpt-4o-2024-08-06",
-            "enabled": True,
-            "credential_mode": "static",
-            "purposes": ["acquisition", "interpretation", "extraction"],
-        }
-    )
-    gateway.synchronize()
-    gateway.synchronize()
+    from .test_single_connection import queued, success
+
+    gateway.transport = success
+    _, test_job = queued(rt, gateway)
+    gateway.dispatch(test_job["grant_id"], test_job["lease"])
+    rt.learning.connection_manager.tick()
+    c = rt.learning.connection_manager.active("acquisition")
     calls = []
 
     def transport(*args):
@@ -231,60 +219,11 @@ def remote_connection(rt, gateway, tmp_path, output):
         return 200, raw(output)
 
     gateway.transport = transport
-    # Explicit M2 authority; the transport above remains simulated/no-egress.
-    rt.config = rt.config.model_copy(
-        update={
-            "learning": rt.config.learning.model_copy(
-                update={
-                    "call": rt.config.learning.call.model_copy(update={"max_input_tokens": 128000}),
-                    "episode": rt.config.learning.episode.model_copy(update={"max_input_tokens": 768000}),
-                }
-            )
-        }
-    )
-    rt.learning.config = rt.config
-    service = rt.learning.allowances
-    service.configure(
-        {
-            "expected_generation": 0,
-            "enabled": True,
-            "total_micro_usd": 4_000_000,
-            "interaction_micro_usd": 2_000_000,
-            "learning_micro_usd": 2_000_000,
-        }
-    )
-    c = rt.learning.connection(c["id"])
-    price = service.save_price(
-        {
-            "idempotency_key": str(uuid4()),
-            "connection_id": c["id"],
-            "connection_version": c["version"],
-            "configuration_digest": c["configuration_digest"],
-            "bound_profile": "openai-4o-context/2026-11-08",
-            "input_micro_usd_per_million": 2_500_000,
-            "output_micro_usd_per_million": 10_000_000,
-            "valid_until_ms": service.now() + 600000,
-        }
-    )
-    c["test_price_id"] = price["id"]
     return c, calls
 
 
 def remote_budget(rt, c, key, scope="task"):
-    service = rt.learning.allowances
-    allowance = service.create(
-        {
-            "idempotency_key": str(uuid4()),
-            "price_id": c["test_price_id"],
-            "adm_id": key,
-            "scope": scope,
-            "scope_id": str(uuid4()),
-            "cap_micro_usd": 2_000_000,
-            "expires_at_ms": service.now() + 300000,
-            "max_input_tokens": 768000,
-        }
-    )
-    return {"allowance_id": allowance["id"], "call_limits": rt.config.learning.call.model_dump()}
+    return {"call_limits": rt.config.learning.call.model_dump()}
 
 
 def test_explicit_source_retry_deduplicates_and_preserves_unknown_reservations(rig, tmp_path):
@@ -300,6 +239,7 @@ def test_explicit_source_retry_deduplicates_and_preserves_unknown_reservations(r
             usage={"input_tokens": 0, "output_tokens": 0},
         ),
     )
+    initial_usage = rt.learning.usage()
     key = rt.create("Explicit retry")["id"]
     install(rt, key)
     source = ingest(rt, key, media_type="text/plain", content="A supplied historical assertion.")
@@ -316,7 +256,8 @@ def test_explicit_source_retry_deduplicates_and_preserves_unknown_reservations(r
     failed = rt.sources.get(key, "source_jobs", original["id"])
     assert failed["status"] == "failed"
     before = rt.learning.usage()
-    assert before["calls"] == before["unresolved"] == 1
+    assert before["calls"] == 2  # Enable test plus the failed extraction.
+    assert before["unresolved"] == 1
     assert job(rt, key, source, **settings)["id"] == original["id"]
 
     retry = job(rt, key, source, reprocess_id="owner-retry-1", **settings)
@@ -331,9 +272,10 @@ def test_explicit_source_retry_deduplicates_and_preserves_unknown_reservations(r
     assert len(calls) == 2
     assert rt.sources.get(key, "source_jobs", original["id"]) == failed
     after = rt.learning.usage()
-    assert after["calls"] == after["unresolved"] == 2
-    assert after["input_tokens"] == 2 * before["input_tokens"]
-    assert after["output_tokens"] == 2 * before["output_tokens"]
+    assert after["calls"] == 3  # Enable test and two explicitly submitted extractions.
+    assert after["unresolved"] == 2
+    for field in ("input_tokens", "output_tokens"):
+        assert after[field] - initial_usage[field] == 2 * (before[field] - initial_usage[field])
     assert rt.sources.overview(key)["claims"] == []
 
 

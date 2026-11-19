@@ -89,6 +89,7 @@ export type Operation = {
   kind: string;
   adm_id: string | null;
   status: string;
+  created_at_ms?: number;
   result?: { adm_id?: string; snapshot?: Json };
   error?: { message: string };
 };

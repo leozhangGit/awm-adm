@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from .protocol import RuntimeFault, dumps, loads
 
 APPLICATION_ID = 0x41574D32
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 
 def identifier(value):
@@ -110,6 +110,10 @@ def migrate(connection, kind):
             from ..lifecycle.schema import extend as lifecycle_extend
 
             lifecycle_extend(connection, kind)
+        if version < 16:
+            from ..interaction.schema import extend as interaction_extend
+
+            interaction_extend(connection, kind)
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.commit()
     except BaseException:
