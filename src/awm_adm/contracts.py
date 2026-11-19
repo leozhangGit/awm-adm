@@ -134,8 +134,33 @@ class FactLookup(ClosedModel):
         return self
 
 
+class FactPeriodLookup(ClosedModel):
+    """One value throughout a half-open period, checked by the source service."""
+
+    op: Literal["lookup_fact_period"]
+    entity_id: Identifier
+    predicate: Symbol
+    effective_from: Instant
+    effective_to: Instant
+
+    @model_validator(mode="after")
+    def interval(self) -> Self:
+        start = datetime.fromisoformat(self.effective_from.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(self.effective_to.replace("Z", "+00:00"))
+        if start >= end:
+            raise ValueError("Historical lookup period must be nonempty and ordered")
+        return self
+
+
 Query = Annotated[
-    Capabilities | Evaluate | CheckClaim | FindPlan | CheckCertificate | Explain | FactLookup,
+    Capabilities
+    | Evaluate
+    | CheckClaim
+    | FindPlan
+    | CheckCertificate
+    | Explain
+    | FactLookup
+    | FactPeriodLookup,
     Field(discriminator="op"),
 ]
 

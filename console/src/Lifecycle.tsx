@@ -11,6 +11,7 @@ export type Deletion = {
   resume_stage: string | null;
   gateway_pending: number;
   message: string | null;
+  created_at_ms: number;
 };
 
 export function forgetOutbox(adm: string) {
@@ -162,11 +163,10 @@ export function OwnerLifecycle({
   );
 }
 
-export function DeletionProgress({ onChanged }: { onChanged: () => void }) {
+export function PendingDeletions({ onChanged }: { onChanged: () => void }) {
   const [items, setItems] = useState<Deletion[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
-  const [history, setHistory] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     let running = false;
@@ -186,11 +186,6 @@ export function DeletionProgress({ onChanged }: { onChanged: () => void }) {
           after = page.next_cursor;
           if (page.items.length < 100) break;
         }
-        const recent = await api<{ items: Deletion[] }>(
-          "/deletions?scope=completed&limit=20",
-          { signal: controller.signal },
-        );
-        rows.push(...recent.items);
         if (!controller.signal.aborted) {
           setItems(rows);
           setError("");
@@ -209,14 +204,17 @@ export function DeletionProgress({ onChanged }: { onChanged: () => void }) {
     };
   }, []);
   const active = items.filter((x) => x.stage !== "deleted");
-  if (!items.length && !error) return null;
+  if (!active.length && !error) return null;
   return (
     <section className="panel" aria-label="Model deletion progress">
-      <h2>Model cleanup</h2>
+      <h2>Deletions in progress</h2>
       {error && <Notice error>{error}</Notice>}
-      {!active.length && <p>All requested deletions are complete.</p>}
       {active.map((x) => (
         <div key={x.operation_id} className="notice">
+          <small>
+            Requested {new Date(x.created_at_ms).toLocaleString()} ·{" "}
+            {x.operation_id.slice(0, 10)}
+          </small>
           <strong>
             {x.stage === "blocked"
               ? "Cleanup needs attention"
@@ -227,7 +225,7 @@ export function DeletionProgress({ onChanged }: { onChanged: () => void }) {
           <p>
             {x.stage === "blocked"
               ? x.message
-              : "New access and publication are disabled. Accounting reservations remain protected."}
+              : "New access and publication are disabled. Provider records are retained until cleanup is safe."}
           </p>
           {x.stage === "blocked" && (
             <button
@@ -260,26 +258,8 @@ export function DeletionProgress({ onChanged }: { onChanged: () => void }) {
               Retry cleanup
             </button>
           )}
-          <details>
-            <summary>Details</summary>
-            <p>
-              Operation {x.operation_id} · stage {x.stage} · pending gateway
-              records {x.gateway_pending}
-            </p>
-          </details>
         </div>
       ))}
-      <button className="secondary" onClick={() => setHistory(!history)}>
-        {history ? "Hide completed operations" : "Completed operations"}
-      </button>
-      {history &&
-        items
-          .filter((x) => x.stage === "deleted")
-          .map((x) => (
-            <p key={x.operation_id}>
-              Deleted · <small>operation {x.operation_id}</small>
-            </p>
-          ))}
     </section>
   );
 }

@@ -24,7 +24,7 @@ def evidence(content):
         "artifact_kind": "evidence",
         "evidence_kind": "observation",
         "origin": "awm-adm:sources",
-        "scope": "Owner-reviewed supplied assertions; external truth is assumed, not established.",
+        "scope": "Supplied assertions admitted by local checks; external truth is assumed, not established.",
         "content": content,
     }
 
@@ -413,6 +413,10 @@ def compute(task, budget):
 def query(checked, query, limits, budget):
     """Return None for ordinary supported queries, or a bound local fact result/hold."""
     model, entries = checked["model"], projected(checked, budget)
+    if query["op"] == "lookup_fact_period":
+        from .period import lookup
+
+        return lookup(checked, query, entries, limits, budget)
     reason, selected = None, None
     if query["op"] == "lookup_fact":
         matches = []

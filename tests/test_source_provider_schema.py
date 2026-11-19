@@ -73,7 +73,13 @@ def test_structure_keeps_closed_fields_and_order_without_changing_local_contract
     assert digest(encode_wire(local_before)) == (
         "sha256:9de6833c52a377bd25728c7806d913b9e09a9c09a11de85e3c13b3d8614979e3"
     )
-    assert digest(encode_wire(output_schema(Projection))) == (
+    # Provider descriptions explain representation; the grammar and local validators stay intact.
+    annotated = output_schema(Projection)
+    temporal = annotated["$defs"]["TemporalScope"]
+    assert "Canonical UTC instant" in temporal["properties"]["effective_from"].pop("description")
+    temporal["properties"]["effective_to"].pop("description")
+    temporal.pop("description")
+    assert digest(encode_wire(annotated)) == (
         "sha256:a22d66d70a7aba462f9ff94b4acc53343f13a0c2f5d4c04f2e39ea79c6d0eca5"
     )
 

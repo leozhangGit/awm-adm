@@ -2,12 +2,15 @@
 
 import base64
 import os
+import runpy
 import secrets
 from pathlib import Path
 
 
 def main():
     root = Path(__file__).resolve().parents[1] / ".local/secrets"
+    temporal = runpy.run_path(str(root.parents[1] / "src/awm_adm/temporal.py"))
+    zone = temporal["system_timezone"]()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     if root.is_symlink():
         raise ValueError("Secret directory must not be a symlink")
@@ -40,7 +43,13 @@ def main():
     if static.is_symlink():
         raise ValueError("Provider secret directory cannot be a symlink")
     static.mkdir(mode=0o755, exist_ok=True)
+    zone_path = root.parent / "system-timezone"
+    if zone_path.is_symlink():
+        raise ValueError("System timezone file must not be a symlink")
+    zone_path.write_text(zone + "\n")
+    zone_path.chmod(0o644)
     print("Local service tokens are ready; existing tokens were preserved. No provider credentials are used.")
+    print("Service system timezone: " + zone)
 
 
 if __name__ == "__main__":

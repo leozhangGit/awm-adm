@@ -1,30 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api, authApi, download, saveSession, watch } from "./api.ts";
-import { Account, Login } from "./Auth.tsx";
+import { LoginSettings, Login } from "./Auth.tsx";
 import type { Adm, Json, Limits, Model, Operation, System } from "./types.ts";
 import { short } from "./types.ts";
 import { Badge, CopyButton, Notice } from "./components.tsx";
-import { Connections, Learning } from "./Learning.tsx";
-import { Language } from "./Language.tsx";
+import { Connections } from "./Connections.tsx";
 import { Operations } from "./Operations.tsx";
-import { Sources } from "./Sources.tsx";
-import { Workspace } from "./Workspace.tsx";
+import { Activity } from "./Activity.tsx";
+import { Knowledge } from "./Knowledge.tsx";
+import { DirectWorkspace } from "./DirectWorkspace.tsx";
 import {
-  DeletionProgress,
+  PendingDeletions,
   OwnerLifecycle,
   forgetOutbox,
 } from "./Lifecycle.tsx";
-import { Playground } from "./Playground.tsx";
-import { CreateModel, History, ModelBrowser, Settings } from "./Views.tsx";
+import { CreateModel, Settings } from "./Views.tsx";
 
 const nav = [
   { id: "overview", label: "Overview", icon: "◫" },
   { id: "adms", label: "Domain models", icon: "◇" },
   { id: "connections", label: "Connections", icon: "⇄" },
-  { id: "sources", label: "Sources", icon: "▤" },
-  { id: "learning", label: "Learning", icon: "⌁" },
   { id: "operations", label: "Operations", icon: "⚙" },
-  { id: "account", label: "Account", icon: "○" },
+  { id: "login", label: "Login", icon: "○" },
 ];
 type Route = {
   view: string;
@@ -35,10 +32,22 @@ type Route = {
 };
 function location(): Route {
   const p = new URLSearchParams(window.location.hash.slice(1));
+  const oldView = p.get("view") || "adms";
+  const view =
+    oldView === "account"
+      ? "login"
+      : ["sources", "learning"].includes(oldView)
+        ? "adms"
+        : oldView;
+  const oldTab = ["sources", "learning"].includes(oldView)
+    ? "teach"
+    : p.get("tab") || "ask";
   return {
-    view: p.get("view") || "adms",
+    view: nav.some((n) => n.id === view) ? view : "adms",
     adm: p.get("adm") || "",
-    tab: p.get("tab") || "ask",
+    tab: ["ask", "teach", "model", "history", "settings"].includes(oldTab)
+      ? oldTab
+      : "ask",
     request: p.get("request") || "",
     conversation: p.get("conversation") || "",
   };
@@ -131,27 +140,20 @@ function ModelList({ adms }: { adms: Adm[] }) {
 function Instance({
   adm,
   route,
-  limits,
-  refresh,
   onChanged,
   busy,
   run,
   exportSnapshot,
   clone,
-  onTeach,
 }: {
   adm: Adm;
   route: Route;
-  limits: Limits;
-  refresh: number;
   onChanged: () => void;
   busy: boolean;
   run: (f: () => Promise<void>) => void;
   exportSnapshot: () => void;
   clone: () => void;
-  onTeach: (draft: { id: string; text: string; status: string }) => void;
 }) {
-  const [inputMode, setInputMode] = useState("language");
   const [model, setModel] = useState<Model | null>(null),
     [error, setError] = useState(""),
     [stream, setStream] = useState("Connecting to updates");
@@ -213,35 +215,18 @@ function Instance({
           <Badge>{adm.mode} mode</Badge>
         </div>
       </div>
-      {!["ask", "teach"].includes(route.tab) && (
-        <div className="context-strip">
-          <span>
-            Accepted version <code>{short(adm.theory_version)}</code>
-          </span>
-          <span>
-            Owner epoch <strong>{adm.policy_epoch}</strong>
-          </span>
-          <span>
-            Remote reasoning <strong>Off</strong>
-          </span>
-        </div>
-      )}
       <nav className="tabs" aria-label="Model views">
-        {["ask", "teach", "playground", "model", "history", "settings"].map(
-          (tab) => (
-            <button
-              key={tab}
-              aria-current={route.tab === tab ? "page" : undefined}
-              onClick={() => go({ tab, conversation: "" })}
-            >
-              {tab === "playground"
-                ? "Local debug"
-                : tab === "model"
-                  ? "Model & evidence"
-                  : tab[0].toUpperCase() + tab.slice(1)}
-            </button>
-          ),
-        )}
+        {["ask", "teach", "model", "history", "settings"].map((tab) => (
+          <button
+            key={tab}
+            aria-current={route.tab === tab ? "page" : undefined}
+            onClick={() => go({ tab, conversation: "" })}
+          >
+            {tab === "model"
+              ? "Model & evidence"
+              : tab[0].toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </nav>
       {error && <Notice error>{error}</Notice>}
       {adm.archived && (
@@ -251,87 +236,25 @@ function Instance({
         </Notice>
       )}
       {["ask", "teach"].includes(route.tab) ? (
-        <Workspace
+        <DirectWorkspace
           key={`${adm.id}:${route.tab}`}
           adm={adm}
           channel={route.tab as "ask" | "teach"}
-          conversationId={route.conversation}
-          select={(conversation) => go({ conversation })}
-          teach={(conversation) => go({ tab: "teach", conversation })}
         />
       ) : !model ? (
         <Notice>Loading accepted model…</Notice>
       ) : route.tab === "model" ? (
-        <ModelBrowser adm={adm} model={model} />
+        <Knowledge adm={adm} model={model} />
       ) : route.tab === "settings" ? (
         <Settings {...{ adm, onChanged, busy, run, exportSnapshot, clone }} />
       ) : route.tab === "history" ? (
-        <History
-          adm={adm.id}
-          refresh={refresh}
-          requestId={route.request}
-          onRequest={(id) => go({ request: id })}
-        />
-      ) : adm.archived ? (
-        <Notice>
-          Open History to inspect prior requests, or Settings to export this
-          model.
-        </Notice>
-      ) : (
-        <>
-          <Notice>
-            Local debug and saved history retain their explicit preview and
-            execution contracts. Preview consent does not authorize paid
-            interaction.
-          </Notice>
-          <div
-            className="segmented playground-mode"
-            aria-label="Playground mode"
-          >
-            <button
-              aria-pressed={inputMode === "language"}
-              onClick={() => setInputMode("language")}
-            >
-              Interpretation preview
-            </button>
-            <button
-              aria-pressed={inputMode === "structured"}
-              onClick={() => setInputMode("structured")}
-            >
-              Structured local execution
-            </button>
-          </div>
-          {inputMode === "language" ? (
-            <Language
-              adm={adm}
-              model={model}
-              limits={limits}
-              onTeach={onTeach}
-              onHistory={(id) => go({ tab: "history", request: id })}
-            />
-          ) : (
-            <Playground
-              key={model.revision_id}
-              adm={adm.id}
-              model={model}
-              limits={limits}
-              requestId={route.request}
-              onRequest={(id) => go({ request: id })}
-              refresh={refresh}
-            />
-          )}
-        </>
-      )}
+        <Activity adm={adm.id} />
+      ) : null}
     </>
   );
 }
 
 export default function App() {
-  const [teachingTask, setTeachingTask] = useState<{
-    id: string;
-    text: string;
-    adm: string;
-  } | null>(null);
   const [route, setRoute] = useState(location),
     [system, setSystem] = useState<System | null>(null),
     [authed, setAuthed] = useState(false),
@@ -411,7 +334,10 @@ export default function App() {
     const c = new AbortController();
     Promise.all([
       api<{ items: Adm[] }>("/adms", { signal: c.signal }),
-      api<{ items: Operation[] }>("/operations", { signal: c.signal }),
+      api<{ items: Operation[] }>(
+        `/operations?since_ms=${Date.now() - 7 * 24 * 60 * 60 * 1000}&include_deletions=true`,
+        { signal: c.signal },
+      ),
     ])
       .then(([a, o]) => {
         setAdms((previous) => {
@@ -419,11 +345,6 @@ export default function App() {
             if (!a.items.some((x) => x.id === old.id)) forgetOutbox(old.id);
           return a.items;
         });
-        setTeachingTask((previous) =>
-          previous && a.items.some((x) => x.id === previous.adm)
-            ? previous
-            : null,
-        );
         setOperations(o.items);
         setReadError("");
       })
@@ -517,7 +438,7 @@ export default function App() {
   if (checking)
     return (
       <div className="loading-screen" role="status">
-        Opening local workspace…
+        Opening workspace…
       </div>
     );
   if (!authed)
@@ -544,37 +465,22 @@ export default function App() {
           AWM<span> / </span>ADM
         </a>
         <div className="workspace-label">
-          <span className="dot" /> LOCAL WORKSPACE
+          <span className="dot" /> WORKSPACE
         </div>
         <nav aria-label="Main navigation">
-          {nav
-            .filter((n) => !["sources", "learning"].includes(n.id))
-            .map((n) => (
-              <button
-                key={n.id}
-                aria-current={route.view === n.id ? "page" : undefined}
-                onClick={() => {
-                  setCreating(false);
-                  go({ view: n.id, adm: "", request: "" });
-                }}
-              >
-                <span aria-hidden="true">{n.icon}</span>
-                {n.label}
-              </button>
-            ))}
-          <details className="debug-navigation">
-            <summary>Advanced model tools</summary>
-            {nav
-              .filter((n) => ["sources", "learning"].includes(n.id))
-              .map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => go({ view: n.id, adm: "", conversation: "" })}
-                >
-                  {n.label}
-                </button>
-              ))}
-          </details>
+          {nav.map((n) => (
+            <button
+              key={n.id}
+              aria-current={route.view === n.id ? "page" : undefined}
+              onClick={() => {
+                setCreating(false);
+                go({ view: n.id, adm: "", request: "" });
+              }}
+            >
+              <span aria-hidden="true">{n.icon}</span>
+              {n.label}
+            </button>
+          ))}
         </nav>
         <div className="sidebar-bottom">
           <span
@@ -688,7 +594,7 @@ export default function App() {
                   [
                     "Learning",
                     system?.available.learning ? "Available" : "Unavailable",
-                    "Explicit bounded episodes",
+                    "Learn through Teach",
                   ],
                 ].map(([label, value, note]) => (
                   <article className="panel" key={label}>
@@ -756,64 +662,82 @@ export default function App() {
               <section className="panel">
                 <h2>Recent model operations</h2>
                 <p className="muted">
-                  Recover an operation after a lost response or a browser
-                  reload.
+                  Past 7 days · up to 50 latest create, import, export and
+                  delete operations.
                 </p>
                 {!operations.length ? (
-                  <p>No create, import or export operations yet.</p>
+                  <p>No model operations in the past 7 days.</p>
                 ) : (
                   <div className="operation-list">
                     {operations.map((o) => (
                       <div key={o.operation_id}>
                         <span>
                           <code>{short(o.operation_id)}</code> · {o.kind}
+                          {o.created_at_ms !== undefined && (
+                            <small>
+                              <time
+                                dateTime={new Date(
+                                  o.created_at_ms,
+                                ).toISOString()}
+                              >
+                                {new Date(o.created_at_ms).toLocaleString()}
+                              </time>
+                            </small>
+                          )}
                         </span>
                         <Badge
-                          tone={o.status === "succeeded" ? "green" : "amber"}
+                          tone={
+                            ["succeeded", "deleted"].includes(o.status)
+                              ? "green"
+                              : "amber"
+                          }
                         >
                           {o.status}
                         </Badge>
-                        <button
-                          className="text-button"
-                          disabled={busy}
-                          onClick={() =>
-                            void run(async () => {
-                              const full = await api<Operation>(
-                                `/operations/${o.operation_id}`,
-                              );
-                              if (
-                                full.status === "succeeded" &&
-                                full.result?.snapshot
-                              )
-                                download(
-                                  `adm-${short(full.adm_id)}.snapshot.json`,
-                                  full.result.snapshot,
+                        {o.kind !== "delete" && (
+                          <button
+                            className="text-button"
+                            disabled={busy}
+                            onClick={() =>
+                              void run(async () => {
+                                const full = await api<Operation>(
+                                  `/operations/${o.operation_id}`,
                                 );
-                              else if (
-                                full.status === "succeeded" &&
-                                full.result?.adm_id
-                              )
-                                go({
-                                  view: "adms",
-                                  adm: full.result.adm_id,
-                                  tab: "playground",
-                                  request: "",
-                                });
-                              else
-                                setMessage(
-                                  full.error?.message ||
-                                    `Operation ${full.status}`,
-                                );
-                            })
-                          }
-                        >
-                          {o.kind === "export" ? "Download" : "Inspect"}
-                        </button>
+                                if (
+                                  full.status === "succeeded" &&
+                                  full.result?.snapshot
+                                )
+                                  download(
+                                    `adm-${short(full.adm_id)}.snapshot.json`,
+                                    full.result.snapshot,
+                                  );
+                                else if (
+                                  full.status === "succeeded" &&
+                                  full.result?.adm_id
+                                )
+                                  go({
+                                    view: "adms",
+                                    adm: full.result.adm_id,
+                                    tab: "ask",
+                                    request: "",
+                                  });
+                                else
+                                  setMessage(
+                                    full.error?.message ||
+                                      `Operation ${full.status}`,
+                                  );
+                              })
+                            }
+                          >
+                            {o.kind === "export" ? "Download" : "Inspect"}
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </section>
+              <PendingDeletions onChanged={refresh} />
             </>
           ) : route.view === "adms" ? (
             <>
@@ -831,8 +755,6 @@ export default function App() {
                   key={chosen.id}
                   adm={chosen}
                   route={route}
-                  limits={limits}
-                  refresh={tick}
                   onChanged={refresh}
                   busy={busy}
                   run={(f) => void run(f)}
@@ -844,10 +766,6 @@ export default function App() {
                       ),
                     )
                   }
-                  onTeach={(draft) => {
-                    setTeachingTask({ ...draft, adm: chosen.id });
-                    go({ view: "learning", adm: chosen.id, request: "" });
-                  }}
                   clone={() =>
                     void run(async () => {
                       const snapshot = await exportOf(chosen);
@@ -884,12 +802,11 @@ export default function App() {
                     </Notice>
                   )}
                   <ModelList adms={adms} />
-                  <DeletionProgress onChanged={refresh} />
                 </>
               )}
             </>
-          ) : route.view === "account" ? (
-            <Account
+          ) : route.view === "login" ? (
+            <LoginSettings
               onSignedOut={() => {
                 saveSession(null);
                 setAuthed(false);
@@ -899,15 +816,6 @@ export default function App() {
             <Operations />
           ) : route.view === "connections" ? (
             <Connections />
-          ) : route.view === "sources" ? (
-            <Sources key={route.adm} adms={adms} initialAdm={route.adm} />
-          ) : route.view === "learning" ? (
-            <Learning
-              adms={adms}
-              initialAdm={route.adm}
-              request={route.request}
-              teachingDraft={teachingTask}
-            />
           ) : (
             <section className="panel future">
               <Badge tone="amber">Not available yet</Badge>
@@ -931,7 +839,7 @@ export default function App() {
           )}
         </main>
         <footer>
-          AWM-ADM <span>{system?.version} · Local workspace</span>
+          AWM-ADM <span>{system?.version} · Workspace</span>
         </footer>
       </div>
     </div>

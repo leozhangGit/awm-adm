@@ -39,15 +39,16 @@ class LearningService:
         self.thread = None
         self.position = 0
         with self.store.db() as db:
-            if self.config.learning.remote_calls_enabled:
-                db.execute("UPDATE learning_control SET enabled=1,generation=1 WHERE generation=0")
             self.clock_base = max(
                 time.time(), db.execute("SELECT clock FROM learning_control WHERE id=1").fetchone()[0]
             )
         self.clock_start = time.monotonic()
         from ..allowances.service import Allowances
 
-        self.allowances = Allowances(self)
+        self.allowances = Allowances(self)  # Historical ledger reads and settlement only.
+        from ..interaction.connection import Connection
+
+        self.connection_manager = Connection(self)
         self.recover()
         if start:
             self.thread = threading.Thread(target=self.loop, name="adm-learning", daemon=True)
@@ -65,7 +66,6 @@ class LearningService:
             "gateway_key": loads(row["public_key"]) if row["public_key"] else None,
             "call_caps": self.config.learning.call.model_dump(),
             "episode_caps": self.config.learning.episode.model_dump(),
-            "quotas": self.config.learning.quotas.model_dump(),
         }
 
     def configure(self, body):
@@ -175,15 +175,10 @@ class LearningService:
 
     def _usable(self, key, version, purpose):
         c = self.connection(key, private=True)
-        if (
-            c["version"] != version
-            or not c["enabled"]
-            or c["status"] != "ready"
-            or purpose not in c["purposes"]
-        ):
+        if c["version"] != version or not c["enabled"] or c["status"] != "ready":
             fault("stale_context", "Connection is disabled, changed or unavailable")
-        if c["provider"] != "recorded" and not self.settings()["remote_calls_enabled"]:
-            fault("remote_calls_disabled", "Remote calls are disabled")
+        if c["provider"] != "recorded" and not self.connection_manager.permits(key, purpose):
+            fault("remote_calls_disabled", "Enable the connection in Connections before remote use")
         return c
 
     def create(self, key, body, *, parent_task=None):
@@ -210,16 +205,6 @@ class LearningService:
             self._usable(body["connection_id"], body["connection_version"], "acquisition")
             # Policy eligibility is checked from the receiver's own snapshot in a
             # bounded child before checked-auto can publish, never provider input.
-            if body.get("allowance_id"):
-                self.allowances.child(
-                    body["allowance_id"],
-                    {
-                        "operation_id": "episode:" + body["idempotency_key"],
-                        "kind": "episode",
-                        "max_work": body["limits"]["max_work"],
-                        "payload_digest": digest,
-                    },
-                )
             now = self.now()
             ep = {
                 "id": uid(),
@@ -386,11 +371,7 @@ class LearningService:
             if (episode is None or r["episode"] == episode)
             and (adm is None or r["adm"] == adm)
             and (lane is None or r["lane"] == lane)
-            and (
-                episode is not None
-                or r["unresolved"]
-                or r["created"] >= now - self.config.learning.quotas.period_seconds
-            )
+            and (episode is not None or r["unresolved"] or r["created"] >= now - 86400)
         ]
         return {
             "calls": sum(r["calls"] for r in selected),
@@ -408,7 +389,7 @@ class LearningService:
             for r in rows
             if (adm is None or r["adm"] == adm)
             and (lane is None or r["lane"] == lane)
-            and (r["unresolved"] or r["created"] >= now - self.config.learning.quotas.period_seconds)
+            and (r["unresolved"] or r["created"] >= now - 86400)
         ]
         return {
             field: sum(r[field] for r in selected) for field in ("calls", "input_tokens", "output_tokens")
@@ -425,8 +406,8 @@ class LearningService:
             if body.get("operation_id"):
                 with self.store.db() as db:
                     prior = db.execute(
-                        "SELECT id,body FROM grants WHERE json_extract(body,'$.operation_id')=? AND json_extract(body,'$.allowance_id')=?",
-                        (body["operation_id"], body.get("allowance_id")),
+                        "SELECT id,body FROM grants WHERE json_extract(body,'$.operation_id')=? AND adm IS ?",
+                        (body["operation_id"], adm),
                     ).fetchone()
                 if prior:
                     old = loads(prior["body"])
@@ -446,7 +427,9 @@ class LearningService:
                     ):
                         fault("conflict", "Provider child identity has different content")
                     return prior["id"]
-            price = self.allowances.prepare(body, adm)
+            # Historical financial metadata cannot become a prerequisite for new work.
+            body.pop("allowance_id", None)
+            body.pop("spending_generation", None)
             body["lane"] = lane(body["purpose"])
             reserve = {
                 "calls": 1,
@@ -455,37 +438,6 @@ class LearningService:
             }
             if reserve["input_tokens"] > body["limits"]["max_input_tokens"]:
                 fault("invalid_limits", "Exact wire estimate exceeds the call input cap")
-            for scope, usage in (("installation", self.usage()), ("per_adm", self.usage(adm=adm))):
-                if scope == "per_adm" and adm is None:
-                    continue
-                with self.store.db() as registry:
-                    held = self.allowances.summary_holds(
-                        registry,
-                        adm=adm if scope == "per_adm" else None,
-                        consuming=body.get("allowance_id") if body["purpose"] == "task_narration" else None,
-                    )
-                for field, amount in reserve.items():
-                    if usage[field] + held[field] + amount > getattr(
-                        self.config.learning.quotas, field + "_" + scope
-                    ):
-                        fault("quota_exceeded", "Provider reservation exceeds aggregate allowance")
-            # Independently protected lane shares within the unchanged total quotas.
-            for scope in ("installation", "per_adm"):
-                if scope == "per_adm" and adm is None:
-                    continue
-                used = self.usage(adm=adm if scope == "per_adm" else None, lane=body["lane"])
-                with self.store.db() as registry:
-                    held = self.allowances.summary_holds(
-                        registry,
-                        adm=adm if scope == "per_adm" else None,
-                        lane=body["lane"],
-                        consuming=body.get("allowance_id") if body["purpose"] == "task_narration" else None,
-                    )
-                share = 40 if body["lane"] == "interaction" else 60
-                for field, n in reserve.items():
-                    cap = max(1, getattr(self.config.learning.quotas, field + "_" + scope) * share // 100)
-                    if used[field] + held[field] + n > cap:
-                        fault("quota_exceeded", "Provider lane quota exhausted")
             if episode:
                 ep = self._get(adm, episode)
                 used = self.usage(episode=episode)
@@ -507,7 +459,6 @@ class LearningService:
                     fault("quota_exceeded", "Retained grant allowance exhausted")
                 if body["purpose"] not in {"acquisition", "interpretation", "extraction", "connection_test"}:
                     self._grant_valid(body)
-                self.allowances.reserve(db, body, price)
                 self.store.capacity(len(dumps(body)) + 4096)
                 db.execute(
                     "INSERT INTO grants(id,adm,episode,status,body,created,input_tokens,output_tokens,lane) VALUES(?,?,?,'ready',?,?,?,?,?)",
@@ -612,33 +563,16 @@ class LearningService:
         return bool(conversations and conversations.teaching.execution.parent(key, ep))
 
     def _grant_valid(self, body):
-        from ..allowances.pricing import lane
-
         if body.get("adm"):
             self.store.info(body["adm"])
 
-        with self.store.db() as registry:
-            if registry.execute(
-                "SELECT suspended FROM provider_lanes WHERE lane=?", (lane(body["purpose"]),)
-            ).fetchone()[0]:
-                fault("quota_exceeded", "Provider lane suspended after a usage overrun")
-            if body.get("allowance_id"):
-                self.allowances.valid(registry, body["allowance_id"])
-                if (
-                    body.get("spending_generation") is not None
-                    and body["spending_generation"]
-                    != registry.execute("SELECT generation FROM spending_control WHERE id=1").fetchone()[0]
-                ):
-                    fault("stale_context", "Installation spending authority changed")
-            if body["purpose"] not in {"acquisition", "interpretation", "extraction", "connection_test"}:
-                child = registry.execute(
-                    "SELECT body FROM budget_children WHERE allowance_id=? AND operation_id=?",
-                    (body.get("allowance_id"), body.get("operation_id")),
-                ).fetchone()
-                if not child or loads(child[0])["payload_digest"] != body["provenance"]["request_hash"]:
-                    fault("forbidden", "Provider step lacks its exact parent child reservation")
-                if self.store.info(body["adm"])["revision_id"] != body["base_revision"]:
-                    fault("stale_context", "Provider step context changed")
+        if body.get("allowance_id"):
+            fault("stale_context", "Retained work needs a fresh submission; it will not be replayed")
+        if body["purpose"] not in {"acquisition", "interpretation", "extraction", "connection_test"}:
+            if not body.get("conversation_work_id") and not body.get("teaching_task_id"):
+                fault("forbidden", "Provider step lacks its owning interaction")
+            if self.store.info(body["adm"])["revision_id"] != body["base_revision"]:
+                fault("stale_context", "Provider step context changed")
         if body["generation"] != self.store.generation or self.now() >= body["deadline"]:
             fault("stale_context", "Dispatch expired or belongs to a previous app generation")
         self._usable(body["connection_id"], body["connection_version"], body["purpose"])
@@ -760,7 +694,10 @@ class LearningService:
             ):
                 fault("stale_context", "Dispatch lease is stale")
             self._grant_valid(body)
-            db.execute("UPDATE grants SET status='dispatched' WHERE id=?", (grant,))
+            db.execute(
+                "UPDATE grants SET status='dispatched', dispatched_at=COALESCE(dispatched_at,?) WHERE id=?",
+                (self.now(), grant),
+            )
             from ..application.store import context_binding
             from ..contracts import DispatchGrant
 
@@ -829,7 +766,6 @@ class LearningService:
             outputs = known["output_tokens"] if known else row["output_tokens"]
             if known and (inputs > row["input_tokens"] or outputs > row["output_tokens"]):
                 outcome.update(status="failed", error="provider_usage_exceeded_reservation", text=None)
-                db.execute("UPDATE provider_lanes SET suspended=1 WHERE lane=?", (row["lane"],))
             self.allowances.settle(db, grant, known)
             if body["purpose"] == "connection_test" and outcome["status"] == "succeeded":
                 try:
@@ -1066,10 +1002,35 @@ class LearningService:
                         fault("busy", "Source receipt recovery is initializing")
 
     def tick(self):
-        # Timeouts retain reservations; expired dispatched calls are never reissued.
-        with self.store.db() as db:
-            for row in db.execute("SELECT * FROM grants WHERE status IN ('leased','dispatched')").fetchall():
-                if loads(row["body"])["expires"] <= self.now():
+        if self.connection_manager.tick():
+            return True
+        # Unclaimed work can expire without a worker. Once a lease was issued,
+        # retain uncertainty and its reservation; never repeat a possible call.
+        with self.store.db() as db, self.store.transaction(db):
+            rows = db.execute(
+                "SELECT * FROM grants WHERE status IN ('ready','leased','dispatched')"
+            ).fetchall()
+            for row in rows:
+                body = loads(row["body"])
+                if row["status"] == "ready":
+                    if body["deadline"] > self.now():
+                        continue
+                    self.allowances.settle(db, row["id"], not_dispatched=True)
+                    db.execute(
+                        "UPDATE grants SET status='not_dispatched',calls=0,input_tokens=0,output_tokens=0,unresolved=0,outcome=? WHERE id=?",
+                        (
+                            dumps(
+                                {
+                                    "status": "not_dispatched",
+                                    "error": "dispatch_expired",
+                                    "usage": None,
+                                    "text": None,
+                                }
+                            ),
+                            row["id"],
+                        ),
+                    )
+                elif body["expires"] <= self.now():
                     db.execute(
                         "UPDATE grants SET status='outcome_unknown',outcome=? WHERE id=?",
                         (

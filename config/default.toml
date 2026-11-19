@@ -46,15 +46,6 @@ max_duration_ms = 360000
 no_progress_attempts = 2
 private_draft_bytes = 2097152
 
-[learning.quotas]
-period_seconds = 86400
-calls_per_adm = 20
-calls_installation = 100
-input_tokens_per_adm = 640000
-input_tokens_installation = 3200000
-output_tokens_per_adm = 163840
-output_tokens_installation = 819200
-
 [sources]
 batch_items = 100
 item_bytes = 262144

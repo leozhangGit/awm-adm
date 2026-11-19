@@ -39,6 +39,9 @@ class Runtime:
             from ..conversations.service import Conversations
 
             self.conversations = Conversations(self, start=False)
+            from ..interaction.service import Interactions
+
+            self.interactions = Interactions(self)
             self.lifecycle.ready = True
             if start_scheduler:
                 self.conversations.start_worker()
@@ -98,10 +101,11 @@ class Runtime:
 
     def query(self, key, query, *, limits=None):
         caps = self.limits(limits)
-        if query.get("op") == "lookup_fact":
-            from ..contracts import FactLookup
+        if query.get("op") in {"lookup_fact", "lookup_fact_period"}:
+            from ..contracts import FactLookup, FactPeriodLookup
 
-            query = FactLookup.model_validate(query).model_dump()
+            schema = FactLookup if query["op"] == "lookup_fact" else FactPeriodLookup
+            query = schema.model_validate(query).model_dump()
         else:
             query = normalize_query(query, caps)
         with self._lock:

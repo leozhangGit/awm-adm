@@ -17,9 +17,9 @@ class Material(ClosedModel):
     def permissions(self) -> Self:
         if len({s.source_id for s in self.sources}) != len(self.sources):
             raise ValueError("Source identities must be unique")
-        # Preparation cannot infer disclosure consent from supplied material.
+        # Provider output cannot grant disclosure authority; the service derives it from submitted scope.
         if any(s.allow_external for s in self.sources):
-            raise ValueError("External source disclosure requires a separate owner decision")
+            raise ValueError("Source proposals cannot grant external disclosure")
         if (
             len(self.projection.entities) * len(self.projection.predicates) * len(self.projection.cells)
             > 4096

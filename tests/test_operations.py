@@ -78,6 +78,7 @@ def test_backup_recovery_preserves_theories_history_and_fences_authority(tmp_pat
         assert restored.store.request(key, pending["request_id"])["status"] == "inconclusive"
         assert restored.sources.feeds.get(key, f["id"])["enabled"] is False
         assert restored.learning.settings()["remote_calls_enabled"] is False
+        assert restored.learning.connection_manager.view()["state"] == "disabled"
         assert restored.learning.claim() is None
         assert restored.learning.usage()["unresolved"] == 1
         assert recovered_vault.lookup("authored-dispatched-id")["status"] == "outcome_unknown"

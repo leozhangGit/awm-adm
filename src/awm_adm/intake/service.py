@@ -6,6 +6,7 @@ from uuid import uuid4
 from ..feeds.service import FINAL as FEED_FINAL
 from ..learning.service import fault, fingerprint
 from ..runtime.protocol import RuntimeFault, dumps, loads
+from .coverage import extend
 from .models import AppendInput, Upload
 
 
@@ -199,11 +200,7 @@ class Intake:
         projections = [c["material"]["projection"] for c in children]
         if any(p != projections[0] for p in projections):
             fault("needs_specification", "Use one finite source projection per task")
-        if policy.get("projection") and policy["projection"] != projections[0]:
-            fault(
-                "needs_specification",
-                "Existing coverage cannot expand implicitly; use an explicit coverage decision",
-            )
+        extend(policy.get("projection"), projections[0])
         actual = {m["source_id"] for m in self.disclosed(key, task)}
         allowed = {s["source_id"] for c in children for s in c["material"]["sources"]}
         if not actual <= allowed or (not actual and not task.get("source_queue") and len(allowed) != 1):
@@ -236,16 +233,8 @@ class Intake:
         return task
 
     def local_reservation(self, key, uid, operation, payload):
-        task = self.parent_valid(key, uid)
-        self.s.finance.child(
-            task["allowance_id"],
-            {
-                "operation_id": operation,
-                "kind": "local_check",
-                "max_work": 1000000,
-                "payload_digest": fingerprint(payload),
-            },
-        )
+        self.parent_valid(key, uid)
+        # Source workers retain their own finite per-item work accounting.
 
     def binding(self, db, key):
         # Read the publishing transaction, not a second connection's older snapshot.
@@ -298,25 +287,31 @@ class Intake:
         body = {
             "expected_revision": run["context"]["revision_id"],
             "expected_generation": policy["generation"],
-            "projection": children[0]["material"]["projection"],
+            "projection": extend(policy.get("projection"), children[0]["material"]["projection"]),
             "sources": list(permissions.values()),
         }
+        if policy.get("projection") and policy["projection"] != body["projection"]:
+            # Use the existing checked additive coverage operation; direct policy
+            # replacement still cannot reinterpret retained facts or time cells.
+            self.sources.coverage(
+                key,
+                {
+                    "expected_revision": run["context"]["revision_id"],
+                    "expected_generation": policy["generation"],
+                    "kind": "extend",
+                    "projection": body["projection"],
+                    "reason": task["objective"][:1024],
+                },
+                parent_task=task["id"],
+                on_commit=lambda db: self.rebind(db, key, task["id"]),
+            )
+            return True
         if policy.get("projection") == body["projection"] and policy.get("sources") == body["sources"]:
             with self.store.db(key) as db, self.store.transaction(db):
                 current = self.t.get(key, task["id"])
                 current["execution"]["source_policy_ready"] = True
                 self.execution.save(db, current)
             return True
-        operation = task["id"] + "-source-policy"
-        self.s.finance.child(
-            task["allowance_id"],
-            {
-                "operation_id": operation,
-                "kind": "local_check",
-                "max_work": 1000000,
-                "payload_digest": fingerprint(body),
-            },
-        )
 
         def committed(db):
             current = self.t.get(key, task["id"])
@@ -398,9 +393,7 @@ class Intake:
             }
             step["feed_input"] = feed_input
             self.execution.persist(key, task)
-        feed = self.sources.feeds.create(
-            key, feed_input, parent_task=task["id"], allowance_id=task["allowance_id"]
-        )
+        feed = self.sources.feeds.create(key, feed_input, parent_task=task["id"])
         step["feed_id"] = feed["id"]
         self.execution.persist(key, task)  # Link before any child reservation can fail.
         with self.store.db(key) as db, self.store.transaction(db):
@@ -499,6 +492,18 @@ class Intake:
                 continue
             ep = self.sources.get(key, "source_episodes", row["episode"])
             if ep["status"] == "awaiting_review" and self.s.now() < run["deadline_ms"]:
+                if task.get("direct"):
+                    self.sources.review(
+                        key,
+                        ep["id"],
+                        {
+                            "expected_revision": run["context"]["revision_id"],
+                            "approve": True,
+                        },
+                        parent_task=task["id"],
+                        automatic_task=True,
+                    )
+                    return True
                 review = {
                     "kind": "source",
                     "receipt_id": ep["id"],
@@ -623,7 +628,7 @@ class Intake:
             fault("conflict", "Source intake is not ready")
         seconds = min(body["expires_in"], (run["deadline_ms"] - self.s.now()) // 1000)
         if seconds < 1:
-            fault("stale_context", "Source allowance expired")
+            fault("stale_context", "Source task execution window ended")
         with self.store.db() as db, self.store.transaction(db):
             result = auth._issue(db, adms=[key], permissions=["append"], seconds=seconds)
             scope = {
@@ -657,7 +662,7 @@ class Intake:
                 for s in run["steps"]
                 if s.get("feed_id")
             ):
-                fault("quota_exceeded", "Source queue processing allowance is exhausted")
+                fault("quota_exceeded", "Source queue processing capacity is exhausted")
             if (
                 run.get("closing_sources")
                 or run["context"]["source_policy_generation"] != principal["source_generation"]

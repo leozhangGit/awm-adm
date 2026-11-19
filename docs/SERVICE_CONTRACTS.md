@@ -1,6 +1,6 @@
 # Service and data contracts
 
-AWM-ADM 0.3.0 combines a domain-agnostic finite library, persistent local runtime, authenticated APIs, conversations, bounded learning and source intake. This document defines their shared boundaries. [Architecture](ARCHITECTURE.md) identifies component ownership; [OpenAPI](../contracts/openapi.json) and [generated schemas](../contracts/schemas/) define exact implemented transports. A valid JSON shape does not confer semantic, spending or publication authority.
+AWM-ADM 0.3.0 combines a domain-agnostic finite library, persistent local runtime, authenticated APIs, conversations, bounded learning and source intake. This document defines their shared boundaries. [Architecture](ARCHITECTURE.md) identifies component ownership; [OpenAPI](../contracts/openapi.json) and [generated schemas](../contracts/schemas/) define exact implemented transports. A valid JSON shape does not confer semantic or publication authority.
 
 ## Model identity and persistence
 
@@ -18,7 +18,7 @@ The application owns a registry and a SQLite database per ADM. A publication tra
 | Source version / span | Immutable input bytes and the exact cited passage |
 | Candidate / receipt sequence | Complete proposed change and receiver-local admission order |
 | Task / child / grant | Parent work scope, one bounded step and one provider-dispatch identity |
-| Price / allowance / charge | Pinned valuation, explicit financial scope and conservative accounting |
+| Historical price / allowance / charge | Preserved prior valuation and settlement; no gate for new work |
 
 These identities are not interchangeable. Same identity with different submitted content is a conflict; an unchanged retry retrieves existing work rather than authorizing another paid call.
 
@@ -43,25 +43,21 @@ Learning follows proposal, checking, bounded diagnostics and revision. Incomplet
 - **Both modes:** enforce finite semantics, exact dependencies, source support and independently installed owner requirements. Review approval permits checking; it cannot bypass these checks.
 - **Mode changes:** apply to future decisions and advance the relevant authority context. They never replay earlier conflict decisions automatically.
 
-Individually valid candidates need not be jointly valid. Publication checks the candidate against the current accepted state and fences cancellation, expiry, stale context and deletion. A learning allowance bounds effort; it does not guarantee acquisition of the requested capability. See [Learning](LEARNING.md), [Teaching](TEACHING.md) and [Execution](TEACHING_EXECUTION.md).
+Individually valid candidates need not be jointly valid. Publication checks the candidate against the current accepted state and fences cancellation, expiry, stale context and deletion. Finite task limits bound effort; they do not guarantee acquisition of the requested capability. See [Learning](LEARNING.md), [Teaching](TEACHING.md) and [Execution](TEACHING_EXECUTION.md).
 
-## Conversations and consent
+## Conversations and automatic execution
 
-Ask and Teach have separate durable histories and authority. Ask interprets read-only intent, validates its meaning, executes locally and may add a separately labeled explanation. Teach prepares a retained specification; an exact owner decision authorizes its bounded execution. A clarification or a generic agreement to an unrelated/expired question cannot authorize work.
+Ask and Teach have separate durable streams. Ask checks a provider interpretation, executes supported meaning locally and labels any provider explanation separately. Teach validates finite specifications and automatically starts clear authenticated requests. It asks only for uncertain meaning or a necessary protected decision. Neither source material nor provider output can install owner requirements or override policy.
 
-Conversation setup binds the target model, connection, price, purpose, context, disclosure and finite allowance. Protected changes such as mode, requirements, source policy and spending require their own checked owner decisions. Neither supplied material nor provider output selects an authenticated principal or grants permissions.
-
-Main chat presents readable outcomes. Details preserves exact technical records. Optional narration has a separate child reservation and an authoritative local fallback. Failure to explain a result never repeats its computation or learning automatically. Local debug exposes explicit provider-free operations separately from normal chat. See [Conversations](CONVERSATIONS.md), [Ask](ASK.md) and [Chat contracts](CHAT_CONTRACTS.md).
+Bounded owner context is managed automatically. Accepted theory is independent of chat prose. Uploads are disclosed only when selected in a submitted Teach request. Model, connection, policy and cancellation bindings are checked again before work and publication. Human clarification waits do not expire financial authority because there is no financial authority setup. See [Conversations](CONVERSATIONS.md) and [Chat contracts](CHAT_CONTRACTS.md).
 
 ## Provider dispatch and accounting
 
-Remote interpretation, acquisition, extraction, explanation and connection tests share the reservation/grant boundary. The application enforces purpose, disclosure, connection version, price validity and enclosing call/token/time/work/dollar limits before a grant becomes issuable. Interaction and background learning have separate protected capacity and financial portions.
+One configured connection is enabled after its successful test. Interpretation, acquisition, extraction and narration use that configuration without purpose permissions or monetary limits. Exact grant purpose/payload/version, finite execution bounds, authenticated leases and at-most-once dispatch remain mandatory.
 
-The gateway records an identity before outbound dispatch. Repeating that identity returns its retained state. A dispatched call with an unknown outcome is never automatically repeated. An explicitly authorized later attempt has a new identity and an additional reservation; it cannot erase earlier uncertainty.
+The gateway records an identity before outbound dispatch. Repeating it returns retained state; an unknown dispatched outcome is never automatically repeated. Known input/output tokens, including failures, contribute to usage charts. Missing or unverified-zero usage remains explicitly unresolved. Historical priced records retain their valuation and settlement history but do not gate new calls.
 
-Known usage settles at the pinned rates. Missing or unverified zero usage retains the full reservation. Expiry, restart, closing an allowance and a new quota window do not release uncertain spending. A confirmed overrun is recorded in full and suspends affected authority. The local ledger estimates token charges; it is not a provider invoice.
-
-Provider configuration is explicit. There is no automatic model switch, refill or paid connectivity test. Shared acquisition guidance preserves authored schema property order, while accepted artifacts keep canonical encoding. Transport capabilities can differ; local semantic admission requirements do not. See [Priced allowances](PRICED_ALLOWANCES.md) and [Limits](LIMITS.md).
+Provider choice does not select task semantics or relax admission. Guidance remains model-neutral and authored schema property order is preserved; accepted artifacts retain canonical encoding. See [Connection](CONNECTION.md) and [Limits](LIMITS.md).
 
 ## Supplied evidence and managed intake
 
@@ -69,9 +65,11 @@ Sources retain immutable versions, original bytes, typed metadata and exact extr
 
 Finite projection checks schema/carrier membership, source references, units, effective intervals, conflicts, owner requirements and bounded size. Admission publishes executable content and its evidence support together. Absence is not automatically false. A date or entity outside supported coverage returns `needs_input` rather than an invented value.
 
+Historical requests support exact instants (`lookup_fact`) and half-open UTC periods (`lookup_fact_period`). Period answers require complete unique active interval coverage with equal computed values, value kinds and units; point-only evidence, gaps, overlaps and disputes cannot establish a period-wide value. A value change asks for a narrower time. Automatic Ask resolves civil-date boundaries using an explicit relevant zone or its captured system default. Query/result bindings retain the entire resolved scope. See [temporal interpretation](TEMPORAL_INTERPRETATION.md).
+
 Historical intervals remain distinct from receipt order. Two capacities for different years can coexist. Conflicting claims for the same resolved interval follow ordinary review and forward/backward admission. A superseding correction can hold dependent current answers before replacement learning; historical results keep their original bindings and provenance.
 
-Managed intake provides bounded push queues, receipts, throttling, lifetime allowances, pause/resume and fair scheduling. Append credentials can submit only to their named scope and inspect acknowledgments; they cannot read models, choose providers, change policy, fund work or publish. No Slack crawler or other pull connector is implicit. See [Sources](SOURCES.md), [Feeds](FEEDS.md) and [Intake](INTAKE.md).
+Managed intake provides bounded push queues, receipts, throttling, finite processing reservations, pause/resume and fair scheduling. Append credentials can submit only to their named scope and inspect acknowledgments; they cannot read models, choose providers, change policy, fund work or publish. No Slack crawler or other pull connector is implicit. See [Sources](SOURCES.md), [Feeds](FEEDS.md) and [Intake](INTAKE.md).
 
 ## Access, snapshots and deletion
 
@@ -83,7 +81,7 @@ Named deletion fences access and publication before durable cleanup. It preserve
 
 ## API and operational boundaries
 
-The unified `/api/v1` API exposes models, local requests, interpretation previews, learning, sources/feeds, snapshots, events, diagnostics, administrator sessions, spending, Ask/Teach conversations, attachments, managed intake and lifecycle controls. Manual preview history uses `interpretation-sessions`; Ask/Teach uses `conversations`. URL versioning is independent of serialized profiles and storage formats. Use [API](API.md) and [OpenAPI](../contracts/openapi.json) for exact methods, pagination and permissions.
+The unified `/api/v1` API exposes models, local requests, interpretation previews, learning, sources/feeds, snapshots, events, diagnostics, administrator sessions, connections, direct Ask/Teach exchanges, attachments, managed intake and lifecycle controls. Manual preview history uses `interpretation-sessions`; Ask/Teach uses `conversations`. URL versioning is independent of serialized profiles and storage formats. Use [API](API.md) and [OpenAPI](../contracts/openapi.json) for exact methods, pagination and permissions.
 
 Paired backup/restore is an **offline operator CLI**, not a public backup HTTP endpoint. It locks both stopped storage owners, checks schemas and hashes, and restores only into a fresh destination. Supported operational restore preserves knowledge/history and uncertain accounting while revoking operational credentials, disabling remote authority and pausing feeds. An old backup cannot reconstruct later external expenditure.
 

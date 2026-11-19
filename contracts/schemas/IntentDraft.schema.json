@@ -227,6 +227,51 @@
       "title": "FactLookup",
       "type": "object"
     },
+    "FactPeriodLookup": {
+      "additionalProperties": false,
+      "description": "One value throughout a half-open period, checked by the source service.",
+      "properties": {
+        "effective_from": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective From",
+          "type": "string"
+        },
+        "effective_to": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective To",
+          "type": "string"
+        },
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "lookup_fact_period",
+          "title": "Op",
+          "type": "string"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "entity_id",
+        "predicate",
+        "effective_from",
+        "effective_to"
+      ],
+      "title": "FactPeriodLookup",
+      "type": "object"
+    },
     "FindPlan": {
       "additionalProperties": false,
       "properties": {
@@ -406,7 +451,8 @@
               "evaluate": "#/$defs/Evaluate",
               "explain": "#/$defs/Explain",
               "find_plan": "#/$defs/FindPlan",
-              "lookup_fact": "#/$defs/FactLookup"
+              "lookup_fact": "#/$defs/FactLookup",
+              "lookup_fact_period": "#/$defs/FactPeriodLookup"
             },
             "propertyName": "op"
           },
@@ -431,6 +477,9 @@
             },
             {
               "$ref": "#/$defs/FactLookup"
+            },
+            {
+              "$ref": "#/$defs/FactPeriodLookup"
             }
           ]
         },

@@ -35,6 +35,7 @@ export async function api<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-ADM-Client": "console",
   };
   const csrf = session()?.csrf;
   if (csrf) headers["X-CSRF-Token"] = csrf;

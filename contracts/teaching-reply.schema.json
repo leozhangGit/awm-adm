@@ -357,7 +357,8 @@
                                         {
                                           "type": "null"
                                         }
-                                      ]
+                                      ],
+                                      "description": "Canonical UTC instant: YYYY-MM-DDTHH:MM:SSZ, with seconds and literal Z; a bare date is not this field's representation. Convert the intended instant from its explicit timezone or the supplied system timezone, preserving meaning."
                                     },
                                     "effective_to": {
                                       "anyOf": [
@@ -367,7 +368,8 @@
                                         {
                                           "type": "null"
                                         }
-                                      ]
+                                      ],
+                                      "description": "Canonical UTC instant: YYYY-MM-DDTHH:MM:SSZ, with seconds and literal Z; a bare date is not this field's representation. Convert the intended instant from its explicit timezone or the supplied system timezone, preserving meaning."
                                     }
                                   },
                                   "required": [
@@ -376,7 +378,8 @@
                                     "effective_from",
                                     "effective_to"
                                   ],
-                                  "additionalProperties": false
+                                  "additionalProperties": false,
+                                  "description": "A point uses effective_from and effective_to null. An interval uses inclusive effective_from and exclusive effective_to; projection intervals must be bounded. Unknown source time uses kind unknown with both bounds null. Granularity describes the UTC carrier: day requires midnight UTC boundaries; year also requires January 1. Use second when converted boundaries are not UTC day/year aligned; this carrier encoding does not justify claiming finer evidence precision. Preserve the full supplied period, never replace it with an arbitrary instant."
                                 }
                               }
                             },

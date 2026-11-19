@@ -98,13 +98,6 @@ class Learning(ClosedModel):
         for name in ("max_input_tokens", "max_output_tokens", "max_duration_ms"):
             if getattr(self.call, name) > getattr(self.episode, name):
                 raise ValueError("Call cap exceeds episode cap")
-        for name, quota in (
-            ("max_calls", "calls_per_adm"),
-            ("max_input_tokens", "input_tokens_per_adm"),
-            ("max_output_tokens", "output_tokens_per_adm"),
-        ):
-            if getattr(self.episode, name) > getattr(self.quotas, quota):
-                raise ValueError("Episode cap exceeds per-ADM quota")
         return self
 
 

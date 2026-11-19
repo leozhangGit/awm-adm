@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
-import { api, download } from "./api.ts";
-import { JsonDetail, Notice } from "./components.tsx";
+import { api } from "./api.ts";
+import { Badge, Notice } from "./components.tsx";
+import type { Adm } from "./types.ts";
 
 type Diagnostics = {
   created_at_ms: number;
+  status: Record<string, boolean>;
   storage: { bytes: number; limit_bytes: number };
-  provider: {
-    accounted_current_window: {
-      calls: number;
-      unresolved: number;
-      input_tokens: number;
-      output_tokens: number;
-    };
-  };
   instances: {
     adm_id: string;
     storage_bytes: number;
@@ -20,112 +14,192 @@ type Diagnostics = {
     source_jobs: Record<string, number>;
     feed_runs: Record<string, number>;
   }[];
-  compute: Record<string, unknown>;
-  retention: unknown;
 };
+const count = (states: Record<string, number>, names: string[]) =>
+  names.reduce((total, name) => total + (states[name] || 0), 0);
+const size = (bytes: number) =>
+  bytes >= 1073741824
+    ? `${(bytes / 1073741824).toFixed(1)} GiB`
+    : `${(bytes / 1048576).toFixed(1)} MiB`;
 
 export function Operations() {
   const [data, setData] = useState<Diagnostics | null>(null);
+  const [models, setModels] = useState<Adm[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  async function refresh() {
-    setBusy(true);
-    try {
-      setData(await api<Diagnostics>("/operations/diagnostics"));
-      setError("");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
   useEffect(() => {
-    void refresh();
+    const abort = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      setBusy(true);
+      try {
+        const [report, items] = await Promise.all([
+          api<Diagnostics>("/operations/diagnostics", { signal: abort.signal }),
+          api<{ items: Adm[] }>("/adms", { signal: abort.signal }),
+        ]);
+        setData(report);
+        setModels(items.items);
+        setError("");
+      } catch (e) {
+        if (!abort.signal.aborted) setError((e as Error).message);
+      } finally {
+        if (!abort.signal.aborted) {
+          setBusy(false);
+          timer = setTimeout(tick, 10000);
+        }
+      }
+    };
+    void tick();
+    return () => {
+      abort.abort();
+      clearTimeout(timer);
+    };
   }, []);
-  const mib = (n: number) => (n / 1048576).toFixed(1);
   return (
     <>
-      <section className="panel">
-        <h2>Service operations</h2>
-        <p>
-          Inspect storage, queued work and provider accounting. Reports omit
-          source text, queries, model content and credentials.
-        </p>
-        <div className="actions">
-          <button
-            className="secondary"
-            disabled={busy}
-            onClick={() => void refresh()}
-          >
-            {busy ? "Refreshing…" : "Refresh diagnostics"}
-          </button>
-          <button
-            className="secondary"
-            disabled={!data || busy || !!error}
-            onClick={() => data && download("awm-adm-diagnostics.json", data)}
-          >
-            Download diagnostic report
-          </button>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">SERVICE STATUS</p>
+          <h1>Operations</h1>
+          <p className="muted">
+            Health, work and storage at a glance. Updates automatically.
+          </p>
         </div>
-        {error && <Notice error>{error}</Notice>}
-        {data && (
-          <>
-            <p>Sample: {new Date(data.created_at_ms).toLocaleString()}</p>
+      </div>
+      {error && (
+        <Notice error>{error} The last available status is shown below.</Notice>
+      )}
+      {!data ? (
+        <Notice>
+          {busy ? "Checking service…" : "Service status is unavailable."}
+        </Notice>
+      ) : (
+        <>
+          <section className="metrics" aria-label="Service health">
+            {(
+              [
+                [
+                  "Model execution",
+                  "local_serving",
+                  "Accepted models answer through the ADM engine.",
+                ],
+                [
+                  "Background worker",
+                  "worker",
+                  "Processes learning and supplied material.",
+                ],
+                [
+                  "Provider gateway",
+                  "gateway",
+                  "Connects to the configured provider.",
+                ],
+                ["Proof checker", "lean", "Checks requested invariant proofs."],
+              ] as const
+            ).map(([name, key, note]) => (
+              <article className="panel" key={key}>
+                <h2>{name}</h2>
+                <Badge tone={data.status[key] ? "green" : "amber"}>
+                  {data.status[key] ? "Available" : "Unavailable"}
+                </Badge>
+                <p className="muted">{note}</p>
+              </article>
+            ))}
+          </section>
+          <section className="panel">
+            <h2>Storage</h2>
             <p>
-              <strong>{mib(data.storage.bytes)} MiB stored</strong> of{" "}
-              {mib(data.storage.limit_bytes)} MiB configured. Compare saved
-              reports to observe growth.
+              <strong>{size(data.storage.bytes)}</strong> used of{" "}
+              {size(data.storage.limit_bytes)}.
             </p>
-            <p>
-              Provider window: {data.provider.accounted_current_window.calls}{" "}
-              accounted calls;{" "}
-              {data.provider.accounted_current_window.unresolved} unresolved
-              reservations. Unknown usage remains reserved across quota windows.
+            <meter
+              aria-label="Service storage usage"
+              min={0}
+              max={data.storage.limit_bytes}
+              value={data.storage.bytes}
+            />
+            <p className="muted">
+              Model knowledge, evidence, conversations and operational records.
             </p>
-            <JsonDetail
-              label="Queues and retained rows by ADM"
-              value={data.instances}
-            />
-            <JsonDetail
-              label="Local compute timings and work allowances"
-              value={data.compute}
-            />
-            <JsonDetail label="Retention preview" value={data.retention} />
-          </>
-        )}
-      </section>
-      <section className="panel">
-        <h2>Backup and recovery</h2>
-        <p>
-          A service backup captures all ADMs and the gateway ledger together.
-          Stop the three services before running the offline operations command.
-          A model snapshot creates an independent model and does not restore
-          service work.
-        </p>
-        <pre>{`docker compose stop\ndocker compose run --rm --no-deps operations backup \\\n  --app-data /var/lib/awm-adm \\\n  --gateway-data /var/lib/awm-gateway \\\n  --output /backups/my-backup\ndocker compose up -d --wait`}</pre>
-        <p>
-          Create the owner-only <code>.local/backups</code> directory first.
-          Keep the gateway master key, configuration and service tokens
-          separately secured. Recovery uses a new destination, disables remote
-          calls, pauses feeds and revokes saved sessions and scoped tokens.
-          Follow <code>docs/OPERATIONS.md</code> before restoring.
-        </p>
-      </section>
-      <section className="panel">
-        <h2>Retention</h2>
-        <p>
-          Evidence, model revisions, results, private drafts, dispatch records
-          and idempotency identities remain retained within finite storage
-          limits. Age settings are review thresholds. No automatic deletion
-          runs.
-        </p>
-        <p>
-          Owners can prune an event prefix through the API. Readers behind that
-          prefix must reload current resources and resume at the reported
-          cursor. Pruning events does not delete source evidence or request
-          results.
-        </p>
-      </section>
+          </section>
+          <section className="panel">
+            <h2>Work by model</h2>
+            <p className="muted">
+              Current work and retained request outcomes. Open a model’s History
+              for its conversations and results.
+            </p>
+            {!data.instances.length ? (
+              <p>No models yet.</p>
+            ) : (
+              <div
+                className="table-scroll work-table-scroll"
+                role="region"
+                aria-label="Work by model"
+                tabIndex={0}
+              >
+                <table className="work-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Model</th>
+                      <th scope="col">Requests in progress</th>
+                      <th scope="col">Waiting for input</th>
+                      <th scope="col">Failed requests</th>
+                      <th scope="col">Source work in progress</th>
+                      <th scope="col">Stored</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.instances.map((row) => (
+                      <tr key={row.adm_id}>
+                        <th scope="row">
+                          <a
+                            href={`#view=adms&adm=${encodeURIComponent(row.adm_id)}&tab=history`}
+                          >
+                            {models.find((m) => m.id === row.adm_id)?.name ||
+                              "Model"}
+                          </a>
+                        </th>
+                        <td>
+                          {count(row.requests, [
+                            "received",
+                            "queued",
+                            "evaluating",
+                            "waiting_for_learning",
+                          ])}
+                        </td>
+                        <td>{count(row.requests, ["needs_input"])}</td>
+                        <td>
+                          {count(row.requests, ["failed", "interrupted"])}
+                        </td>
+                        <td>
+                          {count(row.source_jobs, [
+                            "received",
+                            "queued",
+                            "extracting",
+                            "running",
+                          ]) +
+                            count(row.feed_runs, [
+                              "received",
+                              "queued",
+                              "running",
+                              "extracting",
+                              "projecting",
+                            ])}
+                        </td>
+                        <td>{size(row.storage_bytes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="footnote">
+              Last checked {new Date(data.created_at_ms).toLocaleString()}.
+              Provider-call totals and token usage are in{" "}
+              <a href="#view=connections">Connections</a>.
+            </p>
+          </section>
+        </>
+      )}
     </>
   );
 }

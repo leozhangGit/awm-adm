@@ -39,7 +39,7 @@ The test image is separate from normal runtime volumes. Automated provider tests
 
 Run npm commands from `console/`, or use the Makefile. `make dev-api` and `make dev-console` expose a status-only preview and Vite workspace; they are not the complete runtime. Use a separate Docker project and loopback port for full integration work. Cookies are not port-scoped, so use distinct hostnames for simultaneous administrator sessions.
 
-Ordinary chat shows readable outcomes; full payloads belong in Details. Preserve user drafts on background reads and never turn polling, focus or an unchanged retry into new paid work.
+Ordinary chat shows readable outcomes; exact payloads and bindings remain in the API and saved diagnostic records. Preserve user drafts on background reads and never turn polling, focus or an unchanged retry into new paid work.
 
 ## Contracts and verification
 
@@ -59,4 +59,6 @@ python3 scripts/export_release.py /absolute/new/path/awm-adm-0.3.0 --verify
 
 The exporter includes an explicit public file set, excludes private stores/caches/credentials and records a SHA-256 inventory. It rejects source symlinks. This inventory is an integrity check, not a signature or proof of tests. Build/install from an exported directory without depending on files beside this repository.
 
-Keep plans, personal trial transcripts/screenshots, local databases and operational credentials out of commits. Public documentation images belong under `docs/images/` and must be reviewed for private content and metadata before inclusion. `.gitignore` protects normal local paths, but review `git status` and staged content before publication. Do not force-add ignored files. See [security](SECURITY.md) for reporting sensitive findings.
+Keep plans, personal trial transcripts/screenshots, local databases and operational credentials out of commits. Public documentation images belong under `docs/images/` and must be reviewed for private content and metadata before inclusion. Git, Docker and source-export exclusions cover local stores, database sidecars, credential/key files, private agent configuration and backup directories. `scripts/check_public_release.py` scans public file content for common credential formats and reports paths without printing matched values.
+
+Before publication, review `git status`, the complete staged file list and staged content. Ignore rules do not protect files already tracked, and pattern scanning cannot identify every possible secret. Inspect newly staged files, synthetic credential fixtures, image metadata and any history being pushed. Do not force-add ignored files. See [security](SECURITY.md) for reporting sensitive findings.

@@ -22,7 +22,7 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
-| Application | Public API/console, local administrator, registry and ADM stores, exact owner decisions, local results and scheduling |
+| Application | Public API/console, local administrator, registry and ADM stores, authenticated submissions, model controls, local results and scheduling |
 | Learning worker | Claims one reserved provider job and handles a bounded attempt; queueing alone does not mean a call is running |
 | Provider gateway | Encrypted provider credentials, fixed provider transports, outbound access, at-most-once dispatch and usage outcomes |
 | Compute children | Bounded finite validation, planning, source projection and optional Lean checks outside short database transactions |
@@ -37,11 +37,15 @@ Each request pins an immutable revision. Results bind the request and attempt to
 
 ## Learning and conversational interaction
 
-Ask uses an explicitly funded provider to propose a read-only interpretation. A complete checked interpretation can run locally under its exact authority. Optional provider narration describes the recorded outcome and is labeled separately; fluent text cannot supply a missing local answer.
+A single tested connection supplies interpretation, acquisition, extraction and narration. Each direct Ask or Teach submission gets an independently pinned durable exchange beneath its model’s continuous channel. The service chooses bounded context; a transcript never becomes accepted theory by itself.
 
-Teach prepares a bounded immutable specification, then requires execution authority. Acquisition, diagnostic revision, source extraction and checking happen privately. Only complete candidates that pass local admission and owner requirements become active. Semantic/source review remains necessary when automatic admission is not justified. Completion separates accepted work, unresolved objectives and unavailable explanation. See [Teaching](TEACHING.md) and [Execution](TEACHING_EXECUTION.md).
+Ask obtains a read-only interpretation, validates it and executes supported operations in the ADM. A separately checked explanation refers to the saved outcome. Missing evidence, false results and exhausted computation remain distinct.
 
-Learning and interaction have separate priced lanes and scheduling room. Reservations precede dispatch. Unknown usage retains its full hold, and expired or uncertain dispatched calls are not repeated automatically. No allowance promises a capability will be learned.
+Shared meaning/representation guidance supplies a captured system timezone. A date-only historical question becomes a whole civil-day period with application-resolved UTC bounds. The source-service adapter checks complete active evidence coverage and value constancy; the finite core and source validators retain their contracts. See [temporal interpretation](TEMPORAL_INTERPRETATION.md).
+
+A clear Teach submission authorizes preparation, bounded acquisition, checking and admissible publication within its expressed meaning and selected material. Ambiguity produces a clarification, not a routine approval form. Empty independent requirements do not prevent automatic admission; installed requirements remain mandatory and cannot be replaced by provider assertions. See [Teaching](TEACHING.md) and [Execution](TEACHING_EXECUTION.md).
+
+Finite call, task, compute and storage bounds remain internal operating controls. Scheduling preserves capacity for local serving. There are no financial setup gates or idle clarification countdowns. Actual dispatch and usage are recorded once; an uncertain dispatched call is never repeated automatically.
 
 ## Conflict and evidence boundaries
 
@@ -53,7 +57,7 @@ Source receipt, extracted claims and accepted knowledge are separate resources. 
 
 The registry, per-model SQLite stores and gateway ledger have separate transaction boundaries. Durable intents reconcile cross-store handoffs. Publication commits model/support/decision changes atomically within an ADM. Context generations, cancellation and deletion fence stale work.
 
-Current owned schema is 15. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or spending authority.
+Current owned schema is 16. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
 
 ## Repository map
 
@@ -61,8 +65,8 @@ Current owned schema is 15. Startup transactionally reconciles supported older s
 | --- | --- |
 | `src/awm_adm/engine/` | Standard-library finite kernel, admission, planning, snapshots and proof templates |
 | `src/awm_adm/application/`, `runtime/` | API, persistence, account and service runtime |
-| `src/awm_adm/conversations/`, `teaching/`, `intake/` | Durable interaction, bounded orchestration and supplied material |
-| `src/awm_adm/learning/`, `providers/`, `gateway/`, `allowances/` | Acquisition, transport and conservative accounting |
+| `src/awm_adm/interaction/`, `conversations/`, `teaching/`, `intake/` | Durable interaction, bounded orchestration and supplied material |
+| `src/awm_adm/learning/`, `providers/`, `gateway/`, `allowances/` | Acquisition, transport, usage and historical accounting |
 | `src/awm_adm/sources/`, `feeds/`, `lifecycle/`, `operations/` | Evidence, processing queues, model lifecycle and recovery |
 | `console/` | React/TypeScript UI and native Node tests |
 | `contracts/` | Generated schemas/OpenAPI, authored semantic fixtures and executable workflow specifications |

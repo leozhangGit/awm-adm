@@ -3,11 +3,13 @@
 import pytest
 
 from awm_adm.conversations.history import parse
-from awm_adm.runtime.protocol import dumps, loads
+from awm_adm.runtime.protocol import dumps
 
+from .interaction_support import narration, proposal
 from .test_application import app_runtime as app_runtime
 from .test_application import execute
-from .test_ask import funded, interpret, proposal
+from .test_direct_ask import interpreted, recorded
+from .test_direct_ask import work as work_record
 from .test_learning_service import rig as rig
 from .test_sources import fact, ingest, install, profile, project
 
@@ -42,8 +44,9 @@ def test_history_local_answer_and_unknown(rig, year, expected, origin):
         key = rt.create("Snapshot copy", snapshot=rt.store.revision(key)["snapshot"])["id"]
         assert key != original and not rt.sources.versions(key)
         assert rt.sources.policy(key).get("projection") is None
-    key, cid = funded(rt, gw, command(year), key=key)
-    work, _ = interpret(rt, gw, key, cid, f"What was site capacity at January 1, {year}, midnight UTC?")
+    recorded(rt, gw, proposal(command(year)))
+    item = interpreted(rt, gw, key, f"What was site capacity at January 1, {year}, midnight UTC?")
+    work = work_record(rt, key, item["id"])
     assert work["status"] == "awaiting_local", work
     metadata = work["accepted_fact_projections"]
     assert len(metadata) == 1 and set(metadata[0]) == {"entities", "predicates", "cells"}
@@ -52,6 +55,7 @@ def test_history_local_answer_and_unknown(rig, year, expected, origin):
     assert result["status"] == expected
     assert result["query"]["effective_at"].startswith(str(year))
     assert rt.conversations.tick()
+    narration(rt, work_record(rt, key, item["id"]))
     presentation = rt.conversations.ask.get(key, work["id"])
     assert presentation["outcome"]["binding"] == (
         result["result"]["binding"] if result["result"] else result["pinned_context"]
@@ -60,8 +64,11 @@ def test_history_local_answer_and_unknown(rig, year, expected, origin):
         assert result["result"]["value"]["value"] == 10
         assert result["result"]["binding"]["context"]["adm_id"] == key
         assert result["result"]["value"]["fact"]["claim"]["source"]["version_id"] == "v1"
-        assert "Historical lookup for site" in presentation["outcome_text"]
-    assert rt.learning.usage()["calls"] == 1
+        assert (
+            presentation["outcome_text"]
+            == "Model answer: 10.\nBased on the model's accepted historical evidence."
+        )
+    assert rt.learning.usage()["calls"] == 2
 
 
 @pytest.mark.parametrize(
@@ -81,43 +88,3 @@ def test_history_rejects_authority_duplicates_and_missing_dates(suffix):
 def test_history_unknown_identity_asks_without_executing():
     parsed = parse(dumps(proposal(command(entity_id="other"))).decode(), profile())
     assert parsed["status"] == "needs_clarification" and parsed["query"] is None
-
-
-def test_prior_allowance_does_not_gain_projection_disclosure(rig):
-    rt, gw = rig
-    key, cid = funded(rt, gw)
-    with rt.store.db(key) as db, rt.store.transaction(db):
-        conv = loads(db.execute("SELECT body FROM chat_conversations WHERE id=?", (cid,)).fetchone()[0])
-        conv["preferences"].pop("historical_lookup")
-        conv["preferences"].pop("snapshot_history")
-        db.execute("UPDATE chat_conversations SET body=? WHERE id=?", (dumps(conv), cid))
-    work, _ = interpret(rt, gw, key, cid)
-    assert "fact_projection" not in work
-    with rt.store.db() as db:
-        grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (work["grant_id"],)).fetchone()[0])
-    import base64
-
-    assert b"owner_fact_projection" not in base64.b64decode(grant["wire"])
-    assert b"accepted_fact_projections" not in base64.b64decode(grant["wire"])
-
-
-def test_projection_only_consent_does_not_gain_snapshot_disclosure(rig):
-    rt, gw = rig
-    key = rt.create("History")["id"]
-    install(rt, key)
-    assert project(rt, key, ingest(rt, key))["status"] == "accepted"
-    key = rt.create("Copy", snapshot=rt.store.revision(key)["snapshot"])["id"]
-    key, cid = funded(rt, gw, command(), key=key)
-    with rt.store.db(key) as db, rt.store.transaction(db):
-        conv = loads(db.execute("SELECT body FROM chat_conversations WHERE id=?", (cid,)).fetchone()[0])
-        conv["preferences"].pop("snapshot_history")
-        db.execute("UPDATE chat_conversations SET body=? WHERE id=?", (dumps(conv), cid))
-    work, _ = interpret(rt, gw, key, cid)
-    assert work["status"] == "needs_input" and "request_id" not in work
-    assert "accepted_fact_projections" not in work
-    with rt.store.db() as db:
-        grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (work["grant_id"],)).fetchone()[0])
-    import base64
-
-    assert b"accepted_fact_projections" not in base64.b64decode(grant["wire"])
-    assert rt.learning.usage()["calls"] == 1

@@ -95,7 +95,7 @@ class Coordinator:
     def submit(self, key, body, *, expected_revision=None):
         parsed = Request.model_validate(body).model_dump()
         parsed["limits"] = self.runtime.limits(parsed["limits"])
-        if parsed["query"]["op"] != "lookup_fact":
+        if parsed["query"]["op"] not in {"lookup_fact", "lookup_fact_period"}:
             parsed["query"] = normalize_query(parsed["query"], parsed["limits"])
         uid = self.store.submit(key, parsed, expected_revision=expected_revision)
         self.wake.set()

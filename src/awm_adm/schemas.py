@@ -6,6 +6,7 @@ from pathlib import Path
 from .config import AppConfig
 from .contracts import SCHEMAS
 from .feeds.models import CoverageInput, FeedControl, FeedInput, Reprocess
+from .interaction.models import DirectMessage, DisableConnection, EnableConnection
 from .sources.models import BatchInput, ExtractionOutput, JobInput, PolicyInput, Projection, ProjectionInput
 
 
@@ -24,6 +25,9 @@ def documents():
         "FeedControl": FeedControl,
         "FeedReprocess": Reprocess,
         "CoverageTransition": CoverageInput,
+        "DirectMessage": DirectMessage,
+        "EnableConnection": EnableConnection,
+        "DisableConnection": DisableConnection,
     }.items():
         schema = model.model_json_schema()
         schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"

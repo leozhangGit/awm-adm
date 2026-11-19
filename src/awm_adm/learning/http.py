@@ -5,13 +5,9 @@ from pydantic import Field
 
 from ..contracts import ClosedModel
 from .models import (
-    ConnectionChange,
-    ConnectionInput,
     EpisodeInput,
-    LearningSettings,
     Outcome,
     Review,
-    TestConnection,
 )
 
 
@@ -36,11 +32,6 @@ def public(router, auth, service):
         auth.require(request, owner=True)
         return {**service.settings(), "usage": service.usage()}
 
-    @router.put("/learning")
-    def configure(request: Request, body: LearningSettings):
-        auth.require(request, owner=True)
-        return service.configure(body.model_dump())
-
     @router.get("/connections")
     def connections(request: Request):
         auth.require(request, owner=True)
@@ -53,21 +44,6 @@ def public(router, auth, service):
         value.pop("sealed_credential", None)
         value.pop("sealing_key_id", None)
         return value
-
-    @router.post("/connections", status_code=202)
-    def create_connection(request: Request, body: ConnectionInput):
-        auth.require(request, owner=True)
-        return service.save_connection(body.model_dump())
-
-    @router.put("/connections/{connection}", status_code=202)
-    def change_connection(request: Request, connection: str, body: ConnectionChange):
-        auth.require(request, owner=True)
-        return service.save_connection(body.model_dump(), connection)
-
-    @router.post("/connections/{connection}/test", status_code=202)
-    def test_connection(request: Request, connection: str, body: TestConnection):
-        auth.require(request, owner=True)
-        return service.test_connection(connection, body.model_dump())
 
     @router.get("/dispatches/{grant}")
     def dispatch(request: Request, grant: str):

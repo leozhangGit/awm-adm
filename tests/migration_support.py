@@ -2,6 +2,10 @@
 
 
 def remove_lifecycle(db):
+    for table in ("connection_control", "connection_operations", "direct_interactions"):
+        db.execute(f"DROP TABLE IF EXISTS {table}")
+    if any(r[1] == "dispatched_at" for r in db.execute("PRAGMA table_info(grants)")):
+        db.execute("ALTER TABLE grants DROP COLUMN dispatched_at")
     for table in ("deletion_grants", "deletions"):
         db.execute(f"DROP TABLE IF EXISTS {table}")
 

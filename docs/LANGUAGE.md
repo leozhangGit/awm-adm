@@ -1,21 +1,18 @@
 # Ask, interpretation and local answers
 
-This is the AWM-ADM explicit-preview language contract, retained under **Local debug → Interpretation preview**. The AWM-ADM [Ask/Teach workspace](CONVERSATIONS.md) has separate conversation/authority records. [Automatic Ask](ASK.md) implements checked read-only execution and optional grounded narration under explicit interaction setup. The [teaching coordinator](TEACHING_EXECUTION.md) prepares, executes and reports bounded teaching tasks.
+This is the AWM-ADM explicit-preview language contract, retained through the interpretation API. The AWM-ADM [Ask/Teach workspace](CONVERSATIONS.md) has separate conversation/authority records. [Automatic Ask](ASK.md) implements checked read-only execution and optional grounded narration under the enabled connection. The [teaching coordinator](TEACHING_EXECUTION.md) prepares, executes and reports bounded teaching tasks.
 
 The preview service adds a bounded language layer to the local service. It translates a question into a checked `awm-adm-intent/2` preview. Explicit confirmation creates an ordinary local request; the finite engine computes the answer. An interpretation is neither a theory update nor evidence that a provider understood the user correctly.
 
-## Console workflow
+## Explicit preview API
 
-1. Open a model's **Playground → Ask / Teach**, select or create a conversation, and choose **Ask**.
-2. Use **Local phrases from this model** for editable templates. Local interpretation needs no provider or network. **Guided / JSON** remains available for all structured operations, including certificates.
-3. Choose **Interpret and preview**. Inspect the operation, arguments, initial state, action selection, depth, revision and assumptions. A clarification response has no executable query; supply a complete replacement question and select **Submit clarification**.
-4. Select **Confirm and run locally**. The resulting value, plan or explanation comes from the existing local request/result service. Provider prose is never displayed as an authoritative answer. Request history retains its attempt and revision bindings.
+The normal console uses direct Ask with automatic checked execution. Integrations can still use the explicit preview API: create an interpretation session, submit a local controlled phrase or provider-assisted question, inspect the typed preview, then confirm it with exact revision/catalog bindings. Clarifications have no executable query. Structured request APIs expose all finite operations, including certificates, independently of a remote provider.
 
-The local language is controlled, not unrestricted English. The [grammar and fact profiles](SOURCES.md) define its syntax. Templates supply editable starting values, not a claim that those values represent the user's situation. Qualified symbols are exact; ambiguous aliases return choices. JSON values must match finite carriers. Missing entities, dates, units or state require clarification. No implicit date interpretation, extrapolation or unit conversion occurs.
+The local language is controlled, not unrestricted English. The [grammar and fact profiles](SOURCES.md) define its syntax. Templates supply editable starting values, not a claim that those values represent the user's situation. Qualified symbols are exact; ambiguous aliases return choices. JSON values must match finite carriers. Missing entities, dates, units or state require clarification. This explicit preview grammar performs no implicit date interpretation, extrapolation or unit conversion. Automatic Ask additionally supports [calendar-date historical interpretation](TEMPORAL_INTERPRETATION.md) using the service timezone and checked whole-period lookup.
 
 ## Owner vocabulary and catalog
 
-Each ADM has a separately versioned owner vocabulary: symbol/module aliases, function parameter units and roles (`value`, `entity`, `time`), and explicit aliases for finite parameter values. **Owner vocabulary** in the playground edits this metadata. Targets and values must exist in the current accepted model; aliases cannot override exact symbols or reinterpret an already valid literal. Unit-bearing parameters require `{"value": VALUE, "unit": "EXACT_UNIT"}`. Time parameters use the finite type chosen by the model, such as a bounded year integer or date enum; receipt time and “now” are never substituted.
+Each ADM has a separately versioned owner vocabulary: symbol/module aliases, function parameter units and roles (`value`, `entity`, `time`), and explicit aliases for finite parameter values. The vocabulary API edits this metadata. Targets and values must exist in the current accepted model; aliases cannot override exact symbols or reinterpret an already valid literal. Unit-bearing parameters require `{"value": VALUE, "unit": "EXACT_UNIT"}`. Time parameters use the finite type chosen by the model, such as a bounded year integer or date enum; receipt time and “now” are never substituted.
 
 The catalog contains accepted signatures, types, modules, state/action interfaces and owner vocabulary. It excludes function/transition bodies and evidence. Catalog encoding is canonical and bounded to 256 KiB. Its digest binds every preview, alongside ADM identity, theory/support roots, mode/policy epoch, immutable application revision and vocabulary generation.
 
@@ -23,13 +20,11 @@ Vocabulary is local service metadata. It is not part of a portable model snapsho
 
 ## Explicit provider interpretation
 
-The owner enables the **interpretation** purpose on a versioned connection and selects it for one question. Existing connections keep their existing purposes; an upgrade does not silently authorize translation. OpenAI/Anthropic calls additionally require the global remote-call setting. Recorded connections exercise the same dispatch path without a network provider.
+The single enabled connection supplies provider interpretation. Explicit preview clients bind its current version and select bounded disclosure. Direct Ask selects bounded prior owner context automatically. The payload contains the question, accepted catalog/vocabulary and eligible owner messages, plus bounded result identifiers where needed. It excludes credentials, other models, assistant prose and unrestricted evidence. Recorded adapters use the same contract without network calls.
 
-Before each submission, the console asks permission to disclose the question, accepted catalog, owner vocabulary and explicitly selected prior **user** messages. Only selected messages from the same conversation and ADM are eligible. A bounded list of recorded local result IDs is also included to resolve explanations; result values, assistant prose, evidence and credentials are not included. Selected history is capped at six turns and 16 KiB of encoded context. There is no automatic conversation summarization or assistant-answer reuse.
+The provider receives a model-neutral schema with `status`, one controlled-language `command`, `assumptions` and `clarification`. It does not supply an `IntentDraft`, revision binding, approval or answer. The application parses and type-checks the proposed command locally and constructs the draft. Unsupported/admin commands, invented symbols, malformed replies and extra authority fields cannot produce an executable preview. A wrong but well-typed interpretation can still pass these checks: explicit preview clients can review its meaning before confirmation; direct Ask uses the checked interpretation automatically.
 
-The provider receives a model-neutral schema with `status`, one controlled-language `command`, `assumptions` and `clarification`. It does not supply an `IntentDraft`, revision binding, approval or answer. The application parses and type-checks the proposed command locally and constructs the draft. Unsupported/admin commands, invented symbols, malformed replies and extra authority fields cannot produce an executable preview. A wrong but well-typed interpretation can still pass these checks: the UI labels it as provider-proposed and requires review of its meaning.
-
-One interpretation reserves at most one call under its explicit call limits and the shared connection/ADM/installation quotas. It does not start a learning episode. The gateway owns credentials, egress and at-most-once dispatch. Refusal, timeout, stale authority, quota exhaustion or malformed output ends the interpretation; no automatic repair, fallback provider, model change or larger budget follows. Unknown dispatched usage remains reserved across restart. Provenance records requested/returned models and prompt/schema/wire identities. Simulated adapters and recorded trials do not establish live model translation accuracy.
+One interpretation reserves at most one call under its explicit call limits and configured concurrency. It does not start a learning episode. The gateway owns credentials, egress and at-most-once dispatch. Refusal, timeout, stale authority, resource exhaustion or malformed output ends the interpretation; no automatic repair, fallback provider, model change or larger budget follows. Unknown dispatched usage remains reserved across restart. Provenance records requested/returned models and prompt/schema/wire identities. Simulated adapters and recorded trials do not establish live model translation accuracy.
 
 ## Lifecycle, confirmation and bounded history
 
@@ -47,7 +42,7 @@ Provider-assisted interpretation failures retain specific dispatch errors and sa
 
 ## Teach and acquisition
 
-**Teach** saves an immutable, idempotent teaching draft with text and revision, marked unaccepted and without publication authority. **Review learning task** transfers its text into the Learning task editor. The owner must define receiver-owned interfaces and an acquisition contract, choose a connection and budgets, and approve disclosure before starting the separate learning episode. The regular admission and forward/backward rules still apply. Long source text may need a smaller task description; it is never silently truncated into a learned fact. Source/span extraction and historical fact projection are source work.
+The legacy interpretation-session Teach endpoint saves an unaccepted teaching draft only. It does not publish or acquire. Normal direct Teach at `/adms/{adm}/teach` prepares and executes a checked task automatically; see [Teaching](TEACHING.md). Both routes preserve the distinction between user intent, proposed representation and accepted theory.
 
 ## API resources
 
@@ -67,4 +62,4 @@ All routes use `/api/v1/adms/{adm}` and the existing strict JSON/authentication 
 | `POST /interpretations/{id}/execute` | Submit; explicit confirmation with revision, catalog digest, limits and idempotency key. |
 | `POST /interpretations/{id}/cancel` | Submit; fence later interpretation completion/execution. |
 
-Vocabulary, interpretation, execution and teaching events are durable per-ADM events. SQLite schema 5 adds owned history tables transactionally without rewriting existing model revisions, requests, learning receipts or finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) retain their authority and recovery contracts.
+Vocabulary, interpretation, execution and teaching events are durable per-ADM records under owned schema 16. Supported migrations preserve existing model revisions, requests, learning receipts and finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) define their authority and recovery contracts.

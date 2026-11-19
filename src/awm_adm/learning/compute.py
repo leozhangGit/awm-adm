@@ -40,16 +40,6 @@ def compute(task, budget):
     body = task["body"]
     contract = validate_contract(body["task"]["acquisition_contract"])
     draft = task.get("draft") or (construction.seed(contract) if body["construction"] else None)
-    if operation in ("learning_prepare", "learning_admit") and body["publication"] == "checked_auto":
-        owner = (
-            checked["conformance"]
-            if operation == "learning_prepare"
-            else validate_snapshot(unpack(task["current_snapshot"]), budget=budget)["conformance"]
-        )
-        if not owner.get("contracts") and not owner.get("invariants"):
-            from ..engine.errors import Rejected
-
-            raise Rejected("Automatic publication requires nonempty independent owner requirements")
     if operation == "learning_prepare":
         context = {
             "task": {**body["task"], "acquisition_contract": contract},

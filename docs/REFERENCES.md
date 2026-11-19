@@ -38,6 +38,6 @@ The package owns its finite engine, runtime and test fixtures. Compatibility fix
 | Provider transports | [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [Anthropic Structured Outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) |
 | Console build and checks | [React](https://react.dev/), [Vite](https://vite.dev/), [TypeScript](https://www.typescriptlang.org/), [Node TypeScript execution](https://nodejs.org/docs/latest-v22.x/api/typescript.html), [Prettier](https://prettier.io/docs/cli) |
 
-Exact dependency versions and hashes are in the lock files and [dependency inventory](dependency-inventory.json). The linked documentation explains upstream interfaces; it does not certify this application, verify a provider account or establish current pricing. Shipped audited pricing profiles have explicit validity windows described in [Spending](PRICED_ALLOWANCES.md).
+Exact dependency versions and hashes are in the lock files and [dependency inventory](dependency-inventory.json). The linked documentation explains upstream interfaces; it does not certify this application, verify a provider account or establish current pricing. Shipped audited pricing profiles have explicit validity windows described in [Connection and usage](CONNECTION.md).
 
 Original software is MIT-licensed. Bundled profiles and dependencies retain their own notices in [Third-party notices](../THIRD_PARTY_NOTICES.md).

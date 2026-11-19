@@ -86,7 +86,7 @@ def test_recent_pages_and_operation_summaries_are_bounded(app_runtime):
         rt.coordinator.run_operation()
         summary = c.get("/api/v1/operations").json()["items"][0]
         assert summary["operation_id"] == op["operation_id"]
-        assert set(summary) == {"operation_id", "kind", "adm_id", "status"}
+        assert set(summary) == {"operation_id", "kind", "adm_id", "status", "created_at_ms"}
 
 
 def test_packaged_examples_import_as_independent_models(app_runtime):

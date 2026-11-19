@@ -41,6 +41,25 @@ EXCLUDED = {
     ".venv",
     ".cache",
     ".local",
+    ".codex",
+    ".agents",
+    ".claude",
+    ".mcp.json",
+    ".git-credentials",
+    ".netrc",
+    ".npmrc",
+    "secrets",
+    "credentials",
+    "provider-secrets",
+    "admin-credentials",
+    "backups",
+    "id_rsa",
+    "id_dsa",
+    "id_ecdsa",
+    "id_ed25519",
+    "openai-key",
+    "anthropic-key",
+    "credentials.json",
     "node_modules",
     "dist",
     "build",
@@ -53,27 +72,39 @@ EXCLUDED = {
 }
 
 
-def excluded(name):
+def excluded(name, *, relative=None):
+    # The checked-in npm settings contain portable build defaults, not credentials.
+    if relative == "console/.npmrc":
+        return False
     return (
         name in EXCLUDED
         or name.startswith(".env")
+        or (name.startswith("service-account") and name.endswith(".json"))
         or name.endswith(
             (
                 ".pyc",
                 ".db",
                 ".db-wal",
                 ".db-shm",
+                ".db-journal",
                 ".sqlite",
                 ".sqlite3",
                 ".sqlite-wal",
                 ".sqlite-shm",
+                ".sqlite-journal",
                 ".sqlite3-wal",
                 ".sqlite3-shm",
+                ".sqlite3-journal",
                 ".log",
                 ".secret",
                 ".pem",
                 ".key",
+                ".p12",
+                ".pfx",
+                ".jks",
                 ".token",
+                "-token",
+                "-master-key",
             )
         )
     )
@@ -95,7 +126,7 @@ def export(root: Path, destination: Path):
         stage.mkdir()
 
         def copy(path, target):
-            if excluded(path.name):
+            if excluded(path.name, relative=path.relative_to(root).as_posix()):
                 return
             if path.is_symlink():
                 raise ValueError(f"Source symlinks cannot be exported: {path.relative_to(root)}")

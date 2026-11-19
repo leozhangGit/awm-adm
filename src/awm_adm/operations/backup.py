@@ -266,6 +266,13 @@ def restore(bundle, destination):
                 db.execute("UPDATE administrator SET generation=generation+1")
             db.execute("DELETE FROM components")
             db.execute("UPDATE learning_control SET enabled=0,generation=generation+1")
+            if manifest["schema"] >= 16:
+                db.execute(
+                    "UPDATE connection_control SET state='disabled',generation=generation+1,operation_id=NULL,error=NULL"
+                )
+                db.execute(
+                    "UPDATE connection_operations SET status='cancelled',error='service_restored' WHERE status IN ('received','testing')"
+                )
             # A rollback cannot prove a formerly ready grant was never dispatched
             # after capture. Retain its full reservation rather than refunding it.
             unknown = dumps(

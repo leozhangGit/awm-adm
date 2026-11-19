@@ -207,7 +207,7 @@ def test_rename_and_future_only_mode_preserve_theory(app_runtime):
     assert rt.store.snapshot(key) == before
 
 
-def test_managed_sources_tasks_and_uncertain_dollars_are_removed_without_refund(rig):
+def test_managed_sources_tasks_and_unknown_dispatches_are_removed_without_replay(rig):
     from .test_intake import append_credential, pushed, started
 
     rt, gw = rig
@@ -226,21 +226,14 @@ def test_managed_sources_tasks_and_uncertain_dollars_are_removed_without_refund(
     assert job
     body = rt.learning.authorize(job["grant_id"], job["lease"])
     gw.store.begin(job["grant_id"], body["provenance"]["request_hash"], body)
-    allowance = body["allowance_id"]
-    before = rt.learning.allowances.view(allowance)
-    assert before["reserved_micro_usd"] > 0
+    before = rt.learning.grant_view(job["grant_id"])
+    assert before["unresolved"]
     operation = rt.lifecycle.request(key, delete_input(rt, key))["operation_id"]
     finish(rt, operation, gw)
-    after = rt.learning.allowances.view(allowance)
-    with rt.store.db() as db:
-        retained = db.execute(
-            "SELECT reserved,settled FROM charges WHERE grant_id=?", (job["grant_id"],)
-        ).fetchone()
-    assert retained["settled"] is None
-    assert after["reserved_micro_usd"] == retained["reserved"]
-    assert after["reserved_micro_usd"] <= before["reserved_micro_usd"]
-    assert after["settled_micro_usd"] == before["settled_micro_usd"]
-    assert after["state"] == "closed" and after["scope_id"] == "deleted"
+    after = rt.learning.grant_view(job["grant_id"])
+    assert after["unresolved"]
+    assert after["input_tokens"] == before["input_tokens"]
+    assert after["output_tokens"] == before["output_tokens"]
     with client(rt) as c:
         assert (
             c.post(
@@ -251,7 +244,6 @@ def test_managed_sources_tasks_and_uncertain_dollars_are_removed_without_refund(
         for suffix in (f"conversations/{cid}", f"tasks/{task}", "attachments"):
             assert c.get(f"/api/v1/adms/{key}/{suffix}").status_code == 410
     with rt.store.db() as db:
-        assert not db.execute("SELECT 1 FROM budget_children WHERE allowance_id=?", (allowance,)).fetchone()
         assert not db.execute("SELECT 1 FROM source_arrivals WHERE adm=?", (key,)).fetchone()
     assert not (rt.store.root / (key + ".db")).exists()
     assert meta["id"]

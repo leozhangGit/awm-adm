@@ -1,0 +1,149 @@
+{
+  "profile": "awm-adm-interaction-corpus/1",
+  "description": "Independent intent expectations for synthetic direct interaction fixtures; not a measurement of live translation accuracy.",
+  "cases": [
+    {
+      "id": "clear-rule",
+      "channel": "teach",
+      "input": {
+        "text": "Someone may borrow another camera kit exactly when one is available and they have fewer than two on loan. Use whole-number counts from zero through two."
+      },
+      "expected": {
+        "kind": "capability",
+        "clarification_required": false,
+        "minimum_checks": {
+          "borrowed=1,available=1": true,
+          "borrowed=2,available=1": false,
+          "borrowed=1,available=0": false
+        }
+      }
+    },
+    {
+      "id": "ambiguous-rule",
+      "channel": "teach",
+      "input": {
+        "text": "Use the usual borrowing limit."
+      },
+      "expected": {
+        "kind": "clarification",
+        "missing": "borrowing limit",
+        "publication": false
+      }
+    },
+    {
+      "id": "read-only-question",
+      "channel": "ask",
+      "input": {
+        "text": "I have one kit on loan and one is available. May I borrow another?"
+      },
+      "expected": {
+        "kind": "local_evaluation",
+        "value": true,
+        "publication": false
+      }
+    },
+    {
+      "id": "wrong-well-typed-interpretation",
+      "channel": "ask",
+      "input": {
+        "text": "I have two kits on loan and one is available. May I borrow another?"
+      },
+      "expected": {
+        "kind": "local_evaluation",
+        "value": false,
+        "borrowed": 2,
+        "available": 1,
+        "reject_interpretation_with_borrowed": 1
+      }
+    },
+    {
+      "id": "unknown-year",
+      "channel": "ask",
+      "input": {
+        "text": "What was the camera-kit capacity in 2027?"
+      },
+      "expected": {
+        "kind": "historical_lookup",
+        "status": "needs_input",
+        "value": null
+      }
+    },
+    {
+      "id": "explicit-followup",
+      "channel": "ask",
+      "input": {
+        "text": "And for 2026?",
+        "reply_to": "prior-capacity-question"
+      },
+      "expected": {
+        "kind": "historical_lookup",
+        "retain_entity_from": "prior-capacity-question",
+        "effective_year": 2026
+      }
+    },
+    {
+      "id": "selected-material",
+      "channel": "teach",
+      "input": {
+        "text": "Learn the dated capacity facts in this file.",
+        "attachments": [
+          "camera-history"
+        ]
+      },
+      "expected": {
+        "kind": "facts",
+        "selected_only": [
+          "camera-history"
+        ],
+        "scope_expansion": false
+      }
+    },
+    {
+      "id": "contextual-count-followup",
+      "channel": "ask",
+      "input": {
+        "text": "What if I already have two?",
+        "reply_to": "prior-borrowing-question"
+      },
+      "selected_owner_context": [
+        "I have one kit on loan and one is available. May I borrow another?"
+      ],
+      "expected": {
+        "kind": "local_evaluation",
+        "borrowed": 2,
+        "available": 1,
+        "value": false,
+        "clarification_required": false
+      }
+    },
+    {
+      "id": "missing-reference",
+      "channel": "ask",
+      "input": {
+        "text": "What if I already have two?"
+      },
+      "selected_owner_context": [],
+      "expected": {
+        "kind": "clarification",
+        "publication": false,
+        "execution": false
+      }
+    },
+    {
+      "id": "conflicting-reference",
+      "channel": "ask",
+      "input": {
+        "text": "Can I borrow it?",
+        "reply_to": "two-possible-items"
+      },
+      "selected_owner_context": [
+        "There is a camera kit and a microphone with different availability."
+      ],
+      "expected": {
+        "kind": "clarification",
+        "missing": "item identity",
+        "execution": false
+      }
+    }
+  ]
+}

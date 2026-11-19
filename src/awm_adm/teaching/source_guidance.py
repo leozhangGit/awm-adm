@@ -1,5 +1,7 @@
 """Provider-facing source field explanations; not validators or normalizers."""
 
+from ..temporal import INSTANT, SCOPE
+
 NAMESPACE = (
     "Projection namespace. This does not automatically prefix predicate symbols; "
     "each predicate must carry its complete qualified symbol."
@@ -31,4 +33,5 @@ INSTRUCTIONS = (
     f"Each predicate.kind: {KIND} "
     f"Each predicate.values: {VALUES} "
     f"Predicate bounds: {BOUNDS} "
+    f"Time bounds: {INSTANT} {SCOPE} "
 )

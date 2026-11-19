@@ -1,6 +1,6 @@
 # Documentation
 
-AWM-ADM 0.3.0 is a local, single-owner service. Start with the [repository README](../README.md) and [installation guide](INSTALLATION.md).
+AWM-ADM 0.3.0 is a single-owner service. Start with the [repository README](../README.md) and [installation guide](INSTALLATION.md).
 
 For the motivation and conceptual architecture, read [Explore AWM-ADM](https://concourses.net/awm-adm.html). The [foundation reference](REFERENCES.md) separates AWM's method from our ADM design choices and implementation guarantees. All build and operating instructions are contained in this repository.
 
@@ -10,13 +10,15 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 | --- | --- |
 | [Installation](INSTALLATION.md) | Docker build/start, first administrator, configuration and troubleshooting |
 | [Administrator](ADMINISTRATOR.md) | Password login, setup credentials, sessions and local recovery |
-| [Console](CONSOLE.md) | Models, Ask/Teach, Details, Local debug and Advanced model tools |
+| [Console](CONSOLE.md) | Models, direct Ask/Teach, search, history and status |
 | [Ask](ASK.md) | Interpretation, local execution, explanation and unknown results |
-| [Teaching](TEACHING.md) | Goals, clarification, bounded preparation and review |
-| [Teaching execution](TEACHING_EXECUTION.md) | Admission, time renewal, completion and linked follow-up |
+| [Meaning and temporal context](TEMPORAL_INTERPRETATION.md) | System timezone, calendar-date lookup, source precision and historical presentation |
+| [Teaching](TEACHING.md) | Goals, clarification and automatic checked learning |
+| [Teaching execution](TEACHING_EXECUTION.md) | Admission, cancellation, completion and recovery |
 | [Attachments and intake](INTAKE.md) | Supplied files and managed push queues |
+| [History](HISTORY.md) | Time-filtered console/API activity and current knowledge search |
 | [Model lifecycle](MODEL_LIFECYCLE.md) | Independent snapshots, mode changes, archive and deletion |
-| [Spending](PRICED_ALLOWANCES.md) | Supported pricing, separate lanes, caps and uncertainty |
+| [Connection](CONNECTION.md) | Enable/Disable, saved keys, token and call charts |
 | [Operations](OPERATIONS.md) | Backups, restore, diagnostics, retention and upgrade boundaries |
 
 ## Integrate and inspect
@@ -24,7 +26,7 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 | Reference | Covers |
 | --- | --- |
 | [API](API.md) and [OpenAPI](../contracts/openapi.json) | Unified `/api/v1` model, administrator and chat APIs |
-| [Conversations](CONVERSATIONS.md) | Durable messages, decisions, readiness and disclosure |
+| [Conversations](CONVERSATIONS.md) | Direct messages, automatic context and durable provenance |
 | [Learning](LEARNING.md) | Manual bounded acquisition and provider transport |
 | [Language preview](LANGUAGE.md) | Explicit interpretation preview and confirmation |
 | [Sources](SOURCES.md) | Immutable evidence, extraction, facts and corrections |

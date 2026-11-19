@@ -16,18 +16,20 @@ Use the commands in [Contributing](../CONTRIBUTING.md): `make bootstrap`, `make 
 | Admission | Owner requirements, receipt order, forward/backward conflicts, dependent declarations and publication fences |
 | Proofs and snapshots | Real Lean when configured, exhaustive correspondence, exact result contexts, corrupted/traversing archives and independent imports |
 | Durable requests | Idempotency, cancellation, atomic request/result/events, interrupted attempts, immutable histories and budgets |
-| Learning and spending | Private construction, bounded diagnostics, at-most-once grants, unknown holds, separate lanes, cap/deadline stopping and restart |
-| Chat and teaching | Scoped disclosure, exact decisions, invalid preparation, source-field contracts, local outcomes versus narration, time renewal and late source completion |
+| Learning and dispatch | Private construction, bounded diagnostics, at-most-once grants, unknown holds, finite task stopping and restart |
+| Chat and teaching | Direct inputs, bounded automatic context, invalid preparation, source-field contracts, automatic admission, cancellation and local outcomes versus narration |
 | Sources and lifecycle | Exact spans, corrections/held support, unknown dates, bounded queues, deletion races and independent copies |
 | Access and operations | Password/CSRF/session boundaries, role separation, schema compatibility, paired recovery, conservative accounting and egress restrictions |
 | Public API | Unified `/api/v1`, separate interpretation/chat histories across restart, retired routes without side effects and generated OpenAPI drift |
-| Console and packaging | Strict JSON/query forms, draft retention, readiness, types/build, import independence, exports and documentation boundaries |
+| Console and packaging | Continuous Ask/Teach streams, draft/attachment retention, scroll handoff and auto-follow, readable outcomes/charts/tables, types/build, import independence, exports and documentation boundaries |
 
-`contracts/workflows/` contains executable specification oracles and authored equipment/access fixtures. `scripts/verify_workflow_contracts.py` validates them; its abstract state/price models are not proofs that the runtime refines those models. Integration tests separately exercise actual SQLite, workers and APIs.
+`contracts/workflows/` contains versioned specification oracles and authored equipment/access fixtures, including historical accounting profiles. `scripts/verify_workflow_contracts.py` validates them; its abstract state/price models are not proofs that the runtime refines those models or current spending prerequisites. Current direct-interaction cases are in `contracts/interaction-corpus.json`. Integration tests separately exercise actual SQLite, workers and APIs.
+
+Conversational regressions cover linked owner-context disclosure, changed scenario inputs, retained unresolved assumptions, missing/ambiguous inputs, range rejection, model changes during interpretation, exact result bindings and separate narration. Presentation checks keep computed values visible, retain complex/uncertain outcomes and preserve accepted teaching objectives. These recorded-provider tests verify the integration contract; they do not measure a live model's ability to resolve references or phrase explanations correctly.
 
 ## Docker rehearsals
 
-The release rehearsal runs recorded local scenarios in a fresh exported package with its own credentials, named volumes and loopback port. It checks acquisition, interpretation, source history/conflicts/corrections, snapshots and gateway-independent local serving. It makes no live provider calls. Use an unused `awm-adm-check-release-*` project name and port; the commands below use port 8089. Docker Compose must support the `!override` tag.
+The release rehearsal runs synthetic equipment scenarios in a fresh exported package with its own credentials, named volumes and loopback port. It checks single-connection activation, automatic mixed teaching, supported/unknown Ask outcomes, unified history, snapshots, restart and gateway-independent local serving. It makes no live provider calls. Use an unused `awm-adm-check-release-*` project name and port; the commands below use port 8089. Docker Compose must support the `!override` tag.
 
 From a contributor checkout, export to a new absolute path outside its source directories, then enter that package:
 
@@ -54,14 +56,20 @@ with Path(".local/rehearsal.compose.yaml").open("x") as stream:
     ports: !override ["127.0.0.1:8089:8089"]
     volumes:
       - ./.local/rehearsal.toml:/opt/awm-adm/config.toml:ro
+  provider-gateway:
+    networks: !override [internal]
+    command: [python, /verification/scripts/runtime_fixture_gateway.py, gateway]
+    volumes:
+      - ./scripts:/verification/scripts:ro
+      - ./examples:/verification/examples:ro
 ''')
 PY
 docker compose -p awm-adm-check-release-local -f compose.yaml -f .local/rehearsal.compose.yaml build
 docker compose -p awm-adm-check-release-local -f compose.yaml -f .local/rehearsal.compose.yaml up -d --no-build --wait --wait-timeout 60
-python3 scripts/verify_release_runtime.py --package . --project awm-adm-check-release-local --override .local/rehearsal.compose.yaml --port 8089 --output .local/rehearsal-report
+/path/to/contributor/.venv/bin/python scripts/verify_release_runtime.py --package . --project awm-adm-check-release-local --override .local/rehearsal.compose.yaml --port 8089 --output .local/rehearsal-report
 ```
 
-The verifier requires an empty test installation and can stop/restart its services. Read `.local/rehearsal-report/report.json`; retain the report privately. After inspection, remove **only this disposable test stack and its volumes**:
+The verifier requires the contributor Python environment (for credential sealing), an empty test installation and the fixture gateway above. It creates a synthetic administrator (`owner@example.test`, password `synthetic walkthrough passphrase`) for optional browser inspection. The synthetic provider key is `synthetic-test-secret`; the gateway has no egress network. These fixtures are not production credentials. The verifier can stop/restart its services. Read `.local/rehearsal-report/report.json`; retain the report privately. After inspection, remove **only this disposable test stack and its volumes**:
 
 ```sh
 docker compose -p awm-adm-check-release-local -f compose.yaml -f .local/rehearsal.compose.yaml down -v
@@ -69,7 +77,7 @@ docker compose -p awm-adm-check-release-local -f compose.yaml -f .local/rehearsa
 
 The source manifest describes the clean export before runtime setup. Adding ignored `.local` files intentionally makes the working test directory differ from that clean manifest; keep a separate untouched export for distribution verification.
 
-Other `scripts/verify_*_runtime.py` helpers require their own documented project prefixes. Learning, language, sources, feeds and operations helpers accept explicit overrides and test ports. `verify_runtime.py` and `verify_api_runtime.py` instead test the default 8080 mapping on a dedicated Docker host where that port is unused; they are not suitable for running beside a normal 8080 installation. Inspect each helper's `--help` and arguments before use. Never use normal installation credentials or volumes as test fixtures.
+Other `scripts/verify_*_runtime.py` helpers require their own documented project prefixes. The operations helper accepts explicit overrides and test ports. `verify_runtime.py` and `verify_api_runtime.py` instead test the default 8080 mapping on a dedicated Docker host where that port is unused; they are not suitable for running beside a normal 8080 installation. Inspect each helper's `--help` and arguments before use. Never use normal installation credentials or volumes as test fixtures.
 
 ## Dependency inventory
 
@@ -86,3 +94,5 @@ The inventory retains lock hashes, dependency versions, artifact origins, declar
 A passing finite fixture establishes its expected behavior under the checked representation and configuration. It does not establish universal learning reliability, semantic correctness of arbitrary natural language, empirical truth or unlimited throughput. Unconfigured Lean skips do not satisfy a real-kernel gate. The interpreter/translator remain trusted code; lifecycle specification traces are not a formal implementation refinement proof.
 
 Keep failed live outcomes and uncertainty honest. New live trials require explicit disclosure, model/connection and budgets, and are distinct from automatic regression. No model comparison is needed to establish model-neutral guidance.
+
+Temporal regressions in `tests/test_temporal_interaction.py` and source-guidance tests cover service defaults, explicit zones, DST, captured disclosure, strict source validation, representable-date boundaries, period coverage, disputes, changing values, snapshots and unknown follow-ups. Connection regressions distinguish queued work from actual calls and expire unclaimed tests without retrying uncertain dispatches. Authored provider replies do not measure live interpretation accuracy.
