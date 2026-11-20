@@ -12,7 +12,7 @@ from .wire import MAX_DOCUMENT_BYTES
 
 class Server(ClosedModel):
     bind_host: Literal["127.0.0.1", "::1"] = "127.0.0.1"
-    port: int = Field(default=8080, ge=1024, le=65535)
+    port: int = Field(default=9527, ge=1024, le=65535)
     max_body_bytes: int = Field(default=2_097_152, ge=1024, le=2_097_152)
     data_dir: str = Field(default=".local/data", min_length=1, max_length=4096)
 

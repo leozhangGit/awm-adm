@@ -16,8 +16,10 @@ from ..engine.data import encode, name, thaw
 from ..engine.errors import ADMError, ResourceLimit, TypeMismatch
 from ..engine.model import declaration_references
 from ..language.parser import catalog, validate_vocabulary
+from ..language.vocabulary import effective_vocabulary
 from ..runtime.protocol import unpack
 from ..wire import check_tree, decode
+from .dependencies import preserve_dependents
 from .diagnostics import PreparationError, diagnostic
 from .models import Plan, Reply
 from .provider_format import PROFILE, WireReply, local_plan
@@ -114,7 +116,7 @@ def compute(task, budget):
         or digest(encode(checked["support"])) != task["context"]["support_root"]
     ):
         raise ValueError("Teaching context does not match accepted snapshot")
-    vocabulary = validate_vocabulary(model, task["vocabulary"], budget)
+    vocabulary, _ = effective_vocabulary(model, task["vocabulary"], budget)
     base = {"catalog": catalog(model, vocabulary, budget), "requirements": thaw(checked["conformance"])}
     if task["operation"] == "teaching_catalog":
         return {**base, "work": budget.used}
@@ -174,6 +176,8 @@ def check_reply(task, budget, model, vocabulary, base, stage):
     stage["name"] = "plan"
     check_tree(value)
     plan = Plan.model_validate(value).model_dump()
+    stage["name"] = "dependencies"
+    retained = preserve_dependents(model, plan, budget)
     allowed = set(task["input_ids"])
     proposed, contracts, used = {}, [], set()
     accepted = model.document()["declarations"]
@@ -236,6 +240,9 @@ def check_reply(task, budget, model, vocabulary, base, stage):
     stage["name"] = "types"
     view = Headers(model, proposed, budget)
     stage["name"] = "vocabulary"
+    # Existing labels may become obsolete under explicitly revised interfaces.
+    # Reconcile only inherited metadata; new provider proposals stay strict.
+    vocabulary, _ = effective_vocabulary(view, vocabulary, budget)
     merged = {k: {**vocabulary[k], **plan["vocabulary"][k]} for k in vocabulary}
     plan["vocabulary"] = validate_vocabulary(view, merged, budget)
     stage["name"] = "requirements"
@@ -253,6 +260,7 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         "plan": plan,
         "contracts": contracts,
         "dependencies": dependencies,
+        "preserve_declarations": retained,
         "owner_requirements_digest": digest(encode(base["requirements"])),
         "work": budget.used,
     }

@@ -1,0 +1,9 @@
+interface:
+  display_name: "AWM-ADM project"
+  short_description: "Learn and consult checked project knowledge"
+  default_prompt: "Use $adm-project for this project."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "awm-adm"
+      description: "AWM-ADM native project tools"

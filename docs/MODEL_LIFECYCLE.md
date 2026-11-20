@@ -1,6 +1,6 @@
 # Model lifecycle and owner controls
 
-Models support naming, empty creation, checked snapshot import/export, independent cloning, conflict-mode changes, archive and durable deletion. All operate within the same local AWM-ADM 0.3.0 service and owned schema 16.
+Models support naming, empty creation, checked snapshot import/export, independent cloning, conflict-mode changes, archive and durable deletion. All operate within the same local AWM-ADM 0.4.0 service and owned schema 17.
 
 ## Using the collection
 
@@ -45,7 +45,7 @@ The application and gateway use SQLite. Logical deletion is not secure media era
 
 ## API and recovery
 
-All new controls are owner-only and use the existing session/CSRF boundary:
+All controls use the shared login-free local HTTP boundary, including same-origin and content-type checks:
 
 - `PATCH /api/v1/adms/{adm}/name`: current `expected_name` and replacement `name`.
 - `DELETE /api/v1/adms/{adm}`: stable `idempotency_key`, `expected_revision`, `expected_epoch`, exact `confirm_name` and `confirm_delete: true`.
@@ -55,4 +55,4 @@ All new controls are owner-only and use the existing session/CSRF boundary:
 
 An identical delete retry returns the original operation even after purge; a changed meaning under the same key fails. A second identity for an already-deleting model cannot create another cleanup. Old model routes return `410 gone` where a valid model-scoped operation reaches the fence; revoked credentials fail authentication/authorization first. Invalid route inputs can fail schema validation before resource lookup. Old global import/export operation views stop returning deleted content immediately.
 
-Owned schema 16 stores deletion progress in registry `deletions` and `deletion_grants` tables. The gateway retains its own idempotent redaction ledger. Startup does not reopen deleting models. Paired backup/restore preserves deletion progress, minimal tombstones and all retained uncertainty; restored connection and client authority remain disabled. An older external backup is an independent copy and can restore knowledge that was present when that backup was captured.
+Owned schema 17 stores deletion progress in registry `deletions` and `deletion_grants` tables. The gateway retains its own idempotent redaction ledger. Startup does not reopen deleting models. Paired backup/restore preserves deletion progress, minimal tombstones and all retained uncertainty; restored connection and client authority remain disabled. An older external backup is an independent copy and can restore knowledge that was present when that backup was captured.

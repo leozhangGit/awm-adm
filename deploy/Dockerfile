@@ -48,9 +48,11 @@ FROM app AS test
 COPY --from=test-dependencies /opt/venv /opt/venv
 COPY --chown=10001:10001 tests/ /opt/awm-adm/tests/
 COPY scripts/ /opt/awm-adm/scripts/
+COPY codex-plugin/ /opt/awm-adm/codex-plugin/
 COPY examples/ /opt/awm-adm/examples/
 COPY contracts/ /opt/awm-adm/contracts/
 COPY docs/ /opt/awm-adm/docs/
+COPY deploy/ /opt/awm-adm/deploy/
 COPY config/ /opt/awm-adm/config/
 COPY src/ /opt/awm-adm/src/
 COPY console/ /opt/awm-adm/console-source/

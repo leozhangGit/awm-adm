@@ -120,7 +120,7 @@ class Execution:
                     "authority_generation": self.s._authority(),
                     "learning_generation": self.learning.settings()["generation"],
                     "publication": "checked_auto",
-                    "publication_authority": "authenticated_teach_submission",
+                    "publication_authority": "local_teach_submission",
                     "started_at_ms": self.s.now(),
                     "deadline_ms": self.s.now() + 900000,
                     "connection_id": conn["id"],
@@ -263,7 +263,7 @@ class Execution:
                 fault("forbidden", "Episode is outside this teaching task")
         return True
 
-    def published(self, db, key, ep, revision, context):
+    def published(self, db, key, ep, revision, context, effects=None):
         task = self.t.get(key, ep["parent_task"])
         run = task["execution"]
         step = next(
@@ -273,6 +273,14 @@ class Execution:
             or s.get("episode_input", {}).get("idempotency_key") == ep["body"]["idempotency_key"]
         )
         step.update(status="accepted", episode_id=ep["id"], revision_id=revision)
+        if effects is not None:
+            step["effects"] = effects
+            if effects.get("removed"):
+                step.update(
+                    status="unresolved",
+                    reason="dependent_capabilities_removed",
+                    accepted_symbols=sorted(effects.get("declarations", {})),
+                )
         run["context"] = {
             **run["context"],
             "revision_id": revision,
@@ -484,6 +492,12 @@ class Execution:
                     else {}
                 ),
                 "acquisition_contract": child["acquisition_contract"],
+                "preserve_declarations": child.get("preserve_declarations", {}),
+                "preservation_instructions": (
+                    "Retained dependent definitions are already constructed from accepted syntax. "
+                    "Keep their bodies unchanged; only the explicitly requested definitions may change. "
+                    "The complete candidate, including retained dependents, must pass all local checks."
+                ),
             },
             "construction": True,
             "disclose_model": True,
@@ -570,17 +584,18 @@ class Execution:
             run["vocabulary_started"] = True
             self.persist(key, task)
             captured = run["context"]
-        self.rt.language._compute(
+        checked = self.rt.language._compute(
             key,
             captured["revision_id"],
             vocabulary,
-            "language_vocabulary",
+            "language_reconcile_vocabulary",
             limits={
                 **self.rt.limits(),
                 "max_work": min(1000000, self.rt.limits()["max_work"]),
                 "max_duration_ms": min(5000, self.rt.limits()["max_duration_ms"]),
             },
         )
+        vocabulary = checked["catalog"]["vocabulary"]
         with self.store.lock, self.store.db(key) as db, self.store.transaction(db):
             task = self.t.get(key, task["id"])
             run = task["execution"]
@@ -597,6 +612,7 @@ class Execution:
                 context={**captured, "vocabulary_generation": generation},
                 phase="followup",
                 vocabulary="installed",
+                vocabulary_omissions=checked.get("vocabulary_omissions", []),
             )
             self.save(db, task)
         return True
@@ -676,11 +692,40 @@ class Execution:
         accepted = [
             s["id"]
             for s in run["steps"]
-            if s["status"] == "accepted" or s.get("source_progress", {}).get("accepted", 0)
+            if s["status"] == "accepted"
+            or s.get("source_progress", {}).get("accepted", 0)
+            or s.get("accepted_symbols")
         ]
         unresolved = [s["id"] for s in run["steps"] if s["status"] != "accepted"]
+        completion_issues = []
+        if accepted and run["status"] in TERMINAL and run.get("reason"):
+            completion_issues.append(
+                {
+                    "objective": "Complete teaching follow-up",
+                    "reason": run["reason"],
+                }
+            )
+        if run.get("vocabulary_omissions"):
+            completion_issues.append(
+                {
+                    "objective": "Keep language descriptions aligned with accepted knowledge",
+                    "reason": "obsolete_language_metadata_omitted",
+                }
+            )
+        followup = run.get("followup") or {}
+        if followup.get("status") in LOCAL_FINAL - {"succeeded"}:
+            completion_issues.append(
+                {
+                    "objective": "Answer the original question after learning",
+                    "reason": followup["status"],
+                }
+            )
+        if completion_issues:
+            unresolved = list(dict.fromkeys([*unresolved, *accepted]))
         status = (
-            run["status"]
+            "partially_succeeded"
+            if accepted and run["status"] == "failed"
+            else run["status"]
             if run["status"] in TERMINAL
             else "succeeded"
             if not unresolved
@@ -689,12 +734,19 @@ class Execution:
             else "failed"
         )
         objectives = {c["id"]: c["objective"] for c in task["specification"]["children"]}
+        from ..interaction.admissions import admissions
+        from ..learning.changes import summarize
+
+        changes = summarize(admissions(self.store, run["context"]["adm_id"], run))
         summary = {
             "status": status,
+            "changes": changes,
             "accepted_ids": accepted,
             "unresolved_ids": unresolved,
             "accepted": [
-                objectives[s["id"]]
+                ("Saved declarations: " + ", ".join(s["accepted_symbols"]))
+                if s.get("accepted_symbols")
+                else objectives[s["id"]]
                 + (
                     f" ({s['source_progress']['accepted']} source items accepted; scope incomplete)"
                     if s["status"] != "accepted"
@@ -709,8 +761,15 @@ class Execution:
                     "reason": s.get("reason", run.get("reason", "not_completed")),
                 }
                 for s in run["steps"]
-                if s["id"] in unresolved
+                if s["status"] != "accepted"
+            ]
+            + completion_issues,
+            "checked_changes": [
+                {"objective_id": s["id"], "revision_id": s.get("revision_id"), "effects": s["effects"]}
+                for s in run["steps"]
+                if s.get("effects") is not None
             ],
+            "vocabulary_omissions": run.get("vocabulary_omissions", []),
             "context": run["context"],
             "followup": run["followup"],
             "stop_reason": run.get("reason"),
@@ -729,7 +788,9 @@ class Execution:
         run = task["execution"]
         self.valid(key, task, remote=True)
         conn = self.learning._usable(run["connection_id"], run["connection_version"], "task_narration")
-        packet = run["summary"]
+        # Exact artifact effects remain in the API; the explanation gets a bounded
+        # checked before/after view, without duplicating all hashes and support rows.
+        packet = {k: v for k, v in run["summary"].items() if k != "checked_changes"}
         if len(dumps(packet)) > 32768:
             fault("quota_exceeded", "Completion outcome exceeds bounded explanation packet")
         digest = fingerprint(packet)
@@ -740,6 +801,19 @@ Say what the model learned and can now do, in the user's terms. Preserve the exa
 meaning of accepted conditions: a necessary condition is not a sufficient one,
 and an 'exactly when' rule must not become only an 'only when' restriction.
 Mention unresolved work when present and make partial completion clear. Do not
+describe the whole objective as fulfilled when only some declarations were saved.
+Checked changes and unresolved outcomes take precedence over objective wording.
+Use changes.entries to explain the prior and accepted definitions or dated facts.
+The bounded before/after definition objects supply exact structure when
+definition_complete is true, including structures whose short description is
+abbreviated. Otherwise do not invent omitted expressions, types or conditions.
+A preserved_dependent has an exactly unchanged definition rechecked under changed
+bindings; do not say its rule was removed or rewritten. Its consequences can change.
+Distinguish evidence_changed from a changed definition and removed from historical
+erasure. Do not infer semantic equivalence or new query results. Abbreviated or
+incomplete reports must be described as such. Publication revisions are historical;
+they do not prove the current mode or current knowledge. Keep the explanation brief.
+Do not
 append 'Unresolved: None', status codes or a checklist of empty categories.
 Avoid internal prefixes such as 'Accepted:' and do not repeat the whole summary.
 Do not claim external truth, stronger proof, or that suggested actions happened.
@@ -748,7 +822,7 @@ outcomes. Return only the required JSON with the exact packet digest and
 accepted/unresolved IDs. Your wording is an explanation, not a proof.
 """,
             "context": {"packet_digest": digest, "packet": packet},
-            "prompt_version": "teaching-completion/2",
+            "prompt_version": "teaching-completion/3",
             "schema": COMPLETION_SCHEMA,
         }
         raw, estimate = make_wire(conn, spec, 4096)
@@ -820,6 +894,8 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
             if summary["accepted"]
             else "No new knowledge was saved. "
         )
+        if summary["changes"]["text"]:
+            text += summary["changes"]["text"] + " "
         if summary["unresolved"]:
             text += (
                 "Still unresolved: "
@@ -830,7 +906,7 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
                 + ". "
             )
         if summary["vocabulary"] != "installed":
-            text += "Vocabulary was not installed (" + summary["vocabulary"].replace("_", " ") + "). "
+            text += "Language setup is incomplete; accepted knowledge is retained. "
         if not run.get("narration"):
             text += (
                 "AI completion explanation was unavailable; this summary reports the saved local outcomes. "

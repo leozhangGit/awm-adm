@@ -26,11 +26,15 @@ def attach(app, auth, service):
     @router.post("/intake/{uid}/push", status_code=202)
     def push(request: Request, adm: str, uid: str, body: AppendInput):
         principal = auth.require(request, adm, permission="append")
+        if principal.get("kind") == "local_workspace":
+            principal = service.local_principal(adm, uid, principal)
         return service.push(adm, uid, body.model_dump(), principal)
 
     @router.get("/intake/{uid}/receipts/{identity}")
     def receipt(request: Request, adm: str, uid: str, identity: str):
         principal = auth.require(request, adm, permission="append")
+        if principal.get("kind") == "local_workspace":
+            principal = service.local_principal(adm, uid, principal)
         return service.receipt(adm, uid, identity, principal)
 
     app.include_router(router)

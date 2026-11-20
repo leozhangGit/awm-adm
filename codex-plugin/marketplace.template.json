@@ -1,0 +1,12 @@
+{
+  "name": "awm-adm-local",
+  "interface": {"displayName": "AWM-ADM local"},
+  "plugins": [
+    {
+      "name": "awm-adm",
+      "source": {"source": "local", "path": "./codex-plugin"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}

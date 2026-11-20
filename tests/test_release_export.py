@@ -72,6 +72,20 @@ def test_public_npm_build_configuration_is_retained(tmp_path):
     assert set(result["files"]) == {"pyproject.toml", "console/.npmrc"}
 
 
+def test_plugin_source_is_public_but_runtime_and_private_state_are_not(tmp_path):
+    root = tmp_path / "source"
+    root.mkdir()
+    (root / "pyproject.toml").write_text('[project]\nversion = "0.3.0"\n')
+    public = {"plugin.json", "mcp.json", "uv.lock", "src/connector.py", "skills/project/SKILL.md"}
+    private = {".venv/bin/python", ".local/bindings.json", ".cache/package", ".codex/config.toml"}
+    for relative in public | private:
+        path = root / "codex-plugin" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("Synthetic packaging fixture")
+    result = exporter.export(root, tmp_path / "export")
+    assert set(result["files"]) == {"pyproject.toml"} | {"codex-plugin/" + p for p in public}
+
+
 def test_export_rejects_symlinks_and_recursive_destination_without_partial_package(tmp_path):
     root = tmp_path / "source"
     (root / "src").mkdir(parents=True)

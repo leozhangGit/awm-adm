@@ -21,7 +21,7 @@ x-runtime: &runtime
 services:
   app:
     <<: *runtime
-    image: awm-adm-app:0.3.0
+    image: awm-adm-app:0.4.0
     build:
       context: .
       dockerfile: deploy/Dockerfile
@@ -30,7 +30,7 @@ services:
     cpus: 2
     pids_limit: 128
     tmpfs: ["/tmp:size=268435456,mode=1777"]
-    ports: ["127.0.0.1:8080:8080"]
+    ports: ["127.0.0.1:9527:9527"]
     networks: [internal, ingress]
     security_opt: ["no-new-privileges:true", "seccomp=deploy/app-seccomp.json"]
     environment:
@@ -47,7 +47,7 @@ services:
   learning-worker:
     <<: *runtime
     networks: [internal]
-    image: awm-adm-worker:0.3.0
+    image: awm-adm-worker:0.4.0
     build:
       context: .
       dockerfile: deploy/Dockerfile
@@ -64,7 +64,7 @@ services:
 
   provider-gateway:
     <<: *runtime
-    image: awm-adm-gateway:0.3.0
+    image: awm-adm-gateway:0.4.0
     build:
       context: .
       dockerfile: deploy/Dockerfile
@@ -85,7 +85,7 @@ services:
     <<: *runtime
     networks: [internal]
     profiles: [tools]
-    image: awm-adm-app:0.3.0
+    image: awm-adm-app:0.4.0
     restart: "no"
     secrets: [owner-token]
     entrypoint: [awm-adm, operator, --url, "http://app:8081"]
@@ -93,7 +93,7 @@ services:
   operations:
     <<: *runtime
     profiles: [tools]
-    image: awm-adm-app:0.3.0
+    image: awm-adm-app:0.4.0
     restart: "no"
     network_mode: none
     volumes: [adm-data:/var/lib/awm-adm, gateway-data:/var/lib/awm-gateway, "./.local/backups:/backups"]

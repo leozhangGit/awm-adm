@@ -10,7 +10,7 @@ History is read-only. It retrieves saved outcomes and original context bindings 
 
 ## Endpoints
 
-- `GET /api/v1/adms/{adm}/activity?start=…&end=…&limit=30` returns grouped entries, original bindings, `next_cursor` and the count of undated legacy records. Pass the returned cursor as `after` with the same time filter to continue. The API authenticates the model scope on every page.
+- `GET /api/v1/adms/{adm}/activity?start=…&end=…&limit=30` returns grouped entries, original bindings, `next_cursor` and the count of undated legacy records. Pass the returned cursor as `after` with the same time filter to continue. The API checks the requested model and cursor scope on every page under the shared local-access boundary.
 - `GET /api/v1/adms/{adm}/knowledge?query=…&kind=declaration&limit=30` returns current matches and `revision_id`. `kind` can select declarations, evidence or a specific declaration/evidence kind. Pass `after` and `revision` to continue the same search.
 
 Neither endpoint changes the accepted model, exposes provider credentials or sends data to a remote model. Evidence records describe support and provenance; they do not establish external truth.

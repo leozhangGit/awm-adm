@@ -10,7 +10,7 @@ FORBIDDEN = {"adm", "research", "examples", "study", "experiments"}
 
 def violations(root: Path) -> list[str]:
     failures = []
-    for subtree in ("src", "tests", "console/src"):
+    for subtree in ("src", "tests", "console/src", "codex-plugin/src", "codex-plugin/tests"):
         for path in sorted((root / subtree).rglob("*")):
             relative = path.relative_to(root).as_posix()
             if path.is_symlink():
@@ -37,6 +37,10 @@ def violations(root: Path) -> list[str]:
                                 failures.append(f"{relative}:{node.lineno}: unreviewed dynamic import")
                     if any(module.split(".")[0] in FORBIDDEN for module in modules):
                         failures.append(f"{relative}:{node.lineno}: parent-project import")
+                    if subtree in {"src", "codex-plugin/src"}:
+                        other = "awm_adm_plugin" if subtree == "src" else "awm_adm"
+                        if any(module.split(".")[0] == other for module in modules):
+                            failures.append(f"{relative}:{node.lineno}: service/plugin runtime coupling")
                     if (
                         relative.startswith("src/awm_adm/engine/") or relative == "src/awm_adm/__init__.py"
                     ) and isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -56,7 +60,16 @@ def violations(root: Path) -> list[str]:
                             )
                     if isinstance(node, ast.Attribute) and ast.unparse(node) in {"sys.path", "sys.meta_path"}:
                         failures.append(f"{relative}:{node.lineno}: import-path manipulation")
-    for name in ("pyproject.toml", "uv.lock", "console/package.json", "console/package-lock.json"):
+    for name in (
+        "pyproject.toml",
+        "uv.lock",
+        "console/package.json",
+        "console/package-lock.json",
+        "codex-plugin/pyproject.toml",
+        "codex-plugin/uv.lock",
+    ):
+        if not (root / name).exists():
+            continue
         data = (root / name).read_text()
         if (
             "file:.." in data

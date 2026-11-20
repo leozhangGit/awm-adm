@@ -8,6 +8,7 @@ from ..runtime.protocol import unpack
 from ..wire import decode
 from .models import Proposal
 from .parser import catalog, check_query, parse, validate_vocabulary
+from .vocabulary import effective_vocabulary
 
 
 def compute(task, budget):
@@ -18,9 +19,12 @@ def compute(task, budget):
         or digest(encode(checked["support"])) != task["context"]["support_root"]
     ):
         raise ValueError("Language context does not match the accepted snapshot")
-    metadata = validate_vocabulary(model, task["vocabulary"], budget)
+    if task["operation"] == "language_vocabulary":
+        metadata, omitted = validate_vocabulary(model, task["vocabulary"], budget), []
+    else:
+        metadata, omitted = effective_vocabulary(model, task["vocabulary"], budget)
     cat = catalog(model, metadata, budget)
-    result = {"catalog": cat, "work": budget.used}
+    result = {"catalog": cat, "vocabulary_omissions": omitted, "work": budget.used}
     if task["operation"] == "language_ask_catalog":
         from ..conversations.history import snapshot_metadata
 
@@ -29,7 +33,7 @@ def compute(task, budget):
             "accepted_fact_projections": snapshot_metadata(checked, budget),
             "work": budget.used,
         }
-    if task["operation"] in ("language_catalog", "language_vocabulary"):
+    if task["operation"] in ("language_catalog", "language_vocabulary", "language_reconcile_vocabulary"):
         return result
     if task["operation"] == "language_revalidate":
         draft = IntentDraft.model_validate(task["draft"])

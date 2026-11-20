@@ -2,7 +2,7 @@
 
 One connection supplies remote interpretation, acquisition, extraction and explanation. Provider choice and model identifier are explicit configuration. They do not select domain rules, change local validation or require a pricing catalog.
 
-`GET /api/v1/connection` returns the saved provider/model, a saved-key indicator, current state, configuration generation, any activation error and the gateway's public encryption key. It never returns the saved credential. All connection endpoints require administrator authority.
+`GET /api/v1/connection` returns the saved provider/model, a saved-key indicator, current state, configuration generation, any activation error and the gateway's public encryption key. It never returns the saved credential. Connection endpoints use the shared trusted local workspace boundary.
 
 Submit `POST /api/v1/connection/enable` with a stable `idempotency_key`, `provider` (`openai` or `anthropic`), `model`, and either a new encrypted credential with its `sealing_key_id` or no credential fields to reuse the saved key. The encryption envelope contains `credential`, `provider` and the same `idempotency_key`, sealed with the gateway's RSA-OAEP-SHA256 key and its existing `awm-adm-provider-credential/1` label. The application stores ciphertext; only the gateway decrypts it. A provider change requires a replacement credential.
 
@@ -20,6 +20,6 @@ New calls use their dispatch authorization timestamp. Retained calls without tha
 
 ## Existing installations
 
-Schema 16 preserves connection versions, encrypted credentials and historical accounting. It initializes the connection disabled without sending a test. One existing configuration is retained automatically; multiple legacy configurations require choosing one before activation. Historical versions remain for provenance. The retired global enable, separate connection test, price and spending mutation endpoints cannot bypass this state machine.
+Current schema 17 preserves connection versions, encrypted credentials and historical accounting. An upgrade from schema 16 retains the saved connection state without testing it. Upgrades from older multi-connection stores initialize the single connection disabled: one existing configuration is retained automatically; multiple legacy configurations require choosing one before activation. Historical versions remain for provenance. The retired global enable, separate connection test, price and spending mutation endpoints cannot bypass this state machine.
 
 Use a paired pre-upgrade backup for rollback to an earlier schema; do not open a newer store with an older binary. Model artifact and snapshot profiles remain unchanged.

@@ -14,11 +14,11 @@ Retained originals survive reload and may be selected again. Removing a composer
 
 ## Managed push queues
 
-Normal Teach is a finite task. An integration needing ongoing intake uses owner-only `POST /api/v1/adms/{adm}/source-queues` with the same direct-message input and an explicit source-only request. This is a bounded queue of supplied material; no crawler or pull connector is created. Preparation checks finite entities, predicates and coverage before the queue becomes available.
+Normal Teach is a finite task. An integration needing ongoing intake uses local `POST /api/v1/adms/{adm}/source-queues` with the same direct-message input and an explicit source-only request. This is a bounded queue of supplied material; no crawler or pull connector is created. Preparation checks finite entities, predicates and coverage before the queue becomes available.
 
 The task owns its feed. Its commands can pause, resume, cancel or finish receiving. Pause preserves received data while fencing new dispatch/publication. Finish freezes the source sequence and drains already received items within remaining operating limits. Cancel preserves accepted knowledge and unresolved usage. Direct feed controls cannot bypass a managed parent's authority.
 
-The owner issues an append credential at `POST /api/v1/adms/{adm}/intake/{task}/credentials`. The credential binds one ADM/task/source scope and expires no later than the task. It permits bounded pushes and receipt reads only. It cannot read the model, choose a provider, change policy or publish. The secret is returned once.
+Local callers can push to the prepared queue without a credential; task/source scope, throttling, idempotency and publication checks still apply. A local caller can optionally issue an append credential at `POST /api/v1/adms/{adm}/intake/{task}/credentials`. The credential binds one ADM/task/source scope and expires no later than the task. It permits bounded pushes and receipt reads only. The append endpoint cannot read the model, choose a provider, change policy or publish. This is an endpoint capability; it does not isolate a process that also has access to the full trusted local workspace. The secret is returned once.
 
 Producers send `AppendInput` to `POST .../intake/{task}/push`: a durable idempotency key and up to four records with source/item/version, UTF-8 content, media type, attribution and an optional exact superseded version. Provider or policy fields are forbidden. Receipt and original storage commit together. `202` means received, not learned. A lost acknowledgement is recovered by replaying the identical body/key or reading `GET .../intake/{task}/receipts/{key}`; changed content under that key conflicts.
 
@@ -46,4 +46,4 @@ Source receipt order, event time and candidate arrival order are different. Stor
 
 Task-owned source-policy/support commits advance that parent's bindings atomically. Other changes fence it rather than silently adopting new meaning. Resolution records bind the replacement revision and claims without rewriting historical notices. Evidence retained in snapshots is rechecked on import.
 
-Schema 16 preserves the existing source/intake stores and adds direct exchange metadata. Recovery preserves originals, cursors, known outcomes, accepted facts and unresolved dispatch records. Paired restore disables the connection, pauses feeds and revokes credentials. See [Sources](SOURCES.md), [Feeds](FEEDS.md), [Teaching execution](TEACHING_EXECUTION.md) and [Operations](OPERATIONS.md).
+Schema 17 preserves source/intake stores, direct exchange metadata and immutable historical actor references. Recovery preserves originals, cursors, known outcomes, accepted facts and unresolved dispatch records. Paired restore disables the connection, pauses feeds and revokes credentials. See [Sources](SOURCES.md), [Feeds](FEEDS.md), [Teaching execution](TEACHING_EXECUTION.md) and [Operations](OPERATIONS.md).

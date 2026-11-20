@@ -20,6 +20,12 @@ inventory = runpy.run_path(str(ROOT / "scripts/dependency_inventory.py"))["inven
 def seed_inventory(root, monkeypatch):
     (root / "console/node_modules/example").mkdir(parents=True)
     (root / "deploy").mkdir()
+    (root / "codex-plugin").mkdir()
+    (root / "codex-plugin/uv.lock").write_text(
+        '[[package]]\nname = "awm-adm-codex-plugin"\nversion = "0.1.0.dev1"\n'
+        '[[package]]\nname = "connector-dependency"\nversion = "2.0"\n'
+        'source = { registry = "https://example.org/simple" }\n'
+    )
     (root / "uv.lock").write_text(
         '[[package]]\nname = "awm-adm"\nversion = "0.3.0"\n'
         '[[package]]\nname = "example"\nversion = "1.0"\n'
@@ -49,6 +55,8 @@ def test_inventory_keeps_package_provenance_without_installation_metadata(tmp_pa
     assert result["python"][0]["source"] == {"registry": "https://example.org/simple"}
     assert result["node"][0]["license"] == "MIT"
     assert result["node"][0]["integrity"] == "fixture"
+    assert result["python_plugin"][0]["name"] == "connector-dependency"
+    assert result["python_plugin"][0]["license"] == "metadata unavailable"
     assert result["lock_sha256"]["uv.lock"] == hashlib.sha256((tmp_path / "uv.lock").read_bytes()).hexdigest()
     encoded = json.dumps(result)
     assert str(tmp_path) not in encoded
@@ -89,6 +97,11 @@ def test_committed_inventory_matches_locks_and_is_portable():
     assert {(p["name"], p["version"]) for p in result["python"]} == {
         (p["name"], p["version"]) for p in locked_python if p["name"] != "awm-adm"
     }
+    locked_plugin = tomllib.loads((ROOT / "codex-plugin/uv.lock").read_text())["package"]
+    assert {(p["name"], p["version"]) for p in result["python_plugin"]} == {
+        (p["name"], p["version"]) for p in locked_plugin if p["name"] != "awm-adm-codex-plugin"
+    }
+    assert "codex-plugin/uv.lock" in result["lock_sha256"]
     locked_node = json.loads((ROOT / "console/package-lock.json").read_text())["packages"]
     assert {(p["path"], p["version"]) for p in result["node"]} == {
         (path, p["version"]) for path, p in locked_node.items() if path
@@ -107,7 +120,7 @@ def test_committed_inventory_matches_locks_and_is_portable():
         (["--override", "missing.yaml", "--project", "awm-adm"], "dedicated release project"),
         *[
             (["--override", "missing.yaml", "--port", str(port)], "nonproduction port")
-            for port in (8080, 8081, 0, 65536)
+            for port in (9527, 8081, 0, 65536)
         ],
     ],
 )

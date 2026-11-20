@@ -26,6 +26,7 @@ ROOT_FILES = {
     ".python-version",
 }
 ROOT_DIRS = {
+    "codex-plugin",
     "config",
     "console",
     "contracts",

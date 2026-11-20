@@ -363,10 +363,7 @@ def test_http_authority_and_teach_draft_do_not_mutate_theory_or_dispatch(rig):  
     conv = conversation(rt, key)
     before = rt.store.info(key)["revision_id"]
     with client(rt) as http:
-        token = http.post(
-            "/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read", "submit"]}
-        ).json()["token"]
-        headers = {"Authorization": "Bearer " + token}
+        headers = {}
         request = {
             "idempotency_key": "local",
             "expected_revision": before,
@@ -386,7 +383,10 @@ def test_http_authority_and_teach_draft_do_not_mutate_theory_or_dispatch(rig):  
             "disclose_catalog": True,
         }
         assert (
-            http.post(f"/api/v1/adms/{key}/interpretations", json=remote, headers=headers).status_code == 403
+            http.post(
+                f"/api/v1/adms/{key}/interpretations", json=remote, headers={"Origin": "null"}
+            ).status_code
+            == 403
         )
         assert (
             http.post(
@@ -400,7 +400,7 @@ def test_http_authority_and_teach_draft_do_not_mutate_theory_or_dispatch(rig):  
             "text": "Capacity was ten in 2020; please verify it.",
         }
         url = f"/api/v1/adms/{key}/interpretation-sessions/{conv}/teach"
-        assert http.post(url, json=body, headers=headers).status_code == 403
+        assert http.post(url, json=body, headers={"Origin": "null"}).status_code == 403
         first = http.post(url, json=body)
         assert first.status_code == 201 and first.json()["status"] == "draft"
         assert http.post(url, json=body).json()["id"] == first.json()["id"]
@@ -449,6 +449,7 @@ def test_schema_four_migration_preserves_models_requests_and_learning(tmp_path):
             from tests.migration_support import remove_conversations
 
             remove_conversations(db)
+            db.execute("DROP TABLE IF EXISTS local_workspace")
             db.execute("PRAGMA user_version=4")
     rt = Runtime(cfg, start_scheduler=False)
     try:

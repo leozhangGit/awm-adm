@@ -2,15 +2,16 @@ PYTHON ?= python3
 UV := .venv/bin/uv
 PY := .venv/bin/python
 
-.PHONY: bootstrap check test build schemas isolate dev-api dev-console engine-demo check-lean runtime-setup up status stop
+.PHONY: bootstrap check test build schemas isolate dev-api dev-console engine-demo check-lean runtime-setup up status stop plugin-check
 
 bootstrap:
 	$(PYTHON) -m venv .venv
 	$(PY) -m pip install --cache-dir .cache/pip uv==0.13.7
 	$(UV) sync --locked --reinstall-package uv --cache-dir .cache/uv --python .venv/bin/python --no-python-downloads
 	cd console && npm ci --ignore-scripts
+	$(UV) sync --locked --no-editable --project codex-plugin --cache-dir .cache/uv --python .venv/bin/python --no-python-downloads
 
-check:
+check: plugin-check
 	.venv/bin/ruff check src tests scripts
 	.venv/bin/ruff format --check src tests scripts
 	$(PY) scripts/check_boundaries.py
@@ -59,3 +60,9 @@ status:
 
 stop:
 	docker compose stop
+
+plugin-check:
+	.venv/bin/ruff check codex-plugin/src codex-plugin/tests codex-plugin/setup.py codex-plugin/launch.py
+	.venv/bin/ruff format --check codex-plugin/src codex-plugin/tests codex-plugin/setup.py codex-plugin/launch.py
+	$(UV) sync --locked --offline --no-editable --project codex-plugin --cache-dir .cache/uv --python .venv/bin/python --no-python-downloads
+	codex-plugin/.venv/bin/python -I -m unittest discover -s codex-plugin/tests -v

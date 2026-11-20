@@ -33,3 +33,15 @@ def test_kernel_guard_rejects_http_framework_and_persistence_dependencies(tmp_pa
     errors = violations(tmp_path)
     assert any("non-standard-library kernel dependency" in item for item in errors)
     assert any("transport/storage dependency in kernel" in item for item in errors)
+
+
+def test_plugin_remains_independent_of_service_and_parent_source(tmp_path):
+    (tmp_path / "codex-plugin/src").mkdir(parents=True)
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/bad.py").write_text("import awm_adm_plugin\n")
+    (tmp_path / "codex-plugin/src/bad.py").write_text("import awm_adm\nimport research\n")
+    (tmp_path / "codex-plugin/pyproject.toml").write_text('dependency = {path = "../service"}')
+    errors = violations(tmp_path)
+    assert sum("runtime coupling" in item for item in errors) == 2
+    assert sum("parent-project import" in item for item in errors) == 1
+    assert any("parent dependency" in item for item in errors)

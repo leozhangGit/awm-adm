@@ -1,4 +1,4 @@
-import type { Json, Session } from "./types.ts";
+import type { Json } from "./types.ts";
 import { eventFrames, parseJson } from "./query.ts";
 
 const SESSION = "awm-adm-session-csrf";
@@ -11,18 +11,11 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
-let currentSession: Session | null = null;
-// Remove obsolete session metadata on upgrade; credentials and CSRF state stay out of persistent storage.
+// Legacy metadata is no longer an access credential.
 try {
   globalThis.localStorage?.removeItem(SESSION);
 } catch {
   /* Storage may be disabled. */
-}
-export function session(): Session | null {
-  return currentSession;
-}
-export function saveSession(value: Session | null) {
-  currentSession = value;
 }
 export async function api<T>(
   path: string,
@@ -37,8 +30,6 @@ export async function api<T>(
     "Content-Type": "application/json",
     "X-ADM-Client": "console",
   };
-  const csrf = session()?.csrf;
-  if (csrf) headers["X-CSRF-Token"] = csrf;
   if (options.revision) headers["If-Match"] = options.revision;
   const body =
     options.body === undefined ? undefined : JSON.stringify(options.body);
@@ -50,21 +41,11 @@ export async function api<T>(
     method: options.method || "GET",
     headers,
     body,
-    credentials: "same-origin",
+    credentials: "omit",
     signal: options.signal || AbortSignal.timeout(30_000),
   });
   const value = parseJson(await response.text()) as Record<string, unknown>;
   if (!response.ok) {
-    if (
-      response.status === 401 &&
-      ![
-        "/auth/login",
-        "/auth/setup",
-        "/auth/recover",
-        "/auth/password",
-      ].includes(path)
-    )
-      window.dispatchEvent(new Event("adm-session-expired"));
     throw new ApiError(
       response.status,
       String(value.code || "request_failed"),
@@ -72,12 +53,6 @@ export async function api<T>(
     );
   }
   return value as T;
-}
-export function authApi<T>(path: string, body?: unknown) {
-  return api<T>("/auth" + path, {
-    method: body === undefined ? "GET" : "POST",
-    body,
-  });
 }
 export function download(name: string, value: unknown) {
   const url = URL.createObjectURL(
@@ -102,7 +77,7 @@ export async function watch(
   changed: () => void,
   status: (text: string) => void,
 ) {
-  const key = `adm-events:${session()?.id}:${adm}`;
+  const key = `adm-events:workspace:${adm}`;
   let after = Number(sessionStorage.getItem(key) || "0"),
     failures = 0;
   if (!Number.isSafeInteger(after) || after < 0) after = 0;
@@ -126,7 +101,7 @@ export async function watch(
         `/api/v1/adms/${adm}/events?after=${after}&limit=100`,
         {
           headers: { Accept: "text/event-stream" },
-          credentials: "same-origin",
+          credentials: "omit",
           signal,
         },
       );
@@ -172,10 +147,6 @@ export async function watch(
       }
     } catch (error) {
       if (signal.aborted) break;
-      if (error instanceof ApiError && error.status === 401) {
-        window.dispatchEvent(new Event("adm-session-expired"));
-        break;
-      }
       if (error instanceof ApiError && error.code === "cursor_expired") {
         status("History expired · resynchronizing");
         try {

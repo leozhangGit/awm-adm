@@ -5,9 +5,15 @@ import { chatScroll } from "./chat-scroll.ts";
 export function ChatHistory({
   children,
   version,
+  hasOlder = false,
+  loadingOlder = false,
+  onLoadMore,
 }: {
   children: ReactNode;
   version: unknown;
+  hasOlder?: boolean;
+  loadingOlder?: boolean;
+  onLoadMore?: (preserve: () => void) => Promise<void>;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -30,7 +36,7 @@ export function ChatHistory({
     };
   }, []);
 
-  useLayoutEffect(() => controller.current?.changed(), [version]);
+  useLayoutEffect(() => controller.current?.changed(), [version, hasOlder]);
 
   return (
     <div className="direct-history">
@@ -42,6 +48,32 @@ export function ChatHistory({
         ref={viewport}
       >
         <div className="chat-messages direct-message-list" ref={content}>
+          {hasOlder && (
+            <div className="chat-load-more">
+              <button
+                className="secondary"
+                type="button"
+                disabled={loadingOlder}
+                onClick={() =>
+                  void onLoadMore?.(() => {
+                    const area = viewport.current!;
+                    const top = area.getBoundingClientRect().top;
+                    const visible = [
+                      ...area.querySelectorAll<HTMLElement>(
+                        "[data-exchange-id]",
+                      ),
+                    ].find((item) => item.getBoundingClientRect().bottom > top);
+                    if (visible)
+                      controller.current?.preserve(
+                        () => visible.getBoundingClientRect().top,
+                      );
+                  })
+                }
+              >
+                {loadingOlder ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          )}
           {children}
         </div>
       </div>

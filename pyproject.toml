@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "awm-adm"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local Algebraic Domain Models with checked learning and conversational interaction"
 readme = "README.md"
 license = "MIT"
@@ -35,6 +35,7 @@ packages = ["src/awm_adm"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["codex-plugin/src"]
 addopts = "--import-mode=importlib"
 
 [tool.ruff]

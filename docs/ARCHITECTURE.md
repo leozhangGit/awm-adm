@@ -22,7 +22,7 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
-| Application | Public API/console, local administrator, registry and ADM stores, authenticated submissions, model controls, local results and scheduling |
+| Application | Public API/console, local workspace, registry and ADM stores, local submissions, model controls, local results and scheduling |
 | Learning worker | Claims one reserved provider job and handles a bounded attempt; queueing alone does not mean a call is running |
 | Provider gateway | Encrypted provider credentials, fixed provider transports, outbound access, at-most-once dispatch and usage outcomes |
 | Compute children | Bounded finite validation, planning, source projection and optional Lean checks outside short database transactions |
@@ -53,18 +53,24 @@ Receipt order is a local increasing sequence at the receiving ADM. Backward mode
 
 Source receipt, extracted claims and accepted knowledge are separate resources. Facts retain exact source versions and spans. Corrections can hold prior support before replacement is accepted. Unknown dates and disputed support remain gaps. A bounded managed push queue extends intake; it does not implement external polling connectors.
 
+## Codex project connector
+
+The bundled `codex-plugin/` is a separate Python/MCP package. It binds the explicitly selected project to an ordinary model through the public API, keeps a private per-project work journal and reuses Ask/Teach. The service receives no repository identity or project path. Fixed tools cover readiness, create/bind, Ask, Teach, work/knowledge reads and explicit mode changes. Provider settings and broader model management remain in the console. Neither the skill nor the connector constitutes an enforcement gate.
+
+New Ask/Teach intents can carry a revision precondition; identical retries recover the original retained interaction before applying that precondition to new work. Machine-readable admission receipts distinguish preservation conflicts, checked violations and unresolved work, and bind accepted replacements/removals to actual publication. The connector keeps these local results separate from provider narration. See the [plugin guide](../codex-plugin/README.md).
+
 ## Persistence and recovery
 
 The registry, per-model SQLite stores and gateway ledger have separate transaction boundaries. Durable intents reconcile cross-store handoffs. Publication commits model/support/decision changes atomically within an ADM. Context generations, cancellation and deletion fence stale work.
 
-Current owned schema is 16. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
+Current owned schema is 17. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
 
 ## Repository map
 
 | Directory | Contents |
 | --- | --- |
 | `src/awm_adm/engine/` | Standard-library finite kernel, admission, planning, snapshots and proof templates |
-| `src/awm_adm/application/`, `runtime/` | API, persistence, account and service runtime |
+| `src/awm_adm/application/`, `runtime/` | API, persistence, local workspace and service runtime |
 | `src/awm_adm/interaction/`, `conversations/`, `teaching/`, `intake/` | Durable interaction, bounded orchestration and supplied material |
 | `src/awm_adm/learning/`, `providers/`, `gateway/`, `allowances/` | Acquisition, transport, usage and historical accounting |
 | `src/awm_adm/sources/`, `feeds/`, `lifecycle/`, `operations/` | Evidence, processing queues, model lifecycle and recovery |

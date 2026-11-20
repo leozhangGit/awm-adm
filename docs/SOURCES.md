@@ -28,6 +28,8 @@ Transport response bytes, token/call reservations, child work/time limits and re
 
 Each `(projection,entity,predicate,cell)` becomes a deterministic qualified zero-argument finite function. Its body contains the checked finite value; its exact evidence subset carries the original source, claim, projection and owner source policy. No shared function must be replaced merely to add another disjoint cell. A conflicting value for the same cell becomes an ordinary declaration conflict. Selecting two claims for the same cell in one batch is held for separate review, even when they agree.
 
+Accepted projections retain checked before/after reports alongside their receipt and publication bindings. Reports distinguish changed values from refreshed support for the same definition and retain typed units, time cells and exact source-version spans. Source Teach exposes these receipts through the same interaction view as learned declarations. See [teaching change reports](CHANGE_REPORTING.md).
+
 Predicate carriers and retained fact-cell identities are immutable. The owner can explicitly extend coverage or select a semantic window through the [coverage transition](FEEDS.md#explicit-coverage-and-windows) API. Out-of-window facts receive support holds; history is retained. Source-permission revisions dispute existing source-derived support. No change silently expands or truncates the model.
 
 Default runtime bounds are 100 items/batch, 256 KiB/item, 2 MiB/batch, 100 extracted claims/item, 128 entities, 256 time cells and 4,096 active fact cells. The closed profile schemas also enforce hard carrier limits. Item/queue/storage limits are checked before committing work. Each extraction/compilation/admission uses a separately bounded, network-free compute child sharing background capacity; serving has separate capacity. An extraction job makes at most one provider call. There is no automatic retry of a dispatched or unknown call. App restart stops interrupted manual work; reviewed but unapproved proposals remain inspectable. Feed-owned safe queued local work follows the durable recovery contract in the feed guide.
@@ -75,7 +77,7 @@ An advanced API client can deliberately request another extraction through `POST
 
 ## API
 
-All routes are under `/api/v1/adms/{adm}`. Read access is instance-scoped; source mutation is owner-only. The ordinary request API retains its existing scoped submit authorization.
+All routes are under `/api/v1/adms/{adm}`. Resource identities are instance-scoped; all public operations use the shared local workspace boundary.
 
 | Route | Use |
 | --- | --- |
@@ -91,6 +93,6 @@ All routes are under `/api/v1/adms/{adm}`. Read access is instance-scoped; sourc
 
 The language Ask/Teach grammar remains available for finite commands. Historical predicate/entity/time lookup is available through Ask and the structured request API. Its entity and predicate choices derive from the owner projection or checked accepted snapshot metadata, and its explicit UTC time produces a typed local request with no provider fallback. The exact request and declared cells remain inspectable through the API.
 
-The exported schemas in `contracts/schemas/` define request shapes. Source-policy generation, source-head identity, revision, cancellation and publication checks run again after expensive child work. The current owned schema 16 retains source history and supports transactional migration of supported owned stores, preserving finite certificate encodings and historical evidence.
+The exported schemas in `contracts/schemas/` define request shapes. Source-policy generation, source-head identity, revision, cancellation and publication checks run again after expensive child work. The current owned schema 17 retains source history and supports transactional migration of supported owned stores, preserving finite certificate encodings and historical evidence.
 
-The [release scope](RELEASE.md) describes supported intake and operational limits. Managed push queues process supplied material within configured bounds; they do not pull from external services. Normal Teach uses the enabled connection and the authenticated request's selected material, without a separate spending setup. Engineering live trials require explicit disclosure, scope and test budgets. Application-specific fidelity must be validated for the intended domain.
+The [release scope](RELEASE.md) describes supported intake and operational limits. Managed push queues process supplied material within configured bounds; they do not pull from external services. Normal Teach uses the enabled connection and the local request's selected material, without a separate spending setup. Engineering live trials require explicit disclosure, scope and test budgets. Application-specific fidelity must be validated for the intended domain.

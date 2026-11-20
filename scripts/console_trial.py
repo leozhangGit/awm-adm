@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import secrets
 from pathlib import Path
 
 import uvicorn
@@ -18,10 +17,6 @@ def main():
     parser.add_argument("--port", type=int, default=8082)
     args = parser.parse_args()
     args.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    token = args.directory / "owner-token"
-    if not token.exists():
-        token.write_text(secrets.token_urlsafe(48))
-        token.chmod(0o600)
     config = AppConfig.model_validate(
         {
             "server": {"port": args.port, "data_dir": str(args.directory.resolve() / "data")},
@@ -32,7 +27,7 @@ def main():
     try:
         assets = Path(__file__).resolve().parents[1] / "console/dist"
         uvicorn.run(
-            create_app(config, runtime=runtime, assets=assets, owner_token=token.read_text()),
+            create_app(config, runtime=runtime, assets=assets),
             host="127.0.0.1",
             port=args.port,
             access_log=False,

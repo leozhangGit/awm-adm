@@ -9,6 +9,7 @@ from pathlib import Path
 import uvicorn
 
 from ..api import create_app
+from ..application.local_access import docker_ingress
 from ..config import load_config
 from .http import create_internal, secret
 from .service import Runtime
@@ -35,7 +36,7 @@ def main():
     thread = threading.Thread(target=internal.run, daemon=True)
     public = uvicorn.Server(
         uvicorn.Config(
-            create_app(runtime.config, runtime=runtime, assets=args.assets, owner_token=tokens["owner"]),
+            create_app(runtime.config, runtime=runtime, assets=args.assets, ingress=docker_ingress()),
             host="0.0.0.0",
             port=runtime.config.server.port,
             access_log=False,

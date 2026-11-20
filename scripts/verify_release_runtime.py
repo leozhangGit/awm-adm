@@ -2,7 +2,6 @@
 
 import argparse
 import base64
-import http.cookiejar
 import json
 import subprocess
 import time
@@ -13,9 +12,6 @@ from uuid import uuid4
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-
-EMAIL = "owner@example.test"
-PASSWORD = "synthetic walkthrough passphrase"
 
 
 def main():
@@ -28,7 +24,7 @@ def main():
     args = parser.parse_args()
     if (
         not args.project.startswith("awm-adm-check-release-")
-        or args.port in (8080, 8081)
+        or args.port in (9527, 8081)
         or not 1024 <= args.port <= 65535
     ):
         raise ValueError("Use a dedicated release project and nonproduction port")
@@ -41,15 +37,10 @@ def main():
         raise ValueError("Require a synthetic gateway with no provider-egress network")
     args.output.mkdir(parents=True, exist_ok=False)
     compose = ["docker", "compose", "-p", args.project, "-f", "compose.yaml", "-f", str(override)]
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
-    )
-    csrf = None
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def api(path, body=None, method=None, *, origin=False):
         headers = {"Content-Type": "application/json"}
-        if csrf:
-            headers["X-CSRF-Token"] = csrf
         if origin:
             headers["X-ADM-Client"] = "console"
         request = urllib.request.Request(
@@ -105,17 +96,6 @@ def main():
             assert result["result"]["value"]["value"] == expected, result
         return result
 
-    assert api("/auth/status")["setup_required"]
-    # This is a new, isolated test account and a synthetic provider key only.
-    api(
-        "/auth/setup",
-        {
-            "bootstrap_token": (root / ".local/secrets/owner-token").read_text().strip(),
-            "email": EMAIL,
-            "password": PASSWORD,
-        },
-    )
-    csrf = api("/auth/me")["csrf"]
     assert not api("/adms")["items"]
     state = wait(lambda: api("/connection"), lambda v: bool(v.get("gateway_key")))
     public = state["gateway_key"]
@@ -193,7 +173,7 @@ def main():
         command("start", "provider-gateway")
     api("/connection/disable", {"idempotency_key": str(uuid4())})
     command("restart", "app")
-    wait(lambda: api("/auth/me"), lambda v: bool(v.get("administrator")))
+    wait(lambda: api("/system"), lambda v: bool(v.get("operational")))
     assert api("/connection")["state"] == "disabled"
     assert len(api(f"/adms/{model}/chat/ask")["items"]) == 3
     assert api("/learning")["usage"] == usage

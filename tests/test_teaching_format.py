@@ -195,7 +195,7 @@ def test_error_diagnostics_do_not_echo_untrusted_values_or_map_keys():
 
 def test_preparation_guidance_is_model_and_domain_neutral():
     spec = specification({"objective": "owner request", "inputs": []}, {}, {}, {})
-    assert spec["prompt_version"] == "adm-teaching-preparation/6"
+    assert spec["prompt_version"] == "adm-teaching-preparation/7"
     assert "local_plan_schema" not in spec["context"]
     assert "plan_json" not in dumps(spec["schema"]).decode()
     assert all(

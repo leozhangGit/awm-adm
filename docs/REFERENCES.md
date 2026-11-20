@@ -15,7 +15,7 @@ AWM-ADM adopts explicit, inspectable models as its foundation and organizes them
 - Empty or checked-snapshot initialization, independent ownership and versioned evidence/history.
 - A separation between fallible acquisition/conversational presentation and authoritative execution against accepted models.
 - Receiver-ordered forward/backward conflict policies, with mode changes applying only to future decisions.
-- Owner requirements, bounded background jobs, admission controls, spending limits, APIs and a conversational console.
+- Owner requirements, bounded background jobs, admission controls, usage accounting, APIs and a conversational console.
 
 The role assigned to LLMs here is a service boundary, not a claim that AWM excludes LLM reasoning. AWM's value is a project design premise; this implementation does not establish comparative superiority or reproduce the paper's experiments. The [project introduction](https://concourses.net/awm-adm.html) explains the motivation and architecture.
 
@@ -32,12 +32,11 @@ The package owns its finite engine, runtime and test fixtures. Compatibility fix
 | Local Lean kernel | [Lean 4.19.0](https://github.com/leanprover/lean4/releases/tag/v4.19.0); [pinned archive](../deploy/lean-lock.json) |
 | Container services | [Docker Compose](https://docs.docker.com/compose/); [Dockerfile and base pins](../deploy/Dockerfile) |
 | Application isolation | [Moby seccomp source](https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/seccomp/default.json); [local provenance](../deploy/seccomp-provenance.json) |
-| Password hashing and credential encryption | [cryptography Argon2id](https://cryptography.io/en/stable/hazmat/primitives/key-derivation-functions/#argon2id), [Fernet](https://cryptography.io/en/stable/fernet/), [RSA](https://cryptography.io/en/stable/hazmat/primitives/asymmetric/rsa/) |
-| Authentication guidance | [OWASP authentication](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html), [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) |
+| Provider credential encryption | [Fernet](https://cryptography.io/en/stable/fernet/), [RSA](https://cryptography.io/en/stable/hazmat/primitives/asymmetric/rsa/) |
 | HTTP and typed validation | [FastAPI](https://fastapi.tiangolo.com/), [Pydantic](https://docs.pydantic.dev/), [JSON Schema](https://json-schema.org/) |
 | Provider transports | [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [Anthropic Structured Outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs) |
 | Console build and checks | [React](https://react.dev/), [Vite](https://vite.dev/), [TypeScript](https://www.typescriptlang.org/), [Node TypeScript execution](https://nodejs.org/docs/latest-v22.x/api/typescript.html), [Prettier](https://prettier.io/docs/cli) |
 
-Exact dependency versions and hashes are in the lock files and [dependency inventory](dependency-inventory.json). The linked documentation explains upstream interfaces; it does not certify this application, verify a provider account or establish current pricing. Shipped audited pricing profiles have explicit validity windows described in [Connection and usage](CONNECTION.md).
+Exact dependency versions and hashes are in the lock files and [dependency inventory](dependency-inventory.json). The linked documentation explains upstream interfaces; it does not certify this application, verify a provider account or establish current pricing. Current connection behavior and retained accounting are described in [Connection and usage](CONNECTION.md).
 
 Original software is MIT-licensed. Bundled profiles and dependencies retain their own notices in [Third-party notices](../THIRD_PARTY_NOTICES.md).

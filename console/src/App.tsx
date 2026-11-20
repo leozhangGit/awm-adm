@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, api, authApi, download, saveSession, watch } from "./api.ts";
-import { LoginSettings, Login } from "./Auth.tsx";
+import { api, download, watch } from "./api.ts";
 import type { Adm, Json, Limits, Model, Operation, System } from "./types.ts";
 import { short } from "./types.ts";
 import { Badge, CopyButton, Notice } from "./components.tsx";
@@ -21,7 +20,6 @@ const nav = [
   { id: "adms", label: "Domain models", icon: "◇" },
   { id: "connections", label: "Connections", icon: "⇄" },
   { id: "operations", label: "Operations", icon: "⚙" },
-  { id: "login", label: "Login", icon: "○" },
 ];
 type Route = {
   view: string;
@@ -33,12 +31,7 @@ type Route = {
 function location(): Route {
   const p = new URLSearchParams(window.location.hash.slice(1));
   const oldView = p.get("view") || "adms";
-  const view =
-    oldView === "account"
-      ? "login"
-      : ["sources", "learning"].includes(oldView)
-        ? "adms"
-        : oldView;
+  const view = ["sources", "learning"].includes(oldView) ? "adms" : oldView;
   const oldTab = ["sources", "learning"].includes(oldView)
     ? "teach"
     : p.get("tab") || "ask";
@@ -257,15 +250,12 @@ function Instance({
 export default function App() {
   const [route, setRoute] = useState(location),
     [system, setSystem] = useState<System | null>(null),
-    [authed, setAuthed] = useState(false),
-    [checking, setChecking] = useState(true),
     [adms, setAdms] = useState<Adm[]>([]),
     [operations, setOperations] = useState<Operation[]>([]),
     [limits, setLimits] = useState<Limits | null>(null),
     [tick, setTick] = useState(0),
     [error, setError] = useState(""),
     [readError, setReadError] = useState(""),
-    [sessionReadError, setSessionReadError] = useState(false),
     [busy, setBusy] = useState(false),
     [creating, setCreating] = useState(false),
     [message, setMessage] = useState("");
@@ -277,47 +267,14 @@ export default function App() {
     return () => window.removeEventListener("hashchange", changed);
   }, []);
   useEffect(() => {
-    const expired = () => {
-      setAuthed(false);
-      setChecking(false);
-    };
-    window.addEventListener("adm-session-expired", expired);
-    return () => window.removeEventListener("adm-session-expired", expired);
-  }, []);
-  const authenticate = useCallback(async (background = false) => {
-    // Returning from another window or a file chooser must not unmount forms.
-    // Only initial entry and explicit sign-in replace the workspace while checking.
-    if (!background) setChecking(true);
-    try {
-      const current = await authApi<{
-        id: string;
-        csrf: string;
-        request_limits: Limits;
-      }>("/me");
-      saveSession({ id: current.id, csrf: current.csrf });
-      setLimits(current.request_limits);
-      setAuthed(true);
-      setSessionReadError(false);
-    } catch (e) {
-      if (!background || (e instanceof ApiError && e.status === 401))
-        setAuthed(false);
-      else setSessionReadError(true);
-    } finally {
-      if (!background) setChecking(false);
-    }
-  }, []);
-  useEffect(() => {
-    void authenticate();
-    const listener = () => void authenticate(true);
-    window.addEventListener("focus", listener);
-    return () => window.removeEventListener("focus", listener);
-  }, [authenticate]);
-  useEffect(() => {
     let current = true;
     const load = () =>
       api<System>("/system")
         .then((v) => {
-          if (current) setSystem(v);
+          if (current) {
+            setSystem(v);
+            setLimits(v.request_limits);
+          }
         })
         .catch(() => {
           if (current) setSystem(null);
@@ -330,7 +287,6 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (!authed) return;
     const c = new AbortController();
     Promise.all([
       api<{ items: Adm[] }>("/adms", { signal: c.signal }),
@@ -352,12 +308,11 @@ export default function App() {
         if (!c.signal.aborted) setReadError(e.message);
       });
     return () => c.abort();
-  }, [authed, tick]);
+  }, [tick]);
   useEffect(() => {
-    if (!authed) return;
     const timer = setInterval(refresh, 10_000);
     return () => clearInterval(timer);
-  }, [authed, refresh]);
+  }, [refresh]);
   async function run(f: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -435,19 +390,6 @@ export default function App() {
     return result.result!.snapshot!;
   }
   const chosen = adms.find((a) => a.id === route.adm);
-  if (checking)
-    return (
-      <div className="loading-screen" role="status">
-        Opening workspace…
-      </div>
-    );
-  if (!authed)
-    return (
-      <Login
-        ready={!!system?.operational}
-        onLogin={() => void authenticate()}
-      />
-    );
   return (
     <div className="shell">
       <a
@@ -490,18 +432,6 @@ export default function App() {
             ? "Local serving ready"
             : "Service unavailable"}
           <small>Finite models · explicit boundaries</small>
-          <button
-            className="text-button"
-            onClick={() =>
-              void run(async () => {
-                await authApi("/logout", {});
-                saveSession(null);
-                setAuthed(false);
-              })
-            }
-          >
-            Sign out
-          </button>
         </div>
       </aside>
       <div className="main-shell">
@@ -517,18 +447,6 @@ export default function App() {
           </Badge>
         </header>
         <main id="main" tabIndex={-1}>
-          {sessionReadError && (
-            <Notice error>
-              Session check could not reach the service. Your draft is
-              preserved; requests still require a valid session.
-              <button
-                className="text-button"
-                onClick={() => void authenticate(true)}
-              >
-                Check session again
-              </button>
-            </Notice>
-          )}
           {readError && (
             <Notice error>
               Connection interrupted. Showing last-known state; retrying
@@ -805,13 +723,6 @@ export default function App() {
                 </>
               )}
             </>
-          ) : route.view === "login" ? (
-            <LoginSettings
-              onSignedOut={() => {
-                saveSession(null);
-                setAuthed(false);
-              }}
-            />
           ) : route.view === "operations" ? (
             <Operations />
           ) : route.view === "connections" ? (

@@ -14,7 +14,7 @@ A missing capability alone does not issue a provider call. Explicit episode requ
 
 | Component | Authority and storage |
 | --- | --- |
-| Browser | Owner session and CSRF; seals a newly supplied provider key to the gateway public key before submitting it. No provider key or bearer token is stored in browser storage. |
+| Browser | Same-origin local workspace; seals a newly supplied provider key to the gateway public key before submitting it. No provider key or bearer token is stored in browser storage. |
 | App | ADM stores, connection versions, encrypted credential-transfer envelopes, immutable acquisition tasks, reservations, episode/receipt history, publication and events. Its Linux seccomp policy denies outbound connection initiation. |
 | Learning worker | Claims one bounded acquisition job and asks the internal gateway to dispatch it. Has no provider key, accepted-state storage or publication authority. |
 | Provider gateway | Own encrypted credential store, dispatch ledger, authenticated app connection and provider egress. It authenticates workers and obtains app authorization before first dispatch. |
@@ -46,7 +46,7 @@ An episode uses either receiver-owned interfaces plus provider definition slots 
 
 Limits combine configured process/storage capacity, finite episode totals and one-call caps; aggregate financial/period quotas do not gate new work. The service reserves a call plus estimated input and maximum output before exposing work to a worker. Input estimation uses UTF-8 request bytes plus 4,096 framing/schema overhead. This is a conservative operational estimate, not a proven tokenizer bound or a dollar-cost guarantee. Reported usage exceeding its reservation is charged in full, blocks publication and disables further remote dispatch until owner intervention.
 
-The gateway records `dispatched` durably before sending one HTTPS request. It does not follow redirects, retry HTTP failures or automatically repeat an expired lease. Each grant carries a validated `awm-adm-dispatch-grant/2` and worker lease binding purpose, exact wire digest, connection, ADM context or installation control scope, attempt and expiry. Public client credentials cannot issue grants or change learning controls.
+The gateway records `dispatched` durably before sending one HTTPS request. It does not follow redirects, retry HTTP failures or automatically repeat an expired lease. Each grant carries a validated `awm-adm-dispatch-grant/2` and worker lease binding purpose, exact wire digest, connection, ADM context or installation control scope, attempt and expiry. Public requests cannot issue internal dispatch grants; the application binds each grant to checked work.
 
 | Outcome | Accounting and next action |
 | --- | --- |
@@ -70,7 +70,7 @@ Provider diagnostics retain only bounded, allowlisted metadata: HTTP status, res
 
 Optional `token_details` preserve individually validated provider counters: OpenAI total, cached-input and reasoning tokens, or Anthropic cache-creation/read tokens. Missing, malformed, negative, Boolean and unsafe-integer values are omitted rather than replaced with zero or reconstructed from other counters. These details are reported evidence, not independently verified billing, and do not settle an otherwise unknown call.
 
-For OpenAI, `reasoning_effort` and `reasoning_mode` retain allowlisted settings returned in the response. Missing settings remain unknown; unsupported non-null values are labeled `unknown`. Neither requested settings nor model defaults are substituted for response-side evidence. `output_summary` counts top-level message, text, reasoning and other items, plus recognized visible-text parts and their UTF-8 byte lengths. OpenAI `output` and Anthropic `content` use their respective item structures. Missing or malformed structures produce no summary; an explicit empty array produces measured zero counts. Unknown item type names, reasoning text, reasoning summaries/signatures and partial message content are never copied into diagnostics. Summary collection runs before incomplete output is discarded, so it can describe a partial response without admitting or displaying its content. Readable failure summaries appear in chat; exact structured diagnostics remain available through authenticated APIs. Existing historical outcomes are not backfilled with guessed metadata.
+For OpenAI, `reasoning_effort` and `reasoning_mode` retain allowlisted settings returned in the response. Missing settings remain unknown; unsupported non-null values are labeled `unknown`. Neither requested settings nor model defaults are substituted for response-side evidence. `output_summary` counts top-level message, text, reasoning and other items, plus recognized visible-text parts and their UTF-8 byte lengths. OpenAI `output` and Anthropic `content` use their respective item structures. Missing or malformed structures produce no summary; an explicit empty array produces measured zero counts. Unknown item type names, reasoning text, reasoning summaries/signatures and partial message content are never copied into diagnostics. Summary collection runs before incomplete output is discarded, so it can describe a partial response without admitting or displaying its content. Readable failure summaries appear in chat; exact structured diagnostics remain available through login-free local APIs. Existing historical outcomes are not backfilled with guessed metadata.
 
 On startup, earlier terminal remote calls that settled a zero/zero report regain their original token reservations. Their stored outcomes, response identities, terminal statuses and model publications remain unchanged; repeated startup does not add reservations or dispatch again. Read views label these historical reports as unverified and distinguish reported counters from reserved counters. This conservative accounting adjustment does not reconstruct missing provider diagnostics or verify an account bill. Diagnostics exports exclude unresolved records from settled measured-usage totals.
 
@@ -105,7 +105,7 @@ Registry reservations, gateway dispatches and per-ADM receipts are **separate du
 
 ## API resources
 
-All routes below require owner authority, including reads of connection and learning details. Ordinary scoped request tokens retain their read/submit authority only.
+All public routes use the local workspace boundary. Internal dispatch remains authenticated and isolated.
 
 | Route under `/api/v1` | Operation |
 | --- | --- |
@@ -124,3 +124,7 @@ Collection sizes are bounded; the episode listing returns the latest 100 summari
 ## Technical references
 
 The service uses its local [acquisition/construction core](ENGINE.md). Fixed provider transports and cryptographic primitives are documented in [references](REFERENCES.md). These interfaces and tests do not establish external truth or general provider reliability.
+
+## Describing accepted changes
+
+Accepted receipts retain artifact-level effects and a bounded checked before/after report. Comparing canonical definitions separately from artifact/support hashes distinguishes a changed rule from an unchanged dependent definition rebuilt with new bindings. The report is explanatory metadata, not a new proof or a change to admission. Source projections use the same reporting contract. See [change reports](CHANGE_REPORTING.md).

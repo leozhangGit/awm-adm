@@ -17,6 +17,7 @@ from ..engine.diagnostics import bounded, capture
 from ..engine.errors import ADMError
 from ..providers.wire import make_wire, provenance, specification
 from ..runtime.protocol import pack, unpack
+from . import preservation
 
 
 def package(value):
@@ -40,6 +41,13 @@ def compute(task, budget):
     body = task["body"]
     contract = validate_contract(body["task"]["acquisition_contract"])
     draft = task.get("draft") or (construction.seed(contract) if body["construction"] else None)
+    retained = preservation.bodies(body, base, contract, budget)
+    if retained:
+        if not body["construction"]:
+            raise ValueError("Dependent preservation requires private construction")
+        if not task.get("draft"):
+            draft = preservation.seed(draft, retained, base, contract, budget)
+        preservation.check(draft, retained)
     if operation == "learning_prepare":
         context = {
             "task": {**body["task"], "acquisition_contract": contract},
@@ -78,9 +86,11 @@ def compute(task, budget):
                 "content": {"provenance": task["provenance"], "summary": value.get("summary", "Acquisition")},
             }
             if body["construction"]:
-                draft = construction.merge(
+                merged = construction.merge(
                     draft, {"draft": value["draft"], "evidence": [evidence]}, contract, budget
                 )
+                preservation.check(merged, retained)
+                draft = merged
                 construction.complete(draft, contract, base, budget)
                 declarations, retractions = draft["declarations"], draft["retractions"]
                 sources, support = list(draft["evidence"].values()), draft["support"]
@@ -139,6 +149,9 @@ def compute(task, budget):
             "work": budget.used,
         }
         if decision["status"] == "accepted":
+            from .changes import publication_effects
+
+            result["effects"] = publication_effects(current, instance, budget)
             result.update(
                 snapshot=pack(instance.export_snapshot(budget=budget)),
                 context=instance.info(),

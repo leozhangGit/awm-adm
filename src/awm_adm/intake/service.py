@@ -643,6 +643,29 @@ class Intake:
             db.execute("UPDATE credentials SET scope=? WHERE id=?", (dumps(scope), result["id"]))
         return {**result, "scope": scope, "endpoint": f"/api/v1/adms/{key}/intake/{uid}/push"}
 
+    def local_principal(self, key, uid, actor):
+        task = self.t.get(key, uid)
+        run = task.get("execution") or {}
+        sources = sorted(
+            {
+                sid
+                for step in run.get("steps", [])
+                if step.get("feed_id")
+                for sid in self.sources.feeds.get(key, step["feed_id"])["body"]["source_ids"]
+            }
+        )
+        return {
+            "id": actor["id"],
+            "owner": False,
+            "permissions": ["append"],
+            "adms": [key],
+            "task_id": uid,
+            "source_ids": sources,
+            "specification_digest": task["specification_digest"],
+            "source_generation": run.get("context", {}).get("source_policy_generation"),
+            "policy_epoch": run.get("context", {}).get("policy_epoch"),
+        }
+
     def append_scope(self, key, uid, principal, *, active=True):
         if (
             principal.get("owner")

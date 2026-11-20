@@ -4,7 +4,7 @@ config_profile = "awm-adm-config/2"
 
 [server]
 bind_host = "127.0.0.1"
-port = 8080
+port = 9527
 data_dir = ".local/data"
 max_body_bytes = 2097152
 

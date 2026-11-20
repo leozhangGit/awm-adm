@@ -98,9 +98,9 @@ export type System = {
   product: string;
   version: string;
   operational: boolean;
+  request_limits: Limits;
   available: Record<string, boolean>;
 };
-export type Session = { id: string; csrf: string };
 export type Limits = {
   max_work: number;
   max_duration_ms: number;

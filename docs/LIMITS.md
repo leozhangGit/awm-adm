@@ -14,7 +14,6 @@ Ordinary use requires no monetary allowance or financial expiry. Finite executio
 | Serving/background | Separate bounded process capacity; round-robin scheduling across ready models |
 | Managed intake | Bounded backlog, finite item/call/token/work reservations, producer throttling and explicit stop/finish; see [Intake](INTAKE.md) |
 | Retained history | Finite per-model records and installation bytes; refuse additional work rather than silently discard accepted evidence |
-| Login/session | Five failed attempts per 15 minutes; eight-hour browser session; operator setup/recovery credentials remain short-lived and single-use |
 
 `config/default.toml` and `deploy/config.toml` contain installation ceilings. `CallLimits` and task/source schemas define hard input bounds. Internal token estimates bound requests and scheduling; they are not price certificates. There is no per-day financial, call or token quota blocking new independent work after an earlier task.
 

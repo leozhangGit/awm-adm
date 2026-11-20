@@ -266,6 +266,7 @@ def test_owned_15_migration_preserves_configurations_and_disables_without_dispat
     db.execute("DROP TABLE connection_control")
     db.execute("DROP TABLE connection_operations")
     db.execute("ALTER TABLE grants DROP COLUMN dispatched_at")
+    db.execute("DROP TABLE IF EXISTS local_workspace")
     db.execute("PRAGMA user_version=15")
     for n in range(count):
         db.execute(
@@ -275,7 +276,7 @@ def test_owned_15_migration_preserves_configurations_and_disables_without_dispat
     db.execute("UPDATE learning_control SET enabled=1 WHERE id=1")
     originals = [tuple(r) for r in db.execute("SELECT * FROM connections")]
     migrate(db, "registry")
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 16
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 17
     assert [tuple(r) for r in db.execute("SELECT * FROM connections")] == originals
     control = db.execute("SELECT * FROM connection_control").fetchone()
     assert control["state"] == "disabled"

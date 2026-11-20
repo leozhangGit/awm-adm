@@ -455,9 +455,9 @@ def test_atomic_source_batch_rollback_and_owner_only_http(app_runtime):
         unauthorized = http.post(
             f"/api/v1/adms/{key}/sources/batches",
             json={"idempotency_key": "denied", "items": [source]},
-            headers={"Authorization": "Bearer invalid"},
+            headers={"Origin": "null"},
         )
-        assert unauthorized.status_code == 401
+        assert unauthorized.status_code == 403
 
 
 def test_projection_cell_limit_and_cancellation_before_publish(app_runtime, monkeypatch):

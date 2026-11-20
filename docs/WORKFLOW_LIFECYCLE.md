@@ -6,7 +6,7 @@ This abstract finite lifecycle specification is exercised by [`lifecycle.json`](
 
 | From | Event → next | Required meaning |
 | --- | --- | --- |
-| draft | ask → needs_input; authorize → ready; cancel → cancelled | Preparation cannot acquire knowledge until authenticated intent and a checked finite scope exist |
+| draft | ask → needs_input; authorize → ready; cancel → cancelled | Preparation cannot acquire knowledge until explicit local intent and a checked finite scope exist |
 | needs_input | clarify → draft; cancel → cancelled | A new checked interpretation incorporates the owner's answer |
 | ready | enqueue → queued; cancel → cancelled | Durable task and child reservations precede dispatch |
 | queued | start → running; pause → paused; cancel → cancelled; deadline → exhausted | Queued never means a worker is executing |
@@ -15,7 +15,7 @@ This abstract finite lifecycle specification is exercised by [`lifecycle.json`](
 | paused | resume → queued; clarify → needs_input; cancel → cancelled; exhaust → exhausted | Resume needs current authority and no unknown dispatched child; an explicit new attempt has a new identity and reservation |
 | succeeded / partially_succeeded / exhausted / cancelled / failed | none | Terminal records are immutable; continuation is a new task linked to prior evidence |
 
-Semantic guards accompany the shape/state table. `authorize` needs authenticated request authority, a checked bounded contract and current independent policy. In direct Teach, a clear submission supplies that authority and advances automatically; explicit API review remains available. `complete` requires all intended children done and no unresolved outcome. `partial` requires at least one accepted result and at least one unresolved objective. If nothing was accepted, exhaustion/failure cannot be called partial success. `cancel` fences future publication and never rolls back already accepted knowledge or refunds spent/unknown calls.
+Semantic guards accompany the shape/state table. `authorize` needs explicit local request authority, a checked bounded contract and current independent policy. In direct Teach, a clear submission supplies that authority and advances automatically; explicit API review remains available. `complete` requires all intended children done and no unresolved outcome. `partial` requires at least one accepted result and at least one unresolved objective. If nothing was accepted, exhaustion/failure cannot be called partial success. `cancel` fences future publication and never rolls back already accepted knowledge or refunds spent/unknown calls.
 
 A held complete candidate may await owner review beyond the active task deadline, up to the bounded review expiry. Accepting it then queues only a fresh bounded local admission check with remaining reserved work; it cannot dispatch another provider call. An expired incomplete task needs a new authorized continuation. If an unknown call remains unresolved, an explicit owner decision can create a new separately reserved task/attempt linked to the old task; it cannot relabel the old call undispatched or clear its reservation to make `resume` pass.
 
@@ -59,4 +59,4 @@ Tests inject interruption before/after every phase, owner decision races, attemp
 
 ## Implemented language mapping
 
-[Teaching execution](TEACHING_EXECUTION.md) binds checked prepared specifications to authenticated direct submissions (or exact explicit API commands). Stable child creation intents reconcile registry and ADM handoffs; accepted publication and the parent context advance atomically. Unknown dispatches stop without repetition. External context changes conservatively terminate as needs input for a new task decision. Source-bearing children use the [source intake workflow](INTAKE.md), including selected material disclosure, checked source scope and parent-controlled admission. The completion record preserves deterministic accepted/unresolved outcomes even when optional explanation fails.
+[Teaching execution](TEACHING_EXECUTION.md) binds checked prepared specifications to direct local submissions (or exact explicit API commands). Stable child creation intents reconcile registry and ADM handoffs; accepted publication and the parent context advance atomically. Unknown dispatches stop without repetition. External context changes conservatively terminate as needs input for a new task decision. Source-bearing children use the [source intake workflow](INTAKE.md), including selected material disclosure, checked source scope and parent-controlled admission. The completion record preserves deterministic accepted/unresolved outcomes even when optional explanation fails.

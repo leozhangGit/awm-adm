@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { watch, saveSession } from "../src/api.ts";
+import { watch } from "../src/api.ts";
 
 function storage() {
   const values = new Map<string, string>();
@@ -20,7 +20,6 @@ function environment() {
   const local = storage(),
     saved = storage(),
     window = new EventTarget();
-  saveSession({ id: "session-a", csrf: "test-only" });
   for (const [key, value] of Object.entries({
     localStorage: local,
     sessionStorage: saved,
@@ -31,7 +30,6 @@ function environment() {
     saved,
     window,
     restore: () => {
-      saveSession(null);
       globalThis.fetch = previous.fetch;
       for (const [key, descriptor] of [
         ["localStorage", previous.local],
@@ -75,7 +73,7 @@ test("an expired event cursor resynchronizes resources and resumes without submi
       },
       (s) => states.push(s),
     );
-    assert.equal(env.saved.getItem("adm-events:session-a:a"), "11");
+    assert.equal(env.saved.getItem("adm-events:workspace:a"), "11");
     assert.ok(states.includes("History expired · resynchronizing"));
     assert.equal(calls.length, 3);
     assert.ok(calls.every((path) => !path.includes("/requests")));
@@ -104,30 +102,29 @@ test("ADM cursors are independent and duplicate events do not trigger duplicate 
       );
       assert.equal(refreshes, 1);
     }
-    assert.equal(env.saved.getItem("adm-events:session-a:a"), "1");
-    assert.equal(env.saved.getItem("adm-events:session-a:b"), "1");
+    assert.equal(env.saved.getItem("adm-events:workspace:a"), "1");
+    assert.equal(env.saved.getItem("adm-events:workspace:b"), "1");
   } finally {
     env.restore();
   }
 });
-test("expired authentication stops reconnecting and returns to login", async () => {
+test("service failure preserves the cursor without a login redirect", async () => {
   const env = environment();
-  let calls = 0,
-    expired = 0;
+  const controller = new AbortController();
+  let expired = 0;
   env.window.addEventListener("adm-session-expired", () => expired++);
   globalThis.fetch = async () => {
-    calls++;
-    return json({ code: "unauthorized", message: "expired" }, 401);
+    controller.abort();
+    return json({ code: "unavailable" }, 503);
   };
   try {
     await watch(
       "a",
-      new AbortController().signal,
+      controller.signal,
       () => assert.fail(),
       () => {},
     );
-    assert.equal(expired, 1);
-    assert.equal(calls, 1);
+    assert.equal(expired, 0);
   } finally {
     env.restore();
   }
