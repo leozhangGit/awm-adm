@@ -8,7 +8,7 @@ Original AWM-ADM code and documentation are provided under the [MIT License](LIC
 
 ## Runtime and build dependencies
 
-Python and JavaScript dependencies retain their upstream licenses. Exact package versions and artifact hashes are pinned in [uv.lock](uv.lock) and [package-lock.json](console/package-lock.json). [Dependency inventory](docs/dependency-inventory.json) records publisher license metadata; it is not a substitute for upstream license text or a vulnerability audit.
+Python and JavaScript dependencies retain their upstream licenses. Exact package versions and artifact hashes are pinned in [service lock](uv.lock), [plugin lock](codex-plugin/uv.lock) and [console lock](console/package-lock.json). [Dependency inventory](docs/dependency-inventory.json) records publisher license metadata; it is not a substitute for upstream license text or a vulnerability audit.
 
 Docker images include pinned Python/Node/uv bases and a checksum-verified Lean compiler. Lean and its bundled components retain the notices supplied by their distributions; see [Lean's license](https://github.com/leanprover/lean4/blob/v4.19.0/LICENSE). Toolchain identities are in [deploy/](deploy/). Preserve upstream notices when redistributing images or dependencies.
 

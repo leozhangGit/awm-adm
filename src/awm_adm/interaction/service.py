@@ -11,7 +11,7 @@ class Interactions:
     def __init__(self, runtime):
         self.rt, self.store, self.s = runtime, runtime.store, runtime.conversations
 
-    def submit(self, key, channel, source, *, origin="api", source_queue=False):
+    def submit(self, key, channel, source, *, origin="api", source_queue=False, expected_revision=None):
         body = DirectMessage.model_validate(source).model_dump()
         body["idempotency_key"] = body["idempotency_key"] or str(uuid4())
         if channel not in {"ask", "teach"}:
@@ -29,6 +29,8 @@ class Interactions:
                     fault("conflict", "This submission identity has different content")
                 return self.get(key, old["id"])
             context = self.s.context(key)
+            if expected_revision is not None and expected_revision != context["revision_id"]:
+                fault("stale_context", "Model revision changed; retrieve current knowledge before submitting")
             self.s._current(key, context)
             conn = self.rt.learning.connection_manager.active(
                 "ask_interpretation" if channel == "ask" else "task_preparation"
@@ -180,6 +182,7 @@ class Interactions:
             ).fetchone()
         result = {
             "id": uid,
+            "sequence": row["seq"],
             "idempotency_key": row["idem"],
             "channel": row["channel"],
             "origin": row["origin"],
@@ -224,6 +227,10 @@ class Interactions:
                 self.s.teaching.execution.view(task["execution"]) if task.get("execution") else None
             )
             run = task.get("execution") or {}
+            if result["teaching"] is not None:
+                from .admissions import admissions
+
+                result["teaching"]["admissions"] = admissions(self.store, key, run)
             if run.get("delivered") and run.get("narration"):
                 result["explanation"] = run["narration"]["explanation"]
                 result["outcome_text"] = result["reply"]
@@ -240,6 +247,19 @@ class Interactions:
                 result["outcome_label"] = f"Learned and saved · {count} " + (
                     "objective" if count == 1 else "objectives"
                 )
+
+        if task and run.get("delivered") and summary.get("status") == "succeeded":
+            changes = summary.get("changes") or {}
+            # Keep a concise checked diff visible even when the fluent explanation
+            # or the normal success label would otherwise hide publication effects.
+            if any(e["kind"] != "added" for e in changes.get("entries", [])) or not changes.get(
+                "complete", True
+            ):
+                result["outcome_label"] = changes.get("text") or result.get("outcome_label")
+                if self.store.info(key)["mode"] == "forward":
+                    result["outcome_label"] = (
+                        result["outcome_label"] or ""
+                    ) + " Forward mode remains active until you explicitly request backward mode."
 
         if result["outcome"]:
             from ..conversations.presentation import outcome_label
@@ -289,16 +309,31 @@ class Interactions:
             )
             return self.get(key, uid)
 
-    def chat(self, key, channel, *, after=0, limit=20):
+    def chat(self, key, channel, *, after=0, limit=20, direction="forward", before=None):
         self.store.info(key)
+        if direction not in {"forward", "backward"} or (direction == "forward" and before is not None):
+            fault("invalid_input", "Use backward pagination to load older exchanges")
+        if direction == "backward" and after:
+            fault("invalid_input", "Use before for backward pagination")
         with self.store.db(key) as db:
-            rows = db.execute(
-                "SELECT seq,id FROM direct_interactions WHERE channel=? AND seq>? ORDER BY seq LIMIT ?",
-                (channel, after, limit + 1),
-            ).fetchall()
+            if direction == "backward":
+                rows = db.execute(
+                    "SELECT seq,id FROM direct_interactions WHERE channel=? "
+                    "AND (? IS NULL OR seq<?) ORDER BY seq DESC LIMIT ?",
+                    (channel, before, before, limit + 1),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT seq,id FROM direct_interactions WHERE channel=? AND seq>? ORDER BY seq LIMIT ?",
+                    (channel, after, limit + 1),
+                ).fetchall()
+        selected = rows[:limit]
+        cursor = selected[-1]["seq"] if selected else (before or 0) if direction == "backward" else after
+        if direction == "backward":
+            selected = list(reversed(selected))
         return {
-            "items": [self.get(key, row["id"]) for row in rows[:limit]],
-            "next_cursor": rows[min(len(rows), limit) - 1]["seq"] if rows else after,
+            "items": [self.get(key, row["id"]) for row in selected],
+            "next_cursor": cursor,
             "has_more": len(rows) > limit,
         }
 

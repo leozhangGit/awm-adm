@@ -124,22 +124,18 @@ def test_cleanup_failure_is_resumable_without_reopening(app_runtime, monkeypatch
     finish(rt, op)
 
 
-def test_append_and_scoped_tokens_revoked_but_other_model_authority_preserved(app_runtime):
+def test_deleted_model_inaccessible_and_other_model_preserved(app_runtime):
     rt = app_runtime
     key = rt.create("Delete token target")["id"]
     other = rt.create("Keep target")["id"]
     with client(rt) as c:
-        token = c.post(
-            "/api/v1/auth/tokens", json={"adms": [key, other], "permissions": ["read", "submit"]}
-        ).json()
         op = rt.lifecycle.request(key, delete_input(rt, key))["operation_id"]
         finish(rt, op)
-        headers = {"Authorization": "Bearer " + token["token"]}
-        assert c.get(f"/api/v1/adms/{key}", headers=headers).status_code == 403
-        assert c.get(f"/api/v1/adms/{other}", headers=headers).status_code == 200
+        assert c.get(f"/api/v1/adms/{key}").status_code == 410
+        assert c.get(f"/api/v1/adms/{other}").status_code == 200
         assert (
             c.request(
-                "DELETE", f"/api/v1/adms/{other}", headers=headers, json=delete_input(rt, other)
+                "DELETE", f"/api/v1/adms/{other}", json=delete_input(rt, other), headers={"Origin": "null"}
             ).status_code
             == 403
         )
@@ -405,22 +401,23 @@ def test_failed_drain_transaction_retries_same_intent_without_refunding(rig, mon
     assert rt.learning.usage()["unresolved"] == 1
 
 
-def test_cookie_csrf_and_competing_deletions(app_runtime):
+def test_local_origin_and_competing_deletions(app_runtime):
     from concurrent.futures import ThreadPoolExecutor
 
     rt = app_runtime
     key = rt.create("Exact confirmation")["id"]
     body = delete_input(rt, key)
     with client(rt) as c:
-        from .test_admin import setup
-
-        c.headers.pop("Authorization")
-        assert setup(c).status_code == 200
-        login = c.get("/api/v1/auth/me").json()
-        assert c.request("DELETE", f"/api/v1/adms/{key}", json=body).status_code == 403
+        c.headers.pop("Authorization", None)
         assert (
             c.request(
-                "DELETE", f"/api/v1/adms/{key}", json=body, headers={"X-CSRF-Token": login["csrf"]}
+                "DELETE", f"/api/v1/adms/{key}", json=body, headers={"Origin": "http://evil.example"}
+            ).status_code
+            == 403
+        )
+        assert (
+            c.request(
+                "DELETE", f"/api/v1/adms/{key}", json=body, headers={"Origin": "http://testserver"}
             ).status_code
             == 202
         )

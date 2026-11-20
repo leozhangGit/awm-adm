@@ -41,7 +41,7 @@ def test_reply_to_requires_same_model_and_channel(rig):
         rt.interactions.submit(first, "ask", {"text": "Follow-up", "reply_to": item["id"]})
 
 
-def test_retired_setup_routes_cannot_change_state_and_direct_routes_require_owner(rig):
+def test_retired_setup_routes_cannot_change_state_and_direct_routes_require_local_origin(rig):
     rt, gw = rig
     key = rt.create("API boundary")["id"]
     recorded(rt, gw, proposal("capabilities"))
@@ -58,9 +58,9 @@ def test_retired_setup_routes_cannot_change_state_and_direct_routes_require_owne
                 c.post(
                     f"/api/v1/adms/{key}/{route}",
                     json={"text": "Hello"},
-                    headers={"Authorization": "Bearer invalid"},
+                    headers={"Origin": "null"},
                 ).status_code
-                == 401
+                == 403
             )
         assert (
             c.post(f"/api/v1/adms/{key}/ask", json={"text": "Hello", "allowance_id": "forged"}).status_code

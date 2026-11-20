@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
     if (
         not args.project.startswith("awm-adm-check-operations-")
-        or args.port == 8080
+        or args.port == 9527
         or not 60 <= args.seconds <= 300
     ):
         raise ValueError("Use an isolated operations project, nonproduction port and bounded duration")

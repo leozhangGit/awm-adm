@@ -7,14 +7,14 @@ import tomllib
 from pathlib import Path
 
 
-def inventory(root: Path):
+def python_inventory(root: Path, project_name: str, distribution):
     python_packages = []
     for package in tomllib.loads((root / "uv.lock").read_text())["package"]:
-        if package["name"] == "awm-adm":
+        if package["name"] == project_name:
             continue
         entry = {"name": package["name"], "version": package["version"], "source": package["source"]}
         try:
-            dist = importlib.metadata.distribution(package["name"])
+            dist = distribution(package["name"])
             entry.update(
                 license=dist.metadata.get("License-Expression")
                 or dist.metadata.get("License")
@@ -26,6 +26,24 @@ def inventory(root: Path):
         except importlib.metadata.PackageNotFoundError:
             entry.update(license="metadata unavailable", license_files=[])
         python_packages.append(entry)
+    return python_packages
+
+
+def plugin_distribution(root, name):
+    # The connector is installed independently; never substitute service metadata.
+    paths = [str(p) for p in (root / ".venv/lib").glob("python*/site-packages")]
+    for dist in importlib.metadata.distributions(path=paths):
+        if dist.metadata["Name"].lower().replace("_", "-") == name.lower().replace("_", "-"):
+            return dist
+    raise importlib.metadata.PackageNotFoundError(name)
+
+
+def inventory(root: Path):
+    python_packages = python_inventory(root, "awm-adm", importlib.metadata.distribution)
+    plugin = root / "codex-plugin"
+    plugin_packages = python_inventory(
+        plugin, "awm-adm-codex-plugin", lambda name: plugin_distribution(plugin, name)
+    )
     node_packages = []
     for path, package in json.loads((root / "console/package-lock.json").read_text())["packages"].items():
         if not path:
@@ -47,9 +65,10 @@ def inventory(root: Path):
         "scope": "Locked dependency provenance and declared licenses, not a vulnerability or redistribution clearance",
         "lock_sha256": {
             name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-            for name in ("uv.lock", "console/package-lock.json")
+            for name in ("uv.lock", "codex-plugin/uv.lock", "console/package-lock.json")
         },
         "python": python_packages,
+        "python_plugin": plugin_packages,
         "node": node_packages,
         "container_images": json.loads((root / "deploy/image-lock.json").read_text())["images"],
         "container_status": "Pinned Linux ARM64 runtime; supported runtime checks record actual image identities and execution outcomes",

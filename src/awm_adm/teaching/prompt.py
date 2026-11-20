@@ -4,9 +4,15 @@ from ..temporal import MEANING, context
 from .provider_format import PROFILE, response_schema
 from .source_guidance import INSTRUCTIONS as SOURCE_INSTRUCTIONS
 
-PROMPT_VERSION = "adm-teaching-preparation/6"
+PROMPT_VERSION = "adm-teaching-preparation/7"
 NATIVE_PROMPT_VERSIONS = frozenset(
-    {"adm-teaching-preparation/3", "adm-teaching-preparation/4", "adm-teaching-preparation/5", PROMPT_VERSION}
+    {
+        "adm-teaching-preparation/3",
+        "adm-teaching-preparation/4",
+        "adm-teaching-preparation/5",
+        "adm-teaching-preparation/6",
+        PROMPT_VERSION,
+    }
 )
 
 
@@ -45,6 +51,12 @@ def specification(task, catalog, requirements, source_policy):
             "Enum/component count <=64, vector length <=32, each carrier nonempty and <=65536 values. "
             "No refinements or algebraic presentation synthesis in this preparation profile. "
             "Existing declaration symbols require correction intent. "
+            "For a correction, name the existing declarations whose definitions the user intends to change. "
+            "The receiver includes affected accepted dependents in the same checked candidate, retaining "
+            "their exact bodies unless they are explicitly revised too. Their values may change through "
+            "the revised dependencies; no prior proof status is reused. Related corrections with shared "
+            "dependents must be one atomic child. An incompatible preserved definition prevents publication; "
+            "do not promise a dependent capability is preserved just because its name was not edited. "
             "Vocabulary aliases target accepted/proposed declarations or modules only, never parameter "
             "paths, source predicates or entity IDs. Parameter metadata is separate in plan.parameters "
             "with symbol, parameter, nullable unit and role. Use empty vocabulary arrays when unnecessary. "

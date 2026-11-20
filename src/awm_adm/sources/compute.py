@@ -352,10 +352,21 @@ def compute(task, budget):
         decision = instance.decide_next(budget=budget)
         result = {"status": decision["status"], "decision": thaw(decision["decision"]), "work": budget.used}
         if decision["status"] == "accepted":
+            from ..learning.changes import publication_effects
+
+            after = {"model": instance._model, "support": instance._support, "blobs": instance._blobs}
+            result["effects"] = publication_effects(
+                current,
+                instance,
+                budget,
+                before_facts=projected(current, budget),
+                after_facts=projected(after, budget),
+            )
             result.update(
                 snapshot=pack(instance.export_snapshot(budget=budget)),
                 context=instance.info(),
                 symbols=list(instance._model.index),
+                work=budget.used,
             )
         return result
     if task["operation"] == "source_dispute":

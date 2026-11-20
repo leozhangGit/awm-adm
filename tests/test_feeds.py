@@ -439,9 +439,8 @@ def test_bounded_history_preserves_complete_original_and_authority(app_runtime):
         assert row["content_truncated"] and len(row["content"]) == 2048
         assert len(c.get(base + "/sources/history/versions/" + row["id"]).json()["content"]) == 3000
         assert len(c.get(base + "/sources?limit=2&page=1").json()["versions"]) == 1
-        issued = c.post("/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read"]}).json()
-        headers = {"Authorization": "Bearer " + issued["token"]}
-        assert c.get(base + "/feeds", headers=headers).status_code == 200
+        assert c.get(base + "/feeds").status_code == 200
+        headers = {"Origin": "https://foreign.invalid"}
         body = {
             "idempotency_key": "denied",
             "name": "Denied",
@@ -450,8 +449,8 @@ def test_bounded_history_preserves_complete_original_and_authority(app_runtime):
             "expected_source_generation": 1,
         }
         assert c.post(base + "/feeds", json=body, headers=headers).status_code == 403
-        c.headers.pop("Authorization")
-        assert c.post(base + "/feeds", json={}).status_code in (401, 422)
+        c.headers.pop("Authorization", None)
+        assert c.post(base + "/feeds", json={}).status_code == 422
 
 
 def test_backpressure_keeps_cursor_and_review_hold_visible(app_runtime):
@@ -509,6 +508,7 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=6")
     with rt.store.db() as db:
         from tests.migration_support import remove_admin
@@ -517,6 +517,7 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=6")
     rt.close()
     new = Runtime(config, start_scheduler=False)
@@ -529,7 +530,7 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         assert new.store.run_info(key, result["execution"]["run_id"])["result"] == result
         assert new.sources.feeds.overview(key)["feeds"] == []
         with new.store.db(key) as db:
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 16
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 17
     finally:
         new.close()
 

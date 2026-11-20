@@ -18,7 +18,7 @@ def main():
         config = AppConfig.model_validate({"server": {"data_dir": temporary}})
         runtime = Runtime(config, start_scheduler=False)
         try:
-            app = create_app(config, runtime=runtime, owner_token="offline-contract-" + "x" * 48)
+            app = create_app(config, runtime=runtime)
             args.output.write_text(json.dumps(app.openapi(), indent=2) + "\n")
         finally:
             runtime.close()

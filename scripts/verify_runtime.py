@@ -90,7 +90,7 @@ def main():
             assert "ALL" in item["HostConfig"]["CapDrop"]
             ports = item["HostConfig"]["PortBindings"] or {}
             assert ports == (
-                {"8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "8080"}]} if role == "app" else {}
+                {"9527/tcp": [{"HostIp": "127.0.0.1", "HostPort": "9527"}]} if role == "app" else {}
             )
         assert all(
             m["Destination"] != "/var/lib/awm-adm"
@@ -98,20 +98,20 @@ def main():
             for m in by_role[role]["Mounts"]
         )
         assert config["networks"]["internal"]["internal"] is True
-        assert by_role["app"]["NetworkSettings"]["Ports"]["8080/tcp"] == [
-            {"HostIp": "127.0.0.1", "HostPort": "8080"}
+        assert by_role["app"]["NetworkSettings"]["Ports"]["9527/tcp"] == [
+            {"HostIp": "127.0.0.1", "HostPort": "9527"}
         ]
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open("http://127.0.0.1:8080/health/ready", timeout=3) as response:
+        with opener.open("http://127.0.0.1:9527/health/ready", timeout=3) as response:
             assert json.load(response)["status"] == "ready"
-        with opener.open("http://127.0.0.1:8080/", timeout=3) as response:
+        with opener.open("http://127.0.0.1:9527/", timeout=3) as response:
             html = response.read(65536)
             assert b'<div id="root">' in html
         assets = re.findall(rb'(?:src|href)="(/assets/[^\"]+)"', html)
         assert any(asset.endswith(b".js") for asset in assets)
         asset_records = []
         for asset in assets:
-            with opener.open("http://127.0.0.1:8080" + asset.decode(), timeout=5) as response:
+            with opener.open("http://127.0.0.1:9527" + asset.decode(), timeout=5) as response:
                 data = response.read(2 * 1024 * 1024)
                 assert len(data) == int(response.headers["Content-Length"])
             expected = (ROOT / "console/dist" / asset.decode().lstrip("/")).read_bytes()
@@ -121,7 +121,7 @@ def main():
             )
         (args.output / "assets.json").write_text(json.dumps(asset_records, indent=2) + "\n")
         try:
-            opener.open("http://127.0.0.1:8080/internal/m2/adms", timeout=3)
+            opener.open("http://127.0.0.1:9527/internal/m2/adms", timeout=3)
             raise AssertionError("Private control route is public")
         except urllib.error.HTTPError as error:
             assert error.code == 404

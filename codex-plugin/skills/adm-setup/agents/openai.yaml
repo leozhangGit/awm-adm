@@ -1,0 +1,9 @@
+interface:
+  display_name: "AWM-ADM setup"
+  short_description: "Check local service and project readiness"
+  default_prompt: "Use $adm-setup for this project."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "awm-adm"
+      description: "AWM-ADM native project tools"

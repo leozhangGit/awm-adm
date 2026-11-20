@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "awm-adm",
+  "version": "0.4.0",
+  "description": "Maintain checked project knowledge through the local AWM-ADM service.",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "AWM-ADM",
+        "shortDescription": "Project domain models",
+        "defaultPrompt": [
+          "Use AWM-ADM for this project."
+        ]
+      }
+    }
+  }
+}

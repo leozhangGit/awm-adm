@@ -2,6 +2,11 @@
 .venv
 .cache
 .local
+**/.venv
+**/.cache
+**/.local
+**/.pytest_cache
+**/.ruff_cache
 **/.codex
 **/.agents
 **/.claude

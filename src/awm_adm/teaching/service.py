@@ -100,7 +100,7 @@ class Teaching:
             "ask_gap": None,
             "specification": None,
             "execution_authorized": False,
-            "intent_authority": "authenticated_teach_submission",
+            "intent_authority": "local_teach_submission",
             "previous_task_id": prior["id"] if prior else None,
         }
         db.execute(
@@ -299,6 +299,7 @@ class Teaching:
                         "id": task["id"] + f"-child-{i + 1}",
                         **child,
                         "acquisition_contract": contract,
+                        "preserve_declarations": checked["preserve_declarations"][i],
                         "depends_on": [
                             task["id"] + f"-child-{parent + 1}" for parent in checked["dependencies"][i]
                         ],
@@ -383,5 +384,5 @@ class Teaching:
                     "action": "start",
                     "source_consent": True,
                 },
-                "authenticated_teach_submission",
+                "local_teach_submission",
             )

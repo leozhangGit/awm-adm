@@ -42,8 +42,7 @@ def app_runtime(tmp_path):
 
 def client(runtime):
     return TestClient(
-        create_app(runtime.config, runtime=runtime, owner_token=OWNER),
-        headers={"Authorization": "Bearer " + OWNER},
+        create_app(runtime.config, runtime=runtime),
     )
 
 
@@ -104,60 +103,28 @@ def test_concurrent_retries_share_one_resource(app_runtime):
     assert len(app_runtime.store.events(key)["items"]) == 1
 
 
-def test_scoped_tokens_cross_adm_and_revocation(app_runtime):
+def test_workspace_access_keeps_cross_model_resource_identity(app_runtime):
     rt = app_runtime
-    a = tank(rt)
-    b = rt.create("other")["id"]
-    with client(rt) as c:
-        issued = c.post("/api/v1/auth/tokens", json={"adms": [a], "permissions": ["read", "submit"]}).json()
-        headers = {"Authorization": "Bearer " + issued["token"]}
-        assert [r["id"] for r in c.get("/api/v1/adms", headers=headers).json()["items"]] == [a]
-        uid = c.post(f"/api/v1/adms/{a}/requests", json=envelope(), headers=headers).json()["request_id"]
-        assert c.get(f"/api/v1/adms/{b}/requests/{uid}", headers=headers).status_code == 403
+    a, b = tank(rt), rt.create("other")["id"]
+    with TestClient(create_app(rt.config, runtime=rt)) as c:
+        assert {r["id"] for r in c.get("/api/v1/adms").json()["items"]} == {a, b}
+        uid = c.post(f"/api/v1/adms/{a}/requests", json=envelope()).json()["request_id"]
         assert c.get(f"/api/v1/adms/{b}/requests/{uid}").status_code == 404
-        assert (
-            c.patch(
-                f"/api/v1/adms/{a}/settings", json={"expected_epoch": 0, "mode": "forward"}, headers=headers
-            ).status_code
-            == 403
-        )
-        assert c.get("/api/v1/openapi.json", headers=headers).status_code == 403
-        assert c.delete("/api/v1/auth/tokens/" + issued["id"]).status_code == 200
-        assert c.get(f"/api/v1/adms/{a}", headers=headers).status_code == 401
-        with rt.store.db() as db:
-            assert issued["token"] not in str([tuple(r) for r in db.execute("SELECT * FROM credentials")])
+        assert c.get(f"/api/v1/adms/{a}/requests/{uid}").status_code == 200
+        assert c.post("/api/v1/auth/tokens", json={}).status_code == 404
+        assert c.get("/api/v1/openapi.json").status_code == 200
 
 
-def test_session_csrf_origin_host_and_logout(app_runtime):
-    key = app_runtime.create("session")["id"]
-    with client(app_runtime) as c:
-        from tests.test_admin import setup
-
-        login = setup(c)
-        assert login.status_code == 200 and "HttpOnly" in login.headers["set-cookie"]
-        c.headers.pop("authorization")
+def test_local_origin_host_without_session(app_runtime):
+    key = app_runtime.create("local")["id"]
+    with TestClient(create_app(app_runtime.config, runtime=app_runtime)) as c:
         path = f"/api/v1/adms/{key}/settings"
         body = {"expected_epoch": 0, "mode": "forward"}
-        assert c.patch(path, json=body).status_code == 403
-        assert (
-            c.patch(
-                path,
-                json=body,
-                headers={"X-CSRF-Token": login.json()["csrf"], "Origin": "http://evil.example"},
-            ).status_code
-            == 403
-        )
+        assert c.patch(path, json=body, headers={"Origin": "http://evil.example"}).status_code == 403
         assert c.get("/api/v1/adms", headers={"Host": "evil.example"}).status_code == 403
-        assert (
-            c.patch(
-                path, json=body, headers={"X-CSRF-Token": login.json()["csrf"], "Origin": "http://testserver"}
-            ).status_code
-            == 200
-        )
-        assert (
-            c.post("/api/v1/auth/logout", headers={"X-CSRF-Token": login.json()["csrf"]}).status_code == 200
-        )
-        assert c.get("/api/v1/adms").status_code == 401
+        assert c.patch(path, json=body, headers={"Origin": "http://testserver"}).status_code == 200
+        assert c.post("/api/v1/auth/logout", json={}).status_code == 404
+        assert c.get("/api/v1/adms").status_code == 200
 
 
 @pytest.mark.parametrize(
@@ -451,26 +418,18 @@ def test_active_child_receives_cancel_and_other_instance_serves(app_runtime):
     assert rt.store.request(key, uid)["status"] == "cancelled"
 
 
-def test_read_only_token_and_independent_consumer_ownership(app_runtime):
-    rt = app_runtime
-    key = tank(rt)
-    with client(rt) as c:
-        first = c.post("/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read"]}).json()
-        second = c.post("/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read"]}).json()
-        h1 = {"Authorization": "Bearer " + first["token"]}
-        h2 = {"Authorization": "Bearer " + second["token"]}
+def test_workspace_consumers_keep_independent_cursors(app_runtime):
+    key = tank(app_runtime)
+    with client(app_runtime) as c:
         prefix = f"/api/v1/adms/{key}"
-        assert c.post(prefix + "/requests", json=envelope(), headers=h1).status_code == 403
-        consumer = c.post(prefix + "/event-consumers", json={}, headers=h1).json()
+        first = c.post(prefix + "/event-consumers", json={}).json()
+        second = c.post(prefix + "/event-consumers", json={}).json()
+        assert first["id"] != second["id"]
         assert (
-            c.put(
-                prefix + "/event-consumers/" + consumer["id"] + "/cursor", json={"cursor": 0}, headers=h2
-            ).status_code
-            == 404
+            c.put(prefix + "/event-consumers/" + first["id"] + "/cursor", json={"cursor": 0}).status_code
+            == 200
         )
-        with rt.store.db() as db:
-            db.execute("UPDATE credentials SET expires=0 WHERE id=?", (first["id"],))
-        assert c.get(prefix, headers=h1).status_code == 401
+        assert c.get(prefix).status_code == 200
 
 
 def test_valid_and_violating_owner_requirement_survives_export(app_runtime):
@@ -562,6 +521,7 @@ def test_schema_two_store_migrates_with_existing_model_and_run(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=2")
     with sqlite3.connect(root / (key + ".db")) as db:
         for table in (
@@ -598,6 +558,7 @@ def test_schema_two_store_migrates_with_existing_model_and_run(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=2")
     rt = Runtime(cfg, start_scheduler=False)
     try:

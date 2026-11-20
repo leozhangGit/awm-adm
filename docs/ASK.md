@@ -32,11 +32,11 @@ Per-call time/output limits, finite local computation, queue capacity and bounde
 
 ## API
 
-All paths below begin with `/api/v1` and use the existing authenticated service access.
+All paths below begin with `/api/v1` and use the existing login-free local workspace access.
 
 - `POST /adms/{adm}/ask`: `{ "text": "…" }`, optionally `idempotency_key` and `reply_to`. Returns a durable interaction immediately.
 - `GET /adms/{adm}/interactions/{id}`: current status, readable reply, full local outcome, optional compact `outcome_label`, and request/result identities. The label is generated from the local result, not from provider prose.
-- `GET /adms/{adm}/chat/ask?after=0&limit=20`: ordered interaction pages, with `next_cursor` and `has_more`.
+- `GET /adms/{adm}/chat/ask?after=0&limit=20`: forward interaction pages, with `next_cursor` and `has_more`. Use `direction=backward&limit=100` for the latest page and `before=<next_cursor>` with backward direction for older pages; items remain chronological. The console opens with the latest 100 and loads older batches only on **Load more**.
 - `GET /adms/{adm}/presentations/{id}`: retained exact presentation and result bindings for programmatic inspection.
 - `GET /adms/{adm}/history-options`: bounded accepted entity/predicate/time metadata, without fact values or a support verdict.
 

@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from .protocol import RuntimeFault, dumps, loads
 
 APPLICATION_ID = 0x41574D32
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 
 def identifier(value):
@@ -114,6 +114,15 @@ def migrate(connection, kind):
             from ..interaction.schema import extend as interaction_extend
 
             interaction_extend(connection, kind)
+        if version < 17 and kind == "registry":
+            connection.execute("UPDATE installation_upgrade SET target=17,status='migrating' WHERE id=1")
+            connection.execute(
+                "CREATE TABLE local_workspace (id INTEGER PRIMARY KEY CHECK(id=1), identity TEXT NOT NULL)"
+            )
+            connection.execute("INSERT INTO local_workspace VALUES(1,?)", (str(uuid4()),))
+            # Historical credentials/provenance remain intact but no longer gate public access.
+            connection.execute("UPDATE credentials SET revoked=1")
+            connection.execute("DELETE FROM auth_tickets")
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.commit()
     except BaseException:

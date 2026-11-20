@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import sys
 import tempfile
 import urllib.error
@@ -20,11 +19,6 @@ def main(argv=None):
     parser.add_argument("--token-file", type=Path, default=Path("/run/secrets/owner-token"))
     commands = parser.add_subparsers(dest="operation", required=True)
     commands.add_parser("list")
-    for purpose in ("bootstrap", "recovery"):
-        credential = commands.add_parser(
-            purpose, help="Write a short-lived setup/reset credential to a private file"
-        )
-        credential.add_argument("--output", type=Path, required=True)
     create = commands.add_parser("create")
     create.add_argument("name")
     create.add_argument("--mode", choices=("forward", "backward"), default="backward")
@@ -39,35 +33,6 @@ def main(argv=None):
         if op == "run":
             command.add_argument("run_id")
     args = parser.parse_args(argv)
-    if args.operation in ("bootstrap", "recovery"):
-        # Never place the credential in command arguments, URLs or ordinary stdout.
-        try:
-            fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-            with os.fdopen(fd, "w") as stream:
-                result = exchange(
-                    args.url + "/internal/v3/auth/" + args.operation, secret(args.token_file), {}
-                )
-                stream.write(result["token"] + "\n")
-            print(
-                json.dumps(
-                    {
-                        "status": "credential_written",
-                        "purpose": args.operation,
-                        "expires_in": result["expires_in"],
-                    }
-                )
-            )
-            return 0
-        except (OSError, ValueError, KeyError):
-            print(
-                json.dumps(
-                    {
-                        "status": "credential_not_written",
-                        "action": "Check local operator access and use a new output path",
-                    }
-                )
-            )
-            return 1
     base = args.url + "/internal/m2/adms"
     body = None
     if args.operation == "create":

@@ -12,7 +12,7 @@ Independent ownership, the learning/serving separation, forward/backward conflic
 
 **[Explore AWM-ADM on concourses.net](https://concourses.net/awm-adm.html)** for the motivation, architecture and examples.
 
-**Release: 0.3.0 · MIT license · Supported Docker target: Linux ARM64**
+**Release: 0.4.0 · MIT license · Supported Docker target: Linux ARM64**
 
 ## The idea behind AWM-ADM
 
@@ -50,21 +50,13 @@ docker compose up -d --no-build --wait --wait-timeout 60
 docker compose ps
 ```
 
-Open **[http://127.0.0.1:8080/](http://127.0.0.1:8080/)**. The three services are the application, learning worker and provider gateway. Only the application is published, on loopback.
+Open **[http://127.0.0.1:9527/](http://127.0.0.1:9527/)**. The three services are the application, learning worker and provider gateway. Only the application is published, on loopback.
 
-Create the administrator setup credential:
-
-```sh
-python3 scripts/admin_credential.py bootstrap --project awm-adm
-```
-
-The command prints the path to a private credential file, not its value. Open that file locally, paste its contents into **Setup credential**, choose your email and password, and click **Create administrator**. The credential is single-use and expires after 15 minutes. Delete the file after use. Subsequent sign-ins use email/password; no email is sent.
-
-No API key belongs in these commands or in a committed `.env` file. See [installation and troubleshooting](docs/INSTALLATION.md) for configuration, restart and recovery.
+The workspace opens directly: no account, login, service API key or session renewal is required. The service trusts local access. Provider credentials belong only in Connections; they stay encrypted in the gateway and are never returned in ordinary reads. See [installation](docs/INSTALLATION.md) and the [local access boundary](docs/LOCAL_ACCESS.md).
 
 ## Your first model
 
-1. Sign in and create an empty model under **Domain models**, or import a checked snapshot.
+1. Create an empty model under **Domain models**, or import a checked snapshot.
 2. In **Connections**, choose the provider, enter its model identifier and API key, and click **Enable**. A successful connection test enables all remote capabilities.
 3. Open **Teach** and describe what the model should learn. Attach text or Markdown when useful. Clear requests proceed automatically; answer any genuine clarification in the chat.
 4. Open **Ask** to use accepted knowledge. Missing evidence stays unknown. Ask does not teach implicitly.
@@ -74,6 +66,10 @@ The [teaching example](examples/teaching/README.md) supplies a small equipment r
 
 Connections has one Enable/Disable control and usage charts. Disable retains the configuration and saved key while stopping new remote dispatch. No price installation, purpose permissions or spending setup is required. OpenAI and Anthropic transports are supported; the configured model must support their required structured responses. There is no automatic model switch or retry of an uncertain dispatched call.
 
+## Use with Codex
+
+The bundled [Codex plugin](codex-plugin/README.md) connects to this local service without a login or service API key. Within a selected project, Codex can create/reuse its model, teach adopted decisions and consult accepted knowledge through Ask. Mode changes require explicit user direction; forward remains active until the user requests backward. This is best-effort consultation, not a monitoring hook or enforcement gate.
+
 ## Stop, restart and protect data
 
 ```sh
@@ -81,7 +77,7 @@ docker compose stop
 docker compose up -d --no-build --wait --wait-timeout 60
 ```
 
-These commands preserve the named volumes. Keep `.local/secrets/` private: it includes the gateway encryption key needed to recover encrypted provider credentials. **Do not use `docker compose down -v` for normal shutdown; it deletes model and account storage.**
+These commands preserve the named volumes. Keep `.local/secrets/` private: it includes the gateway encryption key needed to recover encrypted provider credentials. **Do not use `docker compose down -v` for normal shutdown; it deletes model and service storage.**
 
 [Operational backup/restore](docs/OPERATIONS.md) captures both stopped storage owners. Model snapshots create independent models; they are not account/service backups. Recovery and updates must preserve uncertain provider reservations and accepted knowledge.
 
@@ -89,7 +85,7 @@ System timezone: Docker setup captures the host default automatically; native ex
 
 ## Scope and guarantees
 
-0.3.0 is a single-owner, single-host, loopback service with a bounded finite model language. Local acceptance checks enforce representation, independent owner requirements and configured admission rules. They do not establish that supplied premises are externally true. LLM interpretation and explanations remain fallible.
+0.4.0 is a single-owner, single-host, loopback service with a bounded finite model language. Local acceptance checks enforce representation, independent owner requirements and configured admission rules. They do not establish that supplied premises are externally true. LLM interpretation and explanations remain fallible.
 
 Lean kernel checking and exhaustive finite correspondence are reported separately. The interpreter and translator remain trusted code. Unknown provider usage stays reserved, and uncertain dispatched calls are not retried automatically. Finite execution limits bound each task; they do not guarantee that a requested capability can be learned.
 
@@ -103,7 +99,7 @@ Cluster reasoning, federation, Byzantine coordination, public internet hosting, 
 - [Contributing and local checks](CONTRIBUTING.md)
 - [Testing and assurance boundaries](docs/TESTING.md)
 
-The repository builds and tests on its own. It does not import a parent project or require private development history. The public API uses `/api/v1`. URL versioning is independent of the **AWM-ADM 0.3.0** product version and the existing schema/profile and snapshot format identifiers.
+The repository builds and tests on its own. It does not import a parent project or require private development history. The public API uses `/api/v1`. URL versioning is independent of the **AWM-ADM 0.4.0** product version and the existing schema/profile and snapshot format identifiers.
 
 ## Foundation and license
 

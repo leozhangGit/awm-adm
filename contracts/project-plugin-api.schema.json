@@ -1,0 +1,1257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inspected project-plugin API consumption contract",
+  "description": "Current /api/v1 plugin consumption subset. The shared local workspace profile provides login-free access; tools expose only project creation, Ask/Teach, work reads/cancellation, mode and supporting knowledge reads.",
+  "$defs": {
+    "Create": {
+      "additionalProperties": false,
+      "properties": {
+        "idempotency_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "mode": {
+          "default": "backward",
+          "enum": [
+            "forward",
+            "backward"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "name"
+      ],
+      "title": "Create",
+      "type": "object"
+    },
+    "Change": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_epoch": {
+          "minimum": 0,
+          "title": "Expected Epoch",
+          "type": "integer"
+        },
+        "mode": {
+          "enum": [
+            "forward",
+            "backward"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_epoch",
+        "mode"
+      ],
+      "title": "Change",
+      "type": "object"
+    },
+    "DirectMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        },
+        "text": {
+          "default": "",
+          "maxLength": 65536,
+          "title": "Text",
+          "type": "string"
+        },
+        "attachments": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Attachments",
+          "type": "array"
+        },
+        "reply_to": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reply To"
+        }
+      },
+      "title": "DirectMessage",
+      "type": "object"
+    },
+    "ErrorEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "error_profile": {
+          "const": "awm-adm-error/2",
+          "default": "awm-adm-error/2",
+          "title": "Error Profile",
+          "type": "string"
+        },
+        "code": {
+          "enum": [
+            "invalid_input",
+            "unsupported",
+            "not_found",
+            "unauthorized",
+            "forbidden",
+            "remote_calls_disabled",
+            "connection_unavailable",
+            "purpose_unavailable",
+            "allowance_expired",
+            "allowance_closed",
+            "allowance_exhausted",
+            "allowance_unavailable",
+            "price_unavailable",
+            "spending_disabled",
+            "spending_suspended",
+            "conflict",
+            "quota_exceeded",
+            "provider_unavailable",
+            "outcome_unknown",
+            "resource_exhausted",
+            "needs_evidence",
+            "needs_specification",
+            "cursor_expired",
+            "stale_context",
+            "not_implemented",
+            "internal_error"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retry": {
+          "enum": [
+            "never",
+            "after_input",
+            "after_backoff",
+            "reconcile",
+            "resynchronize"
+          ],
+          "title": "Retry",
+          "type": "string"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "details": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "maxProperties": 32,
+          "title": "Details",
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retry"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Operation": {
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "adm_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Adm Id"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorEnvelope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation_id",
+        "kind",
+        "adm_id",
+        "status",
+        "result",
+        "error"
+      ],
+      "title": "Operation",
+      "type": "object"
+    },
+    "Attempt": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "started": {
+          "title": "Started",
+          "type": "number"
+        },
+        "ended": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ended"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revision"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "started",
+        "ended",
+        "revision"
+      ],
+      "title": "Attempt",
+      "type": "object"
+    },
+    "ContextBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "theory_root": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Theory Root",
+          "type": "string"
+        },
+        "policy_epoch": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Policy Epoch",
+          "type": "integer"
+        },
+        "support_root": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Support Root"
+        },
+        "source_policy_generation": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Policy Generation"
+        }
+      },
+      "required": [
+        "adm_id",
+        "theory_root",
+        "policy_epoch"
+      ],
+      "title": "ContextBinding",
+      "type": "object"
+    },
+    "Result": {
+      "additionalProperties": false,
+      "properties": {
+        "result_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "binding": {
+          "$ref": "#/$defs/ResultBinding"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "claims": {
+          "items": {
+            "enum": [
+              "value",
+              "valid_witness",
+              "shortest_action_count",
+              "unreachable",
+              "no_plan_within_bound"
+            ],
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Claims",
+          "type": "array"
+        },
+        "lean_kernel": {
+          "enum": [
+            "not_requested",
+            "checked",
+            "unavailable",
+            "failed"
+          ],
+          "title": "Lean Kernel",
+          "type": "string"
+        },
+        "exhaustive_finite": {
+          "enum": [
+            "not_checked",
+            "checked",
+            "failed"
+          ],
+          "title": "Exhaustive Finite",
+          "type": "string"
+        },
+        "empirical_fidelity": {
+          "default": "not_established",
+          "enum": [
+            "not_established",
+            "conditional_on_declared_sources"
+          ],
+          "title": "Empirical Fidelity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "binding",
+        "value",
+        "claims",
+        "lean_kernel",
+        "exhaustive_finite"
+      ],
+      "title": "Result",
+      "type": "object"
+    },
+    "ResultBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        "request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "query_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Query Digest",
+          "type": "string"
+        },
+        "selection": {
+          "$ref": "#/$defs/Selection"
+        },
+        "resolved_actions": {
+          "items": {
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "title": "Resolved Actions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "context",
+        "request_id",
+        "attempt_id",
+        "query_digest",
+        "selection"
+      ],
+      "title": "ResultBinding",
+      "type": "object"
+    },
+    "Selection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "module_all",
+            "explicit",
+            "not_applicable"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "actions": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 200,
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actions"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "Selection",
+      "type": "object"
+    },
+    "RequestView": {
+      "additionalProperties": false,
+      "properties": {
+        "adm_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Adm Id",
+          "type": "string"
+        },
+        "request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "received",
+            "evaluating",
+            "waiting_for_learning",
+            "needs_input",
+            "succeeded",
+            "inconclusive",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "attempt_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Result"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorEnvelope"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "learning_job_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Learning Job Ids",
+          "type": "array"
+        },
+        "query": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Query",
+          "type": "object"
+        },
+        "revision_id": {
+          "title": "Revision Id",
+          "type": "string"
+        },
+        "initial_revision_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Initial Revision Id"
+        },
+        "pinned_context": {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        "current_context": {
+          "$ref": "#/$defs/ContextBinding"
+        },
+        "attempts": {
+          "items": {
+            "$ref": "#/$defs/Attempt"
+          },
+          "title": "Attempts",
+          "type": "array"
+        },
+        "created_at_ms": {
+          "title": "Created At Ms",
+          "type": "integer"
+        },
+        "updated_at_ms": {
+          "title": "Updated At Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "adm_id",
+        "request_id",
+        "status",
+        "query",
+        "revision_id",
+        "initial_revision_id",
+        "pinned_context",
+        "current_context",
+        "attempts",
+        "created_at_ms",
+        "updated_at_ms"
+      ],
+      "title": "RequestView",
+      "type": "object"
+    },
+    "ModelInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "instance_id": {
+          "type": "string"
+        },
+        "persistence": {
+          "type": "string"
+        },
+        "conformance_root": {
+          "type": "string"
+        },
+        "support_root": {
+          "type": "string"
+        },
+        "theory_version": {
+          "type": "string"
+        },
+        "revision_id": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "backward",
+            "forward"
+          ]
+        },
+        "policy_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "receipt_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "versions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "background_learning": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "status",
+        "instance_id",
+        "persistence",
+        "conformance_root",
+        "support_root",
+        "theory_version",
+        "revision_id",
+        "mode",
+        "policy_epoch",
+        "receipt_sequence",
+        "versions",
+        "archived",
+        "background_learning"
+      ],
+      "additionalProperties": true
+    },
+    "InteractionContext": {
+      "type": "object",
+      "properties": {
+        "adm_id": {
+          "type": "string"
+        },
+        "revision_id": {
+          "type": "string"
+        },
+        "theory_root": {
+          "type": "string"
+        },
+        "support_root": {
+          "type": "string"
+        },
+        "policy_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_policy_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vocabulary_generation": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "adm_id",
+        "revision_id",
+        "theory_root",
+        "support_root",
+        "policy_epoch"
+      ],
+      "additionalProperties": true
+    },
+    "TeachingSummary": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "accepted_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accepted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "context": {
+          "$ref": "#/$defs/InteractionContext"
+        },
+        "stop_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "vocabulary": {
+          "type": "string"
+        },
+        "followup": {}
+      },
+      "required": [
+        "status",
+        "accepted_ids",
+        "unresolved_ids",
+        "accepted",
+        "unresolved",
+        "context"
+      ],
+      "additionalProperties": true
+    },
+    "TeachingView": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "status"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TeachingSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "review": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "version",
+        "status",
+        "phase",
+        "steps",
+        "summary",
+        "review"
+      ],
+      "additionalProperties": true
+    },
+    "Interaction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "ask",
+            "teach"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "api",
+            "console",
+            "legacy_chat"
+          ]
+        },
+        "created_at_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reply_to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reply": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "result_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outcome_text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "explanation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outcome_label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failure_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "teaching": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TeachingView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "idempotency_key",
+        "status",
+        "text",
+        "channel",
+        "origin",
+        "created_at_ms",
+        "reply_to",
+        "reply",
+        "request_id",
+        "result_id",
+        "outcome",
+        "outcome_text",
+        "explanation",
+        "outcome_label",
+        "failure_code"
+      ],
+      "additionalProperties": true
+    },
+    "KnowledgePage": {
+      "type": "object",
+      "properties": {
+        "revision_id": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object"
+        },
+        "query_digest": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "category"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "revision_id",
+        "context",
+        "query_digest",
+        "total",
+        "items",
+        "next_cursor"
+      ],
+      "additionalProperties": true
+    },
+    "AdmissionView": {
+      "additionalProperties": false,
+      "properties": {
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "receipt_id": {
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "receipt_sequence": {
+          "title": "Receipt Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "accepted",
+            "preservation_conflict",
+            "checked_violation",
+            "unresolved"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "backward",
+                "forward"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "base_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Revision"
+        },
+        "decision_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Revision"
+        },
+        "accepted_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accepted Revision"
+        },
+        "decision_context": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Context"
+        },
+        "accepted_context": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accepted Context"
+        },
+        "diagnostic": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diagnostic"
+        },
+        "effects": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effects"
+        },
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "objective_id",
+        "receipt_id",
+        "receipt_sequence",
+        "status",
+        "classification"
+      ],
+      "title": "AdmissionView",
+      "type": "object"
+    }
+  }
+}

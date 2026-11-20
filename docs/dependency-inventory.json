@@ -1,8 +1,9 @@
 {
   "scope": "Locked dependency provenance and declared licenses, not a vulnerability or redistribution clearance",
   "lock_sha256": {
-    "uv.lock": "944400ece6aa6dfdd52cd39fa1bef7d0804dc901507af0129a2e9ec418173c17",
-    "console/package-lock.json": "400aa6cdc29cf99d80e74ad7046f0c0d739163bf54ede854fe4c0878077e556a"
+    "uv.lock": "ce4ffe987e63d19a2fc5e853e22f15193f59dcdc9170964a8ea7ea8ec80ef87c",
+    "codex-plugin/uv.lock": "fa2c371352ff6c774789142399e94711095a8a1e02acc1c0d77803c184764198",
+    "console/package-lock.json": "14112b16b19e5cac87495a5977ff57e01aa4bdcb24bf87567c3c1498b0533bd5"
   },
   "python": [
     {
@@ -401,6 +402,338 @@
       "license_files": [
         "LICENSE-APACHE",
         "LICENSE-MIT"
+      ]
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.md"
+      ]
+    }
+  ],
+  "python_plugin": [
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "anyio",
+      "version": "4.16.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT-0",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "click",
+      "version": "8.5.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.2",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "license_files": [
+        "LICENSE",
+        "LICENSE.APACHE",
+        "LICENSE.BSD"
+      ]
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "httpcore2",
+      "version": "2.16.2",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "httpx2",
+      "version": "2.16.2",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "httpx2-jsfetch",
+      "version": "1.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "metadata unavailable",
+      "license_files": []
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "COPYING"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "COPYING"
+      ]
+    },
+    {
+      "name": "mcp",
+      "version": "2.2.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "mcp-types",
+      "version": "2.2.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.45.2",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "Apache-2.0",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.3",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "version": "2.50.4",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "pyjwt",
+      "version": "2.15.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE",
+        "AUTHORS.rst"
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.34",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "Apache-2.0",
+      "license_files": [
+        "LICENSE.txt"
+      ]
+    },
+    {
+      "name": "pywin32",
+      "version": "312",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "metadata unavailable",
+      "license_files": []
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "COPYING"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.7.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE",
+        "AUTHORS"
+      ]
+    },
+    {
+      "name": "starlette",
+      "version": "1.10.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "BSD-3-Clause",
+      "license_files": [
+        "LICENSE.md"
+      ]
+    },
+    {
+      "name": "truststore",
+      "version": "0.10.5",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "PSF-2.0",
+      "license_files": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.5",
+      "source": {
+        "registry": "https://pypi.org/simple"
+      },
+      "license": "MIT",
+      "license_files": [
+        "LICENSE"
       ]
     },
     {

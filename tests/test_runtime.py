@@ -184,16 +184,17 @@ def test_owned_schema_migration_and_rollback(tmp_path):
     connection.execute(
         "CREATE TABLE instances (id TEXT PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL)"
     )
+    connection.execute("DROP TABLE IF EXISTS local_workspace")
     connection.execute("PRAGMA user_version=1")
     connection.execute("INSERT INTO instances VALUES ('example','preserved','failed')")
     migrate(connection, "registry")
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 16
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 17
     assert connection.execute("SELECT name FROM instances").fetchone()[0] == "preserved"
     connection.close()
 
     class Failing(sqlite3.Connection):
         def execute(self, sql, *args):
-            if sql.startswith("PRAGMA user_version=16"):
+            if sql.startswith("PRAGMA user_version=17"):
                 raise sqlite3.OperationalError("authored migration fault")
             return super().execute(sql, *args)
 
@@ -305,11 +306,11 @@ def test_private_roles_and_public_listener_separation(runtime):
             assert oversized.status_code == 413
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=create_app(runtime.config, runtime=runtime)),
-            base_url="http://test",
+            base_url="http://127.0.0.1:9527",
         ) as public:
             assert (await public.get("/health/ready")).status_code == 200
             assert (await public.get("/internal/m2/adms")).status_code == 404
-            assert (await public.post("/api/v1/adms", json={})).status_code == 404
+            assert (await public.post("/api/v1/adms", json={})).status_code == 422
             availability = (await public.get("/api/v1/system")).json()["available"]
             assert availability["local_serving"] and availability["worker"]
             assert availability["learning"] and not availability["providers"]

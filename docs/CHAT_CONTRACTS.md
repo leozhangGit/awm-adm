@@ -1,19 +1,19 @@
 # Conversation and task contracts
 
-AWM-ADM 0.3.0 exposes direct Ask/Teach exchanges under `/api/v1`. The current operational storage schema is 16; core artifact and snapshot formats are unchanged. [OpenAPI](../contracts/openapi.json) specifies the request shapes.
+AWM-ADM 0.4.0 exposes direct Ask/Teach exchanges under `/api/v1`. The current operational storage schema is 17; core artifact and snapshot formats are unchanged. [OpenAPI](../contracts/openapi.json) specifies the request shapes.
 
 ## Meaning and authority
 
 | Resource | Binding |
 | --- | --- |
-| Exchange | ADM, Ask/Teach channel, authenticated input, selected attachments, origin and current context |
+| Exchange | ADM, Ask/Teach channel, local input, selected attachments, origin and current context |
 | Clarification | Exact preceding exchange and unresolved question; a reply is checked against current context |
 | Teaching specification | Checked intent, finite interfaces, children, selected evidence and task-owned acquisition contracts |
 | Execution | Exact specification, current revision/requirements, parent cancellation fence and receiver receipt order |
 | Presentation | Original request/result or task, exact context and locally supported explanation references |
 | Provider grant | One call identity, exact connection version, purpose, payload and finite execution limits |
 
-An authenticated clear Teach submission authorizes automatic checked learning. This authority comes from the application accepting the request, never from provider output or an attachment. Provider-proposed owner requirements cannot install themselves. Ambiguous requests ask a question; ordinary clarification has no financial expiry. A model/configuration change still requires checking meaning again.
+A clear local Teach submission authorizes automatic checked learning. This authority comes from the application accepting the request, never from provider output or an attachment. Provider-proposed owner requirements cannot install themselves. Ambiguous requests ask a question; ordinary clarification has no financial expiry. A model/configuration change still requires checking meaning again.
 
 Ask is read-only model use. It cannot silently create a teaching task. A provider interpretation is checked before local execution; a provider explanation cannot replace or upgrade a local outcome. Accepted theory is independent of chat history.
 
@@ -29,8 +29,8 @@ Each durable exchange has an idempotency identity. Replaying unchanged input ret
 
 ## Access and recovery
 
-Administrator sessions authorize direct remote Ask/Teach, connections and model management. Scoped read/submit clients retain their existing explicit local-query permissions; they do not acquire administrator powers. Append clients can submit to one checked source queue and read their own receipts, not read the model, change policy or publish. Worker and gateway credentials remain separate.
+The console and retained public APIs use a login-free trusted local workspace. Clear Teach requests authorize only their expressed learning intent; Ask does not implicitly teach. Provider and source text cannot change independent requirements. Append credentials constrain their ingestion endpoint; they do not isolate an otherwise trusted local process from the shared public API. Worker and gateway machine credentials remain separate.
 
 Turns, questions, tasks and outcomes persist. Registry, model and gateway handoffs use durable intents rather than an assumed cross-database transaction. Restart retains accepted knowledge and known outcomes; uncertain provider dispatches are never automatically repeated. A paired restore disables the connection, pauses feeds and revokes operational credentials. Historical financial records remain inspectable but do not gate new exchanges.
 
-The console shows readable outcomes and progress. Exact technical artifacts remain in authenticated APIs for investigation, without routine setup or Details panels. See [Conversations](CONVERSATIONS.md), [Ask](ASK.md), [Teaching](TEACHING.md), [Intake](INTAKE.md) and [Limits](LIMITS.md).
+The console shows readable outcomes and progress. Exact technical artifacts remain in login-free local APIs for investigation, without routine setup or Details panels. See [Conversations](CONVERSATIONS.md), [Ask](ASK.md), [Teaching](TEACHING.md), [Intake](INTAKE.md) and [Limits](LIMITS.md).

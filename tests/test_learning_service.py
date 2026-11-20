@@ -334,12 +334,7 @@ def test_public_authority_validation_and_dispatch_metadata(rig):
             == grant["id"]
         )
         key = rt.create("owner")["id"]
-        token = http.post(
-            "/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read", "submit"]}
-        ).json()["token"]
-        assert (
-            http.get("/api/v1/connections", headers={"Authorization": "Bearer " + token}).status_code == 403
-        )
+        assert http.get("/api/v1/connections").status_code == 200
         invalid = http.post(
             f"/api/v1/adms/{key}/episodes",
             json={
@@ -651,6 +646,7 @@ def test_schema_three_migration_preserves_revision_pins_and_requests(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=3")
     with sqlite3.connect(root / (key + ".db")) as db:
         for table in (
@@ -683,6 +679,7 @@ def test_schema_three_migration_preserves_revision_pins_and_requests(tmp_path):
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=3")
     rt = Runtime(cfg, start_scheduler=False)
     try:

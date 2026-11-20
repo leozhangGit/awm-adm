@@ -1,6 +1,6 @@
 # Service and data contracts
 
-AWM-ADM 0.3.0 combines a domain-agnostic finite library, persistent local runtime, authenticated APIs, conversations, bounded learning and source intake. This document defines their shared boundaries. [Architecture](ARCHITECTURE.md) identifies component ownership; [OpenAPI](../contracts/openapi.json) and [generated schemas](../contracts/schemas/) define exact implemented transports. A valid JSON shape does not confer semantic or publication authority.
+AWM-ADM 0.4.0 combines a domain-agnostic finite library, persistent local runtime, login-free local APIs, conversations, bounded learning and source intake. This document defines their shared boundaries. [Architecture](ARCHITECTURE.md) identifies component ownership; [OpenAPI](../contracts/openapi.json) and [generated schemas](../contracts/schemas/) define exact implemented transports. A valid JSON shape does not confer semantic or publication authority.
 
 ## Model identity and persistence
 
@@ -47,7 +47,7 @@ Individually valid candidates need not be jointly valid. Publication checks the 
 
 ## Conversations and automatic execution
 
-Ask and Teach have separate durable streams. Ask checks a provider interpretation, executes supported meaning locally and labels any provider explanation separately. Teach validates finite specifications and automatically starts clear authenticated requests. It asks only for uncertain meaning or a necessary protected decision. Neither source material nor provider output can install owner requirements or override policy.
+Ask and Teach have separate durable streams. Ask checks a provider interpretation, executes supported meaning locally and labels any provider explanation separately. Teach validates finite specifications and automatically starts clear local requests. It asks only for uncertain meaning or a necessary protected decision. Neither source material nor provider output can install owner requirements or override policy.
 
 Bounded owner context is managed automatically. Accepted theory is independent of chat prose. Uploads are disclosed only when selected in a submitted Teach request. Model, connection, policy and cancellation bindings are checked again before work and publication. Human clarification waits do not expire financial authority because there is no financial authority setup. See [Conversations](CONVERSATIONS.md) and [Chat contracts](CHAT_CONTRACTS.md).
 
@@ -73,15 +73,15 @@ Managed intake provides bounded push queues, receipts, throttling, finite proces
 
 ## Access, snapshots and deletion
 
-The supported installation has one local administrator. Password sessions, CSRF checks, scoped API clients and separate private operator/worker/gateway credentials enforce distinct roles. The fixed provider gateway is the only provider-egress path; source/query data cannot select arbitrary destinations.
+The supported installation has one trusted local workspace. Public console/API access needs no login. Same-origin/Host/peer checks bound that access; private operator/worker/gateway channels retain separate machine credentials. The fixed provider gateway is the only provider-egress path; source/query data cannot select arbitrary destinations.
 
 Model snapshots contain accepted executable knowledge, owner requirements, necessary evidence and optional typed state. They exclude accounts, credentials, live grants, conversation/task queues and imported proof authority. Import validates the package and creates an independent identity. Operational backup is a different process.
 
-Named deletion fences access and publication before durable cleanup. It preserves uncertainty accounting and a content-free replay tombstone; it does not delete independent clones, shared connections or separately held backups. Interrupted cleanup remains fenced and can resume. See [Administrator](ADMINISTRATOR.md), [Security](../SECURITY.md) and [Model lifecycle](MODEL_LIFECYCLE.md).
+Named deletion fences access and publication before durable cleanup. It preserves uncertainty accounting and a content-free replay tombstone; it does not delete independent clones, shared connections or separately held backups. Interrupted cleanup remains fenced and can resume. See [Local access](LOCAL_ACCESS.md), [Security](../SECURITY.md) and [Model lifecycle](MODEL_LIFECYCLE.md).
 
 ## API and operational boundaries
 
-The unified `/api/v1` API exposes models, local requests, interpretation previews, learning, sources/feeds, snapshots, events, diagnostics, administrator sessions, connections, direct Ask/Teach exchanges, attachments, managed intake and lifecycle controls. Manual preview history uses `interpretation-sessions`; Ask/Teach uses `conversations`. URL versioning is independent of serialized profiles and storage formats. Use [API](API.md) and [OpenAPI](../contracts/openapi.json) for exact methods, pagination and permissions.
+The unified `/api/v1` API exposes models, local requests, interpretation previews, learning, sources/feeds, snapshots, events, diagnostics, connections, direct Ask/Teach exchanges, attachments, managed intake and lifecycle controls. Manual preview history uses `interpretation-sessions`; Ask/Teach uses `conversations`. URL versioning is independent of serialized profiles and storage formats. Use [API](API.md) and [OpenAPI](../contracts/openapi.json) for exact methods, pagination and permissions.
 
 Paired backup/restore is an **offline operator CLI**, not a public backup HTTP endpoint. It locks both stopped storage owners, checks schemas and hashes, and restores only into a fresh destination. Supported operational restore preserves knowledge/history and uncertain accounting while revoking operational credentials, disabling remote authority and pausing feeds. An old backup cannot reconstruct later external expenditure.
 

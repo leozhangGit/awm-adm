@@ -1,14 +1,14 @@
 # Application API
 
-The service exposes model, learning, source, administrator, connection and conversational resources under `/api/v1` within AWM-ADM 0.3.0. See [administrator access](ADMINISTRATOR.md), [connection and usage](CONNECTION.md), [conversations](CONVERSATIONS.md) and [OpenAPI](../contracts/openapi.json).
+The service exposes model, learning, source, connection and conversational resources under `/api/v1` within AWM-ADM 0.4.0. See [local workspace access](LOCAL_ACCESS.md), [connection and usage](CONNECTION.md), [conversations](CONVERSATIONS.md) and [OpenAPI](../contracts/openapi.json).
 
-The public API runs at `http://127.0.0.1:8080/api/v1`. It exposes independent ADM initialization, durable local requests, exact result bindings, owner settings/requirements, bounded model operations and retained events. The [browser console](CONSOLE.md) uses these same routes for owner workflows. [Bounded learning and provider dispatch](LEARNING.md) use separate owner-authorized resources. A gap alone does not create a provider grant: an explicit episode can attach eligible requests, retain their learning interests, and trigger a new local attempt after checked publication. Provider output is never substituted for a request result.
+The public API runs at `http://127.0.0.1:9527/api/v1`. It exposes independent ADM initialization, durable local requests, exact result bindings, owner settings/requirements, bounded model operations and retained events. The [browser console](CONSOLE.md) uses these same routes for owner workflows. [Bounded learning and provider dispatch](LEARNING.md) use separate owner-authorized resources. A gap alone does not create a provider grant: an explicit episode can attach eligible requests, retain their learning interests, and trigger a new local attempt after checked publication. Provider output is never substituted for a request result.
 
 ## Direct interaction resources
 
 Historical structured queries support `lookup_fact` with `effective_at`, and `lookup_fact_period` with inclusive `effective_from` and exclusive `effective_to`. Both use canonical UTC instants, an `entity_id` and a `predicate`. Automatic Ask preserves calendar-date precision using the captured system timezone unless the user specifies one. See [temporal semantics](TEMPORAL_INTERPRETATION.md) and [sources](SOURCES.md) for full-period support requirements. Existing instant queries and stored artifact profiles are unchanged.
 
-All paths below are relative to `/api/v1`. The connection and direct chat mutations require administrator authority.
+All paths below are relative to `/api/v1` and use the shared local workspace boundary.
 
 | Resource | Purpose |
 | --- | --- |
@@ -16,7 +16,7 @@ All paths below are relative to `/api/v1`. The connection and direct chat mutati
 | `POST /connection/enable`, `/connection/disable` | Idempotent test-and-enable, or disable retaining the key |
 | `GET /connection/operations/{id}`, `/connection/usage` | Activation progress and known/unknown call usage |
 | `POST /adms/{adm}/ask`, `/teach` | Direct input: `text`, optional `attachments`, `reply_to` and `idempotency_key` |
-| `GET /adms/{adm}/chat/{ask|teach}` | Stable paginated channel history |
+| `GET /adms/{adm}/chat/{ask|teach}` | Stable channel history: default forward `after`; backward `direction=backward` with optional exclusive `before`; limit 1–100, chronological items with `sequence`, `next_cursor`, `has_more` |
 | `GET /adms/{adm}/interactions/{id}` | Readable progress, local outcome and explanation |
 | `POST /adms/{adm}/interactions/{id}/cancel` | Stop active work; preserve accepted knowledge and completed outcomes |
 | `GET /adms/{adm}/activity` | Time/type/origin-filtered console/API history |
@@ -25,33 +25,27 @@ All paths below are relative to `/api/v1`. The connection and direct chat mutati
 | `/adms/{adm}/conversations` | Retained exchange internals and legacy history reads |
 | `/adms/{adm}/interpretation-sessions`, `/interpretations` | Explicit preview, clarification and confirmation APIs |
 | `/adms/{adm}/attachments`, `/intake` | Immutable upload, selected originals and bounded producer routes |
-| `/auth/login`, `/auth/me`, `/auth/logout` | Administrator password sessions |
-| `/auth/tokens` | Existing scoped local-request and producer credentials |
 
 For example, send `{"text":"Can one more item be borrowed when one is already borrowed and one is available?","idempotency_key":"question-1"}` to the model's Ask endpoint. Read the returned interaction until its outcome is ready. Teach accepts the same shape and automatically checks and publishes clear requests; `reply_to` associates a clarification with its original exchange. Ask cannot silently teach.
 
 `GET /adms/{adm}/history-options` retains revision-bound historical lookup metadata. Existing structured requests, requirements, snapshots, sources, feeds, proofs and diagnostic APIs remain available. Manual chat setup/decisions/renewal, separate connection-test/global-enable controls and financial mutation routes are retired. Historical price/allowance reads remain for retained accounting, not permission to issue new work.
 
-URL versioning remains `/api/v1` with no v2/v3 aliases. Core serialized profiles and snapshots are unchanged; owned operational schema is 16. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
+URL versioning remains `/api/v1` with no v2/v3 aliases. Core serialized profiles and snapshots are unchanged; owned operational schema is 17. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
 
-## Start and authenticate
+## Open the local workspace
 
-[Administrator authentication](ADMINISTRATOR.md) uses `/api/v1/auth`. Establish the local administrator once and use email/password for owner access. Fresh stores require setup; ordinary updates preserve compatible runtime data.
+Fresh stores open without setup; ordinary updates preserve compatible runtime data and historical actor references.
 
-The standard-library client keeps credentials in memory and prompts securely for a one-command administrator session:
+The standard-library example client needs no login or API key:
 
 ```sh
-python3 scripts/api_client.py /api/v1/adms --login
-python3 scripts/api_client.py /api/v1/openapi.json --login > openapi.json
+python3 scripts/api_client.py /api/v1/adms
+python3 scripts/api_client.py /api/v1/openapi.json > openapi.json
 ```
 
-Use `--token-file /private/path/client-token` for an explicitly issued scoped client. Password login, session cookies and CSRF authorize owner operations; the old owner bearer stops working publicly after account setup. The private operator credential remains available for local recovery.
+All retained public operations use the shared local HTTP boundary. Same-origin console and native local requests are accepted without user credentials. Foreign/null origins, cross-site requests, browser form mutations and off-host peers are rejected. Provider secrets remain masked; internal machine credentials remain private. See [Local workspace access](LOCAL_ACCESS.md). The `/auth/*` setup/login/session/password/recovery/token routes are retired.
 
-Resource reads/mutations require authentication. Static assets, minimal health/system data and the setup-required boolean remain public on loopback. The owner-authenticated OpenAPI export describes this unified API. No provider secret or owner credential is embedded in the assets.
-
-Owners issue expiring scoped clients through `POST /api/v1/auth/tokens`, with explicit `adms` and `permissions: ["read", "submit"]`. Read covers inspection/events; submit covers local request submission/cancellation/retry. These clients cannot manage models/policies, issue credentials, administer accounts or inspect owner operations. Existing scoped clients retain their scopes after administrator setup/password changes. They expire or may be explicitly revoked; whole-service restore deliberately revokes them. At most 256 active credentials are retained.
-
-The administrator cookie is HttpOnly, SameSite=Strict and scoped to `/api`. Mutations require `X-CSRF-Token`. Sessions expire after eight hours, survive ordinary restart, and are revoked on logout/password change/recovery as documented in the [account guide](ADMINISTRATOR.md). The local HTTP profile does not mark cookies Secure; off-host/reverse-proxy deployment is unsupported. All `/api/v1` routes enforce Host/Origin, JSON-only input, body limits and cross-site mutation rejection.
+`GET /system` includes `request_limits` and `local_service`: profile `awm-adm-local/1`, stable `installation_id`, `connection_ready` and a safe `reason`. Readiness makes no provider call. The plugin checks this contract before using its small operation subset; it does not expose every public route.
 
 ## Instances and model operations
 
@@ -62,8 +56,8 @@ Create `create.json`:
 ```
 
 ```sh
-python3 scripts/api_client.py /api/v1/adms --method POST --body create.json --login
-python3 scripts/api_client.py /api/v1/operations/OPERATION_UUID --login
+python3 scripts/api_client.py /api/v1/adms --method POST --body create.json
+python3 scripts/api_client.py /api/v1/operations/OPERATION_UUID
 ```
 
 Creation returns `202` and an operation resource. Poll until `succeeded` or `failed`. A successful operation identifies the new ADM; an empty ADM has no domain declarations. HTTP disconnect does not cancel creation or lose its durable identity.
@@ -87,7 +81,7 @@ A snapshot transport is `{manifest: BASE64, files: {ARTIFACT_PATH: BASE64}}`, ca
 
 Imports recheck finite content, evidence closure, typed state and the actual owner policy. They do not import proof status or operational authority. Exports preserve the source ADM identity as provenance and exclude requests, credentials, attempts, consumers and jobs. Neither operation is an operational backup.
 
-Creation and model-operation idempotency keys are installation-scoped. Request keys are ADM-scoped. Identical validated canonical input returns the same resource; changed input under the same key returns `409`. Authorization is rechecked on every replay. Failed operations keep their identity; an explicit new key is needed for a new operation. A committed instance can be reconciled with its operation after restart without creating a duplicate. A failed validation never produces a ready instance.
+Creation and model-operation idempotency keys are installation-scoped. Request keys are ADM-scoped. Identical validated canonical input returns the same resource; changed input under the same key returns `409`. The shared local HTTP boundary is checked on every replay. Failed operations keep their identity; an explicit new key is needed for a new operation. A committed instance can be reconciled with its operation after restart without creating a duplicate. A failed validation never produces a ready instance.
 
 ## Durable local requests
 
@@ -105,8 +99,8 @@ Create `request.json`:
 ```
 
 ```sh
-python3 scripts/api_client.py /api/v1/adms/ADM_UUID/requests --method POST --body request.json --login
-python3 scripts/api_client.py /api/v1/adms/ADM_UUID/requests/REQUEST_UUID --login
+python3 scripts/api_client.py /api/v1/adms/ADM_UUID/requests --method POST --body request.json
+python3 scripts/api_client.py /api/v1/adms/ADM_UUID/requests/REQUEST_UUID
 ```
 
 An optional `If-Match` header contains the exact revision UUID displayed by the client (this bounded API profile accepts one bare ID, not HTTP ETag lists or wildcards). A newly submitted request checks it inside the enqueue transaction; mismatch returns `409 stale_context`. A matching idempotent replay returns the original resource before this precondition is evaluated. Clients omitting the header pin the current revision at receipt.
@@ -138,13 +132,13 @@ List requests with `after` and `limit` (1–100). Lists return bounded request s
 ## Durable events and independent consumers
 
 ```sh
-python3 scripts/api_client.py '/api/v1/adms/ADM_UUID/events?after=0&limit=50' --login
-python3 scripts/api_client.py /api/v1/adms/ADM_UUID/events --events --login
+python3 scripts/api_client.py '/api/v1/adms/ADM_UUID/events?after=0&limit=50'
+python3 scripts/api_client.py /api/v1/adms/ADM_UUID/events --events
 ```
 
 Polling and SSE read the same transactional outbox. Polling returns `items`, `cursor`, `earliest_cursor` and `latest_cursor`. SSE uses stable `ADM_UUID:SEQUENCE` event IDs; reconnect with `Last-Event-ID`. A cursor from another ADM is rejected. Delivery is at least once: deduplicate by event ID. SSE connections are bounded to 15 seconds and 32 simultaneous streams; reconnect normally. `?once=true` returns one current batch for clients/tests. Expired credentials or history gaps during a stream produce a `control` event and close the connection.
 
-`POST /event-consumers` creates a cursor bound to the authenticated principal. `PUT /event-consumers/{id}/cursor` advances only that principal's consumer monotonically. Each ADM retains at most 100 consumers. Acknowledgment does not delete events or affect another consumer.
+`POST /event-consumers` creates a cursor bound to the workspace actor. `PUT /event-consumers/{id}/cursor` advances only that workspace's consumer monotonically. Each ADM retains at most 100 consumers. Acknowledgment does not delete events or affect another consumer.
 
 The owner may explicitly prune an event prefix with `POST /events/prune` and `{cursor:N}`. This affects event delivery history, not requests, results, model versions or idempotency. Lagging cursors receive `410 cursor_expired`; retrieve `/event-window`, reload current resources, and resume at the reported earliest cursor. The owner retention preview reports an eligible age-based event prefix. Automatic deletion and wider evidence garbage collection remain unavailable; see [OPERATIONS.md](OPERATIONS.md). No global order across ADMs is implied.
 
@@ -162,7 +156,7 @@ Request and revision lists accept `order=asc` (default) or `order=desc`, rejecti
 
 ## Managed learning resources
 
-The [learning API](LEARNING.md#api-resources) retains owner-only learning diagnostics, `/dispatches`, per-ADM `/episodes` and candidate review routes alongside the single `/connection` controls. [OpenAPI](../contracts/openapi.json) contains the complete implemented schemas. No scoped request token can grant provider authority. Pending requests expose durable learning job IDs; a successful publication may repin a new local attempt only for explicitly authorized learning interests. `initial_revision_id` and each attempt's `revision` preserve historical pins. Interruption never retries an uncertain provider call.
+The [learning API](LEARNING.md#api-resources) retains learning diagnostics, `/dispatches`, per-ADM `/episodes` and candidate review routes alongside the single `/connection` controls. [OpenAPI](../contracts/openapi.json) contains the complete implemented schemas. Provider output cannot change connection settings. Pending requests expose durable learning job IDs; a successful publication may repin a new local attempt only for explicitly authorized learning interests. `initial_revision_id` and each attempt's `revision` preserve historical pins. Interruption never retries an uncertain provider call.
 
 The [language API](LANGUAGE.md#api-resources) adds local/optional external interpretations, explicit confirmation, vocabulary and bounded conversations. Local interpretation accepts scoped submit authority; provider interpretation, vocabulary edits and teaching proposals require owner authority. Interpretation confirmation creates a normal request with the same local result and lifecycle contracts.
 
@@ -174,7 +168,7 @@ The [source guide](SOURCES.md) defines the implemented immutable intake, explici
 
 `GET /api/v1/operations` returns up to 50 operation summaries without payloads. Optional `since_ms` is an inclusive receipt-time lower bound in Unix milliseconds, applied before the limit; optional `include_deletions=true` combines deletion status with create/export records and sorts newest first by receipt time (operation identity breaks ties). Summaries include `created_at_ms`. Defaults preserve the unfiltered create/export list. The console requests the preceding seven days; older records remain stored and readable by ID. Deletion responses also include `created_at_ms`; `/deletions?scope=active` retains older unfinished operations and their existing explicit retry path. Reading these lists does not advance or retry work.
 
-`GET /api/v1/operations/diagnostics` returns an owner-only report capped at 1 MiB: process timing/work counters, persistent queue/status counts, app-store bytes, provider accounting and retention eligibility. `GET /api/v1/operations/retention` returns the retention preview. Instance-scoped tokens cannot access either endpoint. Neither includes raw source/model/query/credential content. Metric counters reset at process start; persistent accounting does not.
+`GET /api/v1/operations/diagnostics` returns an local report capped at 1 MiB: process timing/work counters, persistent queue/status counts, app-store bytes, provider accounting and retention eligibility. `GET /api/v1/operations/retention` returns the retention preview. Neither includes raw source/model/query/credential content. Metric counters reset at process start; persistent accounting does not.
 
 Service backup and restore use an offline operator CLI, never public API filesystem paths. They require stopped storage owners and a fresh destination. [Operations contract](OPERATIONS.md)
 
@@ -182,8 +176,14 @@ Service backup and restore use an offline operator CLI, never public API filesys
 
 Connection failures, malformed or incomplete output, transport errors and unknown usage are retained with bounded diagnostics. These do not imply insufficient credit or a free call. A stopped or unavailable connection prevents new provider work; accepted local execution remains independent. No automatic retry is issued for an uncertain call.
 
-[Ask](ASK.md) defines checked interpretation, local result bindings and separately labeled narration. [Intake](INTAKE.md) defines uploads, automatic source checking and append-only producer routes. Exact technical records remain inspectable through authenticated endpoints; the console presents readable outcomes.
+[Ask](ASK.md) defines checked interpretation, local result bindings and separately labeled narration. [Intake](INTAKE.md) defines uploads, automatic source checking and append-only producer routes. Exact technical records remain inspectable through local endpoints; the console presents readable outcomes.
 
 ## owner model lifecycle
 
-[Model lifecycle](MODEL_LIFECYCLE.md) adds owner-only `PATCH /api/v1/adms/{adm}/name`, `DELETE /api/v1/adms/{adm}` and bounded `/api/v1/deletions` progress/retry routes. Named deletion commits the access/publication fence before cleanup. Existing AWM-ADM model routes subsequently return `410 gone` (revoked credentials fail earlier); export/import operation records no longer expose that model's payload. No provider call is issued by these controls. Snapshot copies and shared connections retain their independent identities.
+[Model lifecycle](MODEL_LIFECYCLE.md) adds local `PATCH /api/v1/adms/{adm}/name`, `DELETE /api/v1/adms/{adm}` and bounded `/api/v1/deletions` progress/retry routes. Named deletion commits the access/publication fence before cleanup. Existing AWM-ADM model routes subsequently return `410 gone` (revoked credentials fail earlier); export/import operation records no longer expose that model's payload. No provider call is issued by these controls. Snapshot copies and shared connections retain their independent identities.
+
+## Connector revision and admission metadata
+
+Direct Ask/Teach accept an optional `If-Match` revision ID. The connector supplies it on every new submission. The service resolves an identical idempotent replay before testing freshness; stale new work returns `409 stale_context` before provider dispatch. A changed body under an existing identity remains a conflict.
+
+Teach views include typed `admissions`, projected from retained local receipts. Each identifies its objective, receiver sequence, actual status/mode, base and decision revisions, accepted revision, declaration/support effects and checked diagnostics when available. Classifications distinguish `accepted`, `preservation_conflict`, `checked_violation` and `unresolved`. Backward rejection of a replacement is not a proof of logical contradiction. Older receipts may lack added revision/effect metadata; missing values stay null. Both acquisition and source-projection receipts are included, ordered by receiver sequence. Accepted `effects.change_report` compares checked before/after definitions and evidence; `teaching.summary.changes` combines bounded publication reports with receipt/revision references. Preserved dependent definitions are distinct from logical rule changes even if their artifact IDs were replaced. Completeness and abbreviation flags are explicit; no receipt implies every objective succeeded. See [change reporting](CHANGE_REPORTING.md).

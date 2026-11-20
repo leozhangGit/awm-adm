@@ -1093,9 +1093,16 @@ class SourceService:
                 ).fetchone()
                 if not head or head[0] != source["version_id"]:
                     fault("stale_context", "Source changed during validation")
-            item.update(status=value["status"], decision=value["decision"])
+            item.update(
+                status=value["status"],
+                decision=value["decision"],
+                decision_revision=current["revision_id"],
+                decision_context=current["context"],
+                effects=value.get("effects"),
+            )
             if value["status"] == "accepted":
                 item["accepted_revision"] = self.publish(db, key, value)
+                item["accepted_context"] = value["context"]
                 if item.get("feed_run"):
                     parent = self.feeds.run(key, item["feed_run"]).get("parent_task")
                     if parent:
@@ -1112,7 +1119,29 @@ class SourceService:
                     db.execute("UPDATE source_claims SET status='accepted' WHERE id=?", (row["claim"],))
                 self.resolve_notices(db, key, item["accepted_revision"])
             self.save(db, "source_episodes", item)
-            db.execute("UPDATE learning_receipts SET status=? WHERE id=?", (item["status"], item["id"]))
+            db.execute(
+                "UPDATE learning_receipts SET status=?,data=? WHERE id=?",
+                (
+                    item["status"],
+                    dumps(
+                        {
+                            "kind": "source_projection",
+                            **{
+                                k: item.get(k)
+                                for k in (
+                                    "decision",
+                                    "decision_revision",
+                                    "decision_context",
+                                    "accepted_revision",
+                                    "accepted_context",
+                                    "effects",
+                                )
+                            },
+                        }
+                    ),
+                    item["id"],
+                ),
+            )
             self.store.emit(
                 db,
                 key,

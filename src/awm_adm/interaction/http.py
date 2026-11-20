@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from fastapi import Query, Request
+from fastapi import Header, Query, Request
 
 from .models import DirectMessage, DisableConnection, EnableConnection
 
@@ -36,23 +36,35 @@ def attach(router, auth, runtime):
         return service.usage(timezone)
 
     @router.post("/adms/{adm}/ask", status_code=202)
-    def ask(request: Request, adm: str, body: DirectMessage):
+    def ask(
+        request: Request,
+        adm: str,
+        body: DirectMessage,
+        if_match: str | None = Header(default=None, max_length=128),
+    ):
         auth.require(request, adm, owner=True)
         return runtime.interactions.submit(
             adm,
             "ask",
             body.model_dump(),
             origin="console" if request.headers.get("x-adm-client") == "console" else "api",
+            expected_revision=if_match,
         )
 
     @router.post("/adms/{adm}/teach", status_code=202)
-    def teach(request: Request, adm: str, body: DirectMessage):
+    def teach(
+        request: Request,
+        adm: str,
+        body: DirectMessage,
+        if_match: str | None = Header(default=None, max_length=128),
+    ):
         auth.require(request, adm, owner=True)
         return runtime.interactions.submit(
             adm,
             "teach",
             body.model_dump(),
             origin="console" if request.headers.get("x-adm-client") == "console" else "api",
+            expected_revision=if_match,
         )
 
     @router.post("/adms/{adm}/source-queues", status_code=202)
@@ -67,9 +79,13 @@ def attach(router, auth, runtime):
         channel: Literal["ask", "teach"],
         after: int = Query(0, ge=0),
         limit: int = Query(20, ge=1, le=100),
+        direction: Literal["forward", "backward"] = "forward",
+        before: int | None = Query(None, ge=1),
     ):
         auth.require(request, adm, owner=True)
-        return runtime.interactions.chat(adm, channel, after=after, limit=limit)
+        return runtime.interactions.chat(
+            adm, channel, after=after, limit=limit, direction=direction, before=before
+        )
 
     @router.get("/adms/{adm}/interactions/{interaction}")
     def interaction(request: Request, adm: str, interaction: str):

@@ -75,6 +75,34 @@ def main():
                 ],
                 export,
             )
+            run(
+                [
+                    uv,
+                    "sync",
+                    "--locked",
+                    "--offline",
+                    "--no-editable",
+                    "--no-python-downloads",
+                    "--cache-dir",
+                    root / ".cache/uv",
+                    "--python",
+                    python,
+                ],
+                export / "codex-plugin",
+            )
+            run(
+                [
+                    export / "codex-plugin/.venv/bin/python",
+                    "-I",
+                    "-m",
+                    "unittest",
+                    "discover",
+                    "-s",
+                    "tests",
+                    "-v",
+                ],
+                export / "codex-plugin",
+            )
             run([isolated_python, "-I", "-m", "pytest", "-q"], export)
             run([isolated_python, "scripts/check_boundaries.py"], export)
             run([isolated_python, "scripts/check_public_release.py"], export)

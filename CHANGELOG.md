@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+Local project integration and clearer model interaction.
+
+- Login-free console and public API on loopback port 9527, with private internal service authentication retained. Supported upgrades preserve existing models and history in owned schema 17.
+- Bundled Codex plugin for project model creation/reuse, natural-language Ask/Teach, durable work recovery, accepted-knowledge recall and explicit forward/backward changes.
+- Atomic preservation and rechecking of dependent definitions during conversational corrections, revision-compatible language metadata and accurate partial-completion reporting.
+- Checked before/after teaching reports distinguish changed definitions, preserved dependents, evidence updates and active removals.
+- Ask/Teach initially load the latest 100 exchanges; Load more adds older batches with stable scrolling. Full history and bounded interpretation context remain independent.
+- Removed retired login/session implementation and styling; updated product documentation and dependency provenance for the service, console and plugin.
+- Fixed plugin installation isolation, invalid-port handling and source-admission work accounting.
+
+The public API remains `/api/v1`. Finite model, snapshot and result format identifiers are unchanged.
+
 ## 0.3.0
 
 First public release of the standalone AWM-ADM service.

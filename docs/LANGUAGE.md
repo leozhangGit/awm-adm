@@ -16,7 +16,7 @@ Each ADM has a separately versioned owner vocabulary: symbol/module aliases, fun
 
 The catalog contains accepted signatures, types, modules, state/action interfaces and owner vocabulary. It excludes function/transition bodies and evidence. Catalog encoding is canonical and bounded to 256 KiB. Its digest binds every preview, alongside ADM identity, theory/support roots, mode/policy epoch, immutable application revision and vocabulary generation.
 
-Vocabulary is local service metadata. It is not part of a portable model snapshot and does not alter finite artifacts or conformance policy. After a theory change, stale vocabulary may require an owner update before interpretation resumes. Snapshot restoration starts with empty vocabulary. Conversations and teaching proposals likewise remain local service history, not model knowledge or snapshot content.
+Vocabulary is local service metadata. It is not part of a portable model snapshot and does not alter finite artifacts or conformance policy. After a theory change, catalog/Ask/Teach reads derive a validated compatible view at the pinned revision while preserving the stored profile and generation. Obsolete targets, parameter names and invalid value aliases are omitted; valid entries remain. If any target of an ambiguous alias disappears, the whole alias is omitted, never silently narrowed or retargeted. Explicit vocabulary installation remains strict. Computation exhaustion is not interpreted as obsolete metadata. Snapshot restoration starts with empty vocabulary. Conversations and teaching proposals likewise remain local service history, not model knowledge or snapshot content.
 
 ## Explicit provider interpretation
 
@@ -46,7 +46,7 @@ The legacy interpretation-session Teach endpoint saves an unaccepted teaching dr
 
 ## API resources
 
-All routes use `/api/v1/adms/{adm}` and the existing strict JSON/authentication boundaries. `interpretation-sessions` groups manual previews and teaching drafts; it is separate from the Ask/Teach `conversations` resource. Session identifiers still occupy the existing `conversation_id` payload field.
+All routes use `/api/v1/adms/{adm}` and the existing strict JSON and local-access boundaries. `interpretation-sessions` groups manual previews and teaching drafts; it is separate from the Ask/Teach `conversations` resource. Session identifiers still occupy the existing `conversation_id` payload field.
 
 | Route | Authority and behavior |
 | --- | --- |
@@ -62,4 +62,4 @@ All routes use `/api/v1/adms/{adm}` and the existing strict JSON/authentication 
 | `POST /interpretations/{id}/execute` | Submit; explicit confirmation with revision, catalog digest, limits and idempotency key. |
 | `POST /interpretations/{id}/cancel` | Submit; fence later interpretation completion/execution. |
 
-Vocabulary, interpretation, execution and teaching events are durable per-ADM records under owned schema 16. Supported migrations preserve existing model revisions, requests, learning receipts and finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) define their authority and recovery contracts.
+Vocabulary, interpretation, execution and teaching events are durable per-ADM records under owned schema 17. Supported migrations preserve existing model revisions, requests, learning receipts and finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) define their authority and recovery contracts.

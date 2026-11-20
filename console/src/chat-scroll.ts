@@ -10,6 +10,7 @@ export function chatScroll(
   showJump: (visible: boolean) => void,
 ) {
   let following = true;
+  let anchor: { read: () => number; position: number } | null = null;
   const end = () => Math.max(0, port.scrollHeight - port.clientHeight);
   const read = () => {
     // Clamp elastic overscroll without changing the browser's native scrolling.
@@ -25,7 +26,16 @@ export function chatScroll(
   };
   return {
     onScroll: read,
+    preserve: (position: () => number) => {
+      anchor = { read: position, position: position() };
+    },
     changed: () => {
+      if (anchor) {
+        port.scrollTop += anchor.read() - anchor.position;
+        anchor = null;
+        read();
+        return;
+      }
       // Use the position recorded before content/viewport size changed.
       if (following) port.scrollTop = port.scrollHeight;
       read();

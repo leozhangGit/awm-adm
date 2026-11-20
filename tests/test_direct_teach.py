@@ -66,7 +66,7 @@ def test_clear_rule_automatically_learns_and_serves_without_requirements_or_revi
     t = task(rt, key, uid)
     assert t["status"] == "queued", t
     assert t["execution"]["publication"] == "checked_auto"
-    assert t["intent_authority"] == "authenticated_teach_submission"
+    assert t["intent_authority"] == "local_teach_submission"
     pump(rt, key, uid, lambda _: has_ready(rt))
     reply(rt, definition())
     t = pump(rt, key, uid, lambda t: t["execution"]["phase"] == "narration")

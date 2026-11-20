@@ -13,7 +13,7 @@ make build
 make isolate
 ```
 
-`make bootstrap` installs locked dependencies and warms local caches. `make check` runs lint/format, independence and publication checks, generated schemas, Python tests, native Node tests, TypeScript and the production console build. `make build` creates the wheel/assets. `make isolate` uses the public export boundary, installs non-editably into a temporary directory, and tests/builds offline from the warmed caches. No parent workspace is mounted or imported.
+`make bootstrap` installs locked dependencies and warms local caches. `make check` runs lint/format, independence and publication checks, generated schemas, Python tests, the independent Codex plugin/protocol tests, native Node tests, TypeScript and the production console build. `make build` creates the wheel/assets. `make isolate` uses the public export boundary, installs non-editably into a temporary directory, and tests/builds offline from the warmed caches. No parent workspace is mounted or imported.
 
 To include real kernel checks on the host, install Lean **4.19.0** and set its absolute executable path:
 
@@ -27,17 +27,21 @@ Without this variable, real-Lean tests explicitly skip. Skips do not establish p
 For an offline container test run:
 
 ```sh
-docker build --target test -t awm-adm-test:0.3.0 -f deploy/Dockerfile .
+docker build --target test -t awm-adm-test:0.4.0 -f deploy/Dockerfile .
 docker run --rm --network none --read-only --cap-drop ALL \
   --security-opt no-new-privileges --pids-limit 256 --memory 5g --cpus 3 \
-  --tmpfs /tmp:rw,size=1073741824,mode=1777 awm-adm-test:0.3.0
+  --tmpfs /tmp:rw,size=1073741824,mode=1777 awm-adm-test:0.4.0
 ```
 
 The test image is separate from normal runtime volumes. Automated provider tests use synthetic/recorded responses; no API key is needed.
 
+## Working on the Codex plugin
+
+The independent package lives in `codex-plugin/`. `make bootstrap` prepares both locked environments; `make plugin-check` runs its offline tests. The service integration suite imports the connector only through pytest's explicit test path and exercises real HTTP handlers with recorded providers. Production service imports do not depend on the connector or MCP SDK; the static boundary check also rejects connector imports of service internals. `make isolate` installs and tests both packages non-editably from the public export. Native installation or paid walkthrough evidence is recorded separately from these offline checks.
+
 ## Working on the console
 
-Run npm commands from `console/`, or use the Makefile. `make dev-api` and `make dev-console` expose a status-only preview and Vite workspace; they are not the complete runtime. Use a separate Docker project and loopback port for full integration work. Cookies are not port-scoped, so use distinct hostnames for simultaneous administrator sessions.
+Run npm commands from `console/`, or use the Makefile. `make dev-api` and `make dev-console` expose a status-only preview and Vite workspace; they are not the complete runtime. Use a separate Docker project and loopback port for full integration work. The console needs no login; use a distinct loopback port for each isolated installation.
 
 Ordinary chat shows readable outcomes; exact payloads and bindings remain in the API and saved diagnostic records. Preserve user drafts on background reads and never turn polling, focus or an unchanged retry into new paid work.
 
@@ -53,8 +57,8 @@ Ordinary chat shows readable outcomes; exact payloads and bindings remain in the
 ## Source release
 
 ```sh
-python3 scripts/export_release.py /absolute/new/path/awm-adm-0.3.0
-python3 scripts/export_release.py /absolute/new/path/awm-adm-0.3.0 --verify
+python3 scripts/export_release.py /absolute/new/path/awm-adm-0.4.0
+python3 scripts/export_release.py /absolute/new/path/awm-adm-0.4.0 --verify
 ```
 
 The exporter includes an explicit public file set, excludes private stores/caches/credentials and records a SHA-256 inventory. It rejects source symlinks. This inventory is an integrity check, not a signature or proof of tests. Build/install from an exported directory without depending on files beside this repository.

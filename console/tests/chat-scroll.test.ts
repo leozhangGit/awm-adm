@@ -126,3 +126,19 @@ test("empty or short history needs no jump control and follows the first loaded 
   otherChannel.scroll.changed();
   assert.equal(otherChannel.port.scrollTop, 1400);
 });
+test("prepending history preserves the visible exchange even when a new reply also grows", () => {
+  const { port, scroll, jumpVisible } = reader();
+  scroll.changed();
+  port.scrollTop = 120;
+  scroll.onScroll();
+  let messageTop = 240;
+  scroll.preserve(() => messageTop - port.scrollTop);
+  messageTop += 1500;
+  port.scrollHeight += 1800; // 1500 above the anchor, 300 appended below it.
+  scroll.changed();
+  assert.equal(port.scrollTop, 1620);
+  assert.equal(messageTop - port.scrollTop, 120);
+  assert.equal(jumpVisible(), true);
+  scroll.changed();
+  assert.equal(port.scrollTop, 1620); // ResizeObserver must not apply the shift twice.
+});

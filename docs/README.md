@@ -1,6 +1,6 @@
 # Documentation
 
-AWM-ADM 0.3.0 is a single-owner service. Start with the [repository README](../README.md) and [installation guide](INSTALLATION.md).
+AWM-ADM 0.4.0 is a single-owner service. Start with the [repository README](../README.md) and [installation guide](INSTALLATION.md).
 
 For the motivation and conceptual architecture, read [Explore AWM-ADM](https://concourses.net/awm-adm.html). The [foundation reference](REFERENCES.md) separates AWM's method from our ADM design choices and implementation guarantees. All build and operating instructions are contained in this repository.
 
@@ -8,8 +8,8 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 
 | Guide | Covers |
 | --- | --- |
-| [Installation](INSTALLATION.md) | Docker build/start, first administrator, configuration and troubleshooting |
-| [Administrator](ADMINISTRATOR.md) | Password login, setup credentials, sessions and local recovery |
+| [Installation](INSTALLATION.md) | Docker build/start, direct workspace access, configuration and troubleshooting |
+| [Local workspace](LOCAL_ACCESS.md) | Login-free console/API, local boundary and preserved data |
 | [Console](CONSOLE.md) | Models, direct Ask/Teach, search, history and status |
 | [Ask](ASK.md) | Interpretation, local execution, explanation and unknown results |
 | [Meaning and temporal context](TEMPORAL_INTERPRETATION.md) | System timezone, calendar-date lookup, source precision and historical presentation |
@@ -25,7 +25,8 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 
 | Reference | Covers |
 | --- | --- |
-| [API](API.md) and [OpenAPI](../contracts/openapi.json) | Unified `/api/v1` model, administrator and chat APIs |
+| [Codex project plugin](../codex-plugin/README.md) | Local setup, project bindings, Ask/Teach and explicit revision |
+| [API](API.md) and [OpenAPI](../contracts/openapi.json) | Unified `/api/v1` model and chat APIs |
 | [Conversations](CONVERSATIONS.md) | Direct messages, automatic context and durable provenance |
 | [Learning](LEARNING.md) | Manual bounded acquisition and provider transport |
 | [Language preview](LANGUAGE.md) | Explicit interpretation preview and confirmation |
@@ -39,4 +40,6 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 - [Testing](TESTING.md), [contributing](../CONTRIBUTING.md), [security](../SECURITY.md)
 - [Release scope](RELEASE.md), [references](REFERENCES.md), [third-party notices](../THIRD_PARTY_NOTICES.md)
 
-Versioned routes, storage schemas and serialized profiles are compatibility identifiers, not separate installed products. All guides describe the same AWM-ADM 0.3.0 release.
+Versioned routes, storage schemas and serialized profiles are compatibility identifiers, not separate installed products. All guides describe the same AWM-ADM 0.4.0 release.
+
+[Teaching change reports](CHANGE_REPORTING.md) explain checked before/after meanings, preserved dependents, source support and reporting bounds.

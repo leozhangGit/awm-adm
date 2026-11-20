@@ -257,3 +257,17 @@ def test_managed_local_compute_caps_cannot_grow_with_operator_defaults(rig):
     feed = rt.sources.feeds.overview(key)["feeds"][0]
     assert feed["reserved"]["work"] == 3000000
     assert rt.sources.history(key)["jobs"][0]["work_reserved"] == 1000000
+
+
+def test_local_queue_push_needs_no_credential_and_keeps_scope_checks(rig):
+    rt, gw = rig
+    key, _, uid, _, _ = started(rt, gw, queue=True)
+    path = f"/api/v1/adms/{key}/intake/{uid}/push"
+    body = pushed("local-item")
+    with client(rt) as http:
+        first = http.post(path, json=body)
+        assert first.status_code == 202, first.text
+        assert http.post(path, json=body).json() == first.json()
+        foreign = pushed("wrong-source", source_id="outside-task")
+        assert http.post(path, json=foreign).status_code == 403
+        assert http.post(path, json=pushed(), headers={"Origin": "null"}).status_code == 403

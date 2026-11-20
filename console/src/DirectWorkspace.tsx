@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "./api.ts";
 import { Notice } from "./components.tsx";
 import { ChatHistory } from "./ChatHistory.tsx";
+import { chatPages, mergeExchanges } from "./chat-pages.ts";
+import type { ChatPage } from "./chat-pages.ts";
 import type { Adm } from "./types.ts";
 import { readDraft, saveDraft } from "./draft.ts";
 import {
-  nextReference,
+  resolveReference,
   newMessage,
   outcomeNote,
   replyText,
@@ -20,7 +22,6 @@ type Attachment = {
   byte_count: number;
   current_source_version: string | null;
 };
-type Page = { items: Exchange[]; next_cursor: number; has_more: boolean };
 export function DirectWorkspace({
   adm,
   channel,
@@ -31,6 +32,10 @@ export function DirectWorkspace({
   const prefix = `adm-chat:${adm.id}:${channel}`;
   const [text, setText] = useState(() => readDraft(sessionStorage, prefix));
   const [items, setItems] = useState<Exchange[]>([]);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const pages = useRef<ReturnType<typeof chatPages> | null>(null);
+  const olderPending = useRef(false);
   const [connection, setConnection] = useState("loading");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -103,6 +108,29 @@ export function DirectWorkspace({
   useEffect(() => {
     mounted.current = true;
     const controller = new AbortController();
+    const history = chatPages(
+      (query) =>
+        api<ChatPage>(`/adms/${adm.id}/chat/${channel}?${query}`, {
+          signal: controller.signal,
+        }),
+      (incoming, more) => {
+        if (controller.signal.aborted) return;
+        setItems((old) => mergeExchanges(old, incoming));
+        setHasOlder(more);
+        const lost = savedMessage(sessionStorage, prefix + ":pending");
+        const found =
+          lost &&
+          incoming.find((i) => i.idempotency_key === lost.idempotency_key);
+        if (found) {
+          clearPending();
+          setSelected([]);
+          setPrevious(found.id);
+          saveDraft(sessionStorage, prefix + ":reply", found.id);
+          setText((current) => (current === lost.text ? "" : current));
+        }
+      },
+    );
+    pages.current = history;
     let timer: ReturnType<typeof setTimeout>;
     const refresh = async () => {
       try {
@@ -121,33 +149,9 @@ export function DirectWorkspace({
                 : attachments.items,
             );
         }
-        const all: Exchange[] = [];
-        let cursor = 0,
-          more = true;
-        while (more && !controller.signal.aborted) {
-          const page = await api<Page>(
-            `/adms/${adm.id}/chat/${channel}?after=${cursor}&limit=100`,
-            { signal: controller.signal },
-          );
-          all.push(...page.items);
-          cursor = page.next_cursor;
-          more = page.has_more;
-        }
+        await history.refresh();
         if (!mounted.current) return;
         setConnection(state.state);
-        setItems((old) =>
-          JSON.stringify(old) === JSON.stringify(all) ? old : all,
-        );
-        const lost = savedMessage(sessionStorage, prefix + ":pending");
-        const found =
-          lost && all.find((i) => i.idempotency_key === lost.idempotency_key);
-        if (found) {
-          clearPending();
-          setSelected([]);
-          setPrevious(found.id);
-          saveDraft(sessionStorage, prefix + ":reply", found.id);
-          setText((current) => (current === lost.text ? "" : current));
-        }
       } catch (e) {
         if (!controller.signal.aborted) setError((e as Error).message);
       } finally {
@@ -158,19 +162,42 @@ export function DirectWorkspace({
     return () => {
       mounted.current = false;
       controller.abort();
+      if (pages.current === history) pages.current = null;
       clearTimeout(timer);
     };
   }, [adm.id, channel, prefix]);
+  async function loadOlder(preserve: () => void) {
+    if (olderPending.current || !pages.current) return;
+    olderPending.current = true;
+    setLoadingOlder(true);
+    setError("");
+    try {
+      await pages.current.older(preserve);
+    } catch (e) {
+      if (mounted.current) setError((e as Error).message);
+    } finally {
+      olderPending.current = false;
+      if (mounted.current) setLoadingOlder(false);
+    }
+  }
   async function send() {
     if (sending) return;
-    const body =
-      pending ||
-      newMessage(channel, text, selected, nextReference(items, previous));
-    setPending(body);
-    sessionStorage.setItem(prefix + ":pending", JSON.stringify(body));
     setSending(true);
     setError("");
     try {
+      const body =
+        pending ||
+        newMessage(
+          channel,
+          text,
+          selected,
+          await resolveReference(items, previous, (id) =>
+            api<Exchange>(`/adms/${adm.id}/interactions/${id}`),
+          ),
+        );
+      if (!mounted.current) return;
+      setPending(body);
+      sessionStorage.setItem(prefix + ":pending", JSON.stringify(body));
       const result = await api<Exchange>(`/adms/${adm.id}/${channel}`, {
         method: "POST",
         body,
@@ -181,9 +208,7 @@ export function DirectWorkspace({
       setText("");
       setPrevious(result.id);
       saveDraft(sessionStorage, prefix + ":reply", result.id);
-      setItems((old) =>
-        old.some((i) => i.id === result.id) ? old : [...old, result],
-      );
+      setItems((old) => mergeExchanges(old, [result]));
     } catch (e) {
       if (!mounted.current) return;
       if (e instanceof ApiError && e.status < 500) clearPending();
@@ -204,7 +229,12 @@ export function DirectWorkspace({
         </Notice>
       )}
       {error && <Notice error>{error}</Notice>}
-      <ChatHistory version={items}>
+      <ChatHistory
+        version={items}
+        hasOlder={hasOlder}
+        loadingOlder={loadingOlder}
+        onLoadMore={loadOlder}
+      >
         {!items.length && (
           <p className="empty-chat">
             {channel === "ask"
@@ -213,7 +243,11 @@ export function DirectWorkspace({
           </p>
         )}
         {items.map((item) => (
-          <article key={item.id} className="chat-exchange">
+          <article
+            key={item.id}
+            data-exchange-id={item.id}
+            className="chat-exchange"
+          >
             <div className="chat-message owner">
               <small className="chat-author">
                 You{item.origin === "api" ? " · API" : ""} ·{" "}

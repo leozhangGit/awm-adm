@@ -1,5 +1,6 @@
 export type Exchange = {
   id: string;
+  sequence: number;
   idempotency_key: string;
   channel: string;
   origin: string;
@@ -66,6 +67,17 @@ export function nextReference(
 ): string | null {
   const item = items.find((i) => i.id === previous);
   return item && !working(item.status) ? item.id : null;
+}
+export async function resolveReference(
+  items: Exchange[],
+  previous: string | null,
+  read: (id: string) => Promise<Exchange>,
+): Promise<string | null> {
+  if (!previous) return null;
+  // Display pagination must not discard the browser's explicit reply chain.
+  const prior =
+    items.find((item) => item.id === previous) || (await read(previous));
+  return nextReference([prior], previous);
 }
 export function savedMessage(
   storage: Pick<Storage, "getItem">,

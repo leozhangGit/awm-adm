@@ -44,7 +44,7 @@ A deliberate `reprocess` command creates a new recorded pass and consumes a new 
 
 ## Explicit coverage and windows
 
-`POST /sources/coverage` is an owner-only compare-and-swap against the current revision and source-policy generation. The transition is checked in a bounded child, then publishes its policy, support revision and history atomically.
+`POST /sources/coverage` is an local compare-and-swap against the current revision and source-policy generation. The transition is checked in a bounded child, then publishes its policy, support revision and history atomically.
 
 - `extend` retains all existing cells and may add bounded entities, predicates or disjoint cells.
 - `window` selects another explicit bounded set of cells. Facts outside it receive support holds. Original declarations, evidence and historical query results remain retained; this is a semantic window, not storage cleanup.
@@ -58,7 +58,7 @@ Windows do not free fact/storage capacity. Carrier changes, retention and operat
 
 ## API
 
-All paths below are relative to `/api/v1/adms/{adm}`. Reads require instance read authority; mutations require the owner. Schemas are exported under `contracts/schemas` and the authenticated OpenAPI endpoint.
+All paths below are relative to `/api/v1/adms/{adm}`. Reads and mutations use the shared local workspace boundary. Schemas are exported under `contracts/schemas` and the local OpenAPI endpoint.
 
 | Method and path | Input/result |
 | --- | --- |

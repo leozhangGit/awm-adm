@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AWM-ADM local API",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "paths": {
     "/health/live": {
@@ -46,7 +46,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
               }
             }
           }
@@ -149,11 +151,6 @@
       "get": {
         "summary": "Info",
         "operationId": "info_api_v1_adms__adm__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -347,12 +344,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/operations/retention": {
@@ -365,94 +357,6 @@
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/auth/tokens": {
-      "post": {
-        "summary": "Token",
-        "operationId": "token_api_v1_auth_tokens_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Token"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/auth/tokens/{uid}": {
-      "delete": {
-        "summary": "Revoke",
-        "operationId": "revoke_api_v1_auth_tokens__uid__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "uid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Uid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -472,12 +376,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "Create",
@@ -513,23 +412,13 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/operations/{uid}": {
       "get": {
         "summary": "Operation",
         "operationId": "operation_api_v1_operations__uid__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "uid",
@@ -569,11 +458,6 @@
       "get": {
         "summary": "Operations",
         "operationId": "operations_api_v1_operations_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "since_ms",
@@ -624,11 +508,6 @@
       "patch": {
         "summary": "Change",
         "operationId": "change_api_v1_adms__adm__settings_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -676,11 +555,6 @@
       "post": {
         "summary": "Archive",
         "operationId": "archive_api_v1_adms__adm__archive_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -728,11 +602,6 @@
       "get": {
         "summary": "Requirements",
         "operationId": "requirements_api_v1_adms__adm__requirements_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -768,11 +637,6 @@
       "put": {
         "summary": "Set Requirements",
         "operationId": "set_requirements_api_v1_adms__adm__requirements_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -820,11 +684,6 @@
       "get": {
         "summary": "Model",
         "operationId": "model_api_v1_adms__adm__model_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -878,11 +737,6 @@
       "get": {
         "summary": "Capabilities",
         "operationId": "capabilities_api_v1_adms__adm__capabilities_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -920,11 +774,6 @@
       "get": {
         "summary": "Versions",
         "operationId": "versions_api_v1_adms__adm__versions_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -962,11 +811,6 @@
       "get": {
         "summary": "Version",
         "operationId": "version_api_v1_adms__adm__versions__uid__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1013,11 +857,6 @@
       "post": {
         "summary": "Submit",
         "operationId": "submit_api_v1_adms__adm__requests_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1065,11 +904,6 @@
       "get": {
         "summary": "Requests",
         "operationId": "requests_api_v1_adms__adm__requests_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1109,11 +943,6 @@
       "get": {
         "summary": "Result",
         "operationId": "result_api_v1_adms__adm__requests__uid__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1162,11 +991,6 @@
       "post": {
         "summary": "Cancel",
         "operationId": "cancel_api_v1_adms__adm__requests__uid__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1215,11 +1039,6 @@
       "post": {
         "summary": "Retry",
         "operationId": "retry_api_v1_adms__adm__requests__uid__retry_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1268,11 +1087,6 @@
       "post": {
         "summary": "Export",
         "operationId": "export_api_v1_adms__adm__snapshot_exports_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1322,11 +1136,6 @@
       "get": {
         "summary": "Events",
         "operationId": "events_api_v1_adms__adm__events_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1364,11 +1173,6 @@
       "post": {
         "summary": "Consumer",
         "operationId": "consumer_api_v1_adms__adm__event_consumers_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1416,11 +1220,6 @@
       "put": {
         "summary": "Advance",
         "operationId": "advance_api_v1_adms__adm__event_consumers__uid__cursor_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1477,11 +1276,6 @@
       "post": {
         "summary": "Prune",
         "operationId": "prune_api_v1_adms__adm__events_prune_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1529,11 +1323,6 @@
       "get": {
         "summary": "Window",
         "operationId": "window_api_v1_adms__adm__event_window_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1580,12 +1369,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/learning": {
@@ -1601,12 +1385,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/connections": {
@@ -1622,23 +1401,13 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/connections/{connection}": {
       "get": {
         "summary": "Connection Detail",
         "operationId": "connection_detail_api_v1_connections__connection__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "connection",
@@ -1676,11 +1445,6 @@
       "get": {
         "summary": "Dispatch",
         "operationId": "dispatch_api_v1_dispatches__grant__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "grant",
@@ -1718,11 +1482,6 @@
       "get": {
         "summary": "Episodes",
         "operationId": "episodes_api_v1_adms__adm__episodes_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1758,11 +1517,6 @@
       "post": {
         "summary": "Create Episode",
         "operationId": "create_episode_api_v1_adms__adm__episodes_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1810,11 +1564,6 @@
       "get": {
         "summary": "Episode",
         "operationId": "episode_api_v1_adms__adm__episodes__episode__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1861,11 +1610,6 @@
       "post": {
         "summary": "Cancel",
         "operationId": "cancel_api_v1_adms__adm__episodes__episode__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1912,11 +1656,6 @@
       "post": {
         "summary": "Review",
         "operationId": "review_api_v1_adms__adm__candidates__candidate__review_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -1982,12 +1721,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/connection/enable": {
@@ -2023,12 +1757,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/connection/disable": {
@@ -2064,23 +1793,13 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/connection/operations/{operation}": {
       "get": {
         "summary": "Operation",
         "operationId": "operation_api_v1_connection_operations__operation__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "operation",
@@ -2118,11 +1837,6 @@
       "get": {
         "summary": "Usage",
         "operationId": "usage_api_v1_connection_usage_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "timezone",
@@ -2162,11 +1876,6 @@
       "post": {
         "summary": "Ask",
         "operationId": "ask_api_v1_adms__adm__ask_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2175,6 +1884,23 @@
             "schema": {
               "type": "string",
               "title": "Adm"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -2214,11 +1940,6 @@
       "post": {
         "summary": "Teach",
         "operationId": "teach_api_v1_adms__adm__teach_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2227,6 +1948,23 @@
             "schema": {
               "type": "string",
               "title": "Adm"
+            }
+          },
+          {
+            "name": "if-match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -2266,11 +2004,6 @@
       "post": {
         "summary": "Source Queue",
         "operationId": "source_queue_api_v1_adms__adm__source_queues_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2318,11 +2051,6 @@
       "get": {
         "summary": "Chat",
         "operationId": "chat_api_v1_adms__adm__chat__channel__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2368,6 +2096,37 @@
               "default": 20,
               "title": "Limit"
             }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "forward",
+                "backward"
+              ],
+              "type": "string",
+              "default": "forward",
+              "title": "Direction"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
           }
         ],
         "responses": {
@@ -2396,11 +2155,6 @@
       "get": {
         "summary": "Interaction",
         "operationId": "interaction_api_v1_adms__adm__interactions__interaction__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2447,11 +2201,6 @@
       "post": {
         "summary": "Cancel",
         "operationId": "cancel_api_v1_adms__adm__interactions__interaction__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2498,11 +2247,6 @@
       "get": {
         "summary": "Activity",
         "operationId": "activity_api_v1_adms__adm__activity_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2649,11 +2393,6 @@
       "get": {
         "summary": "Knowledge",
         "operationId": "knowledge_api_v1_adms__adm__knowledge_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2759,11 +2498,6 @@
       "get": {
         "summary": "Catalog",
         "operationId": "catalog_api_v1_adms__adm__language_catalog_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2801,11 +2535,6 @@
       "get": {
         "summary": "Vocabulary",
         "operationId": "vocabulary_api_v1_adms__adm__language_vocabulary_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2841,11 +2570,6 @@
       "put": {
         "summary": "Change Vocabulary",
         "operationId": "change_vocabulary_api_v1_adms__adm__language_vocabulary_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2893,11 +2617,6 @@
       "get": {
         "summary": "Conversations",
         "operationId": "conversations_api_v1_adms__adm__interpretation_sessions_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2933,11 +2652,6 @@
       "post": {
         "summary": "Create Conversation",
         "operationId": "create_conversation_api_v1_adms__adm__interpretation_sessions_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -2985,11 +2699,6 @@
       "get": {
         "summary": "Conversation Detail",
         "operationId": "conversation_detail_api_v1_adms__adm__interpretation_sessions__conversation__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3036,11 +2745,6 @@
       "post": {
         "summary": "Teach",
         "operationId": "teach_api_v1_adms__adm__interpretation_sessions__conversation__teach_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3097,11 +2801,6 @@
       "post": {
         "summary": "Interpret",
         "operationId": "interpret_api_v1_adms__adm__interpretations_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3149,11 +2848,6 @@
       "get": {
         "summary": "Interpretation Detail",
         "operationId": "interpretation_detail_api_v1_adms__adm__interpretations__interpretation__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3200,11 +2894,6 @@
       "post": {
         "summary": "Clarify",
         "operationId": "clarify_api_v1_adms__adm__interpretations__interpretation__clarify_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3261,11 +2950,6 @@
       "post": {
         "summary": "Revalidate",
         "operationId": "revalidate_api_v1_adms__adm__interpretations__interpretation__revalidate_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3322,11 +3006,6 @@
       "post": {
         "summary": "Execute",
         "operationId": "execute_api_v1_adms__adm__interpretations__interpretation__execute_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3383,11 +3062,6 @@
       "post": {
         "summary": "Cancel",
         "operationId": "cancel_api_v1_adms__adm__interpretations__interpretation__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3434,11 +3108,6 @@
       "get": {
         "summary": "Overview",
         "operationId": "overview_api_v1_adms__adm__sources_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3500,11 +3169,6 @@
       "get": {
         "summary": "Detail",
         "operationId": "detail_api_v1_adms__adm__sources_history__kind___identity__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3560,11 +3224,6 @@
       "post": {
         "summary": "Ingest",
         "operationId": "ingest_api_v1_adms__adm__sources_batches_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3612,11 +3271,6 @@
       "put": {
         "summary": "Policy",
         "operationId": "policy_api_v1_adms__adm__sources_policy_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3664,11 +3318,6 @@
       "post": {
         "summary": "Extraction",
         "operationId": "extraction_api_v1_adms__adm__sources_jobs_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3716,11 +3365,6 @@
       "post": {
         "summary": "Projection",
         "operationId": "projection_api_v1_adms__adm__sources_episodes_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3768,11 +3412,6 @@
       "post": {
         "summary": "Review",
         "operationId": "review_api_v1_adms__adm__sources_episodes__identity__review_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3829,11 +3468,6 @@
       "post": {
         "summary": "Cancel Job",
         "operationId": "cancel_job_api_v1_adms__adm__sources_jobs__identity__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3880,11 +3514,6 @@
       "post": {
         "summary": "Cancel Episode",
         "operationId": "cancel_episode_api_v1_adms__adm__sources_episodes__identity__cancel_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3931,11 +3560,6 @@
       "get": {
         "summary": "Overview",
         "operationId": "overview_api_v1_adms__adm__feeds_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -3995,11 +3619,6 @@
       "post": {
         "summary": "Create",
         "operationId": "create_api_v1_adms__adm__feeds_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -4047,11 +3666,6 @@
       "put": {
         "summary": "Control",
         "operationId": "control_api_v1_adms__adm__feeds__identity__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -4108,11 +3722,6 @@
       "post": {
         "summary": "Reprocess",
         "operationId": "reprocess_api_v1_adms__adm__feeds__identity__reprocess_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -4169,11 +3778,6 @@
       "post": {
         "summary": "Coverage",
         "operationId": "coverage_api_v1_adms__adm__sources_coverage_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "adm",
@@ -4194,219 +3798,6 @@
               }
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/status": {
-      "get": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Status",
-        "operationId": "status_api_v1_auth_status_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/setup": {
-      "post": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Setup",
-        "operationId": "setup_api_v1_auth_setup_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetupInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/login": {
-      "post": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Login",
-        "operationId": "login_api_v1_auth_login_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/me": {
-      "get": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Me",
-        "operationId": "me_api_v1_auth_me_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/logout": {
-      "post": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Logout",
-        "operationId": "logout_api_v1_auth_logout_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/recover": {
-      "post": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Recover",
-        "operationId": "recover_api_v1_auth_recover_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RecoveryInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/password": {
-      "post": {
-        "tags": [
-          "administrator"
-        ],
-        "summary": "Password",
-        "operationId": "password_api_v1_auth_password_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PasswordInput"
-              }
-            }
-          },
-          "required": true
         },
         "responses": {
           "200": {
@@ -6972,36 +6363,40 @@
         "title": "JobInput"
       },
       "JsonValue": {},
-      "LoginInput": {
+      "LocalServiceInfo": {
         "properties": {
           "profile": {
             "type": "string",
-            "const": "awm-adm-v3-logininput/0.1",
+            "const": "awm-adm-local/1",
             "title": "Profile",
-            "default": "awm-adm-v3-logininput/0.1"
+            "default": "awm-adm-local/1"
           },
-          "email": {
+          "installation_id": {
             "type": "string",
-            "maxLength": 254,
-            "minLength": 3,
-            "title": "Email"
+            "title": "Installation Id"
           },
-          "password": {
+          "connection_ready": {
+            "type": "boolean",
+            "title": "Connection Ready"
+          },
+          "reason": {
             "type": "string",
-            "maxLength": 1024,
-            "minLength": 1,
-            "format": "password",
-            "title": "Password",
-            "writeOnly": true
+            "enum": [
+              "ready",
+              "connection_disabled",
+              "connection_not_ready"
+            ],
+            "title": "Reason"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "email",
-          "password"
+          "installation_id",
+          "connection_ready",
+          "reason"
         ],
-        "title": "LoginInput"
+        "title": "LocalServiceInfo"
       },
       "Operation": {
         "properties": {
@@ -7053,33 +6448,6 @@
           "error"
         ],
         "title": "Operation"
-      },
-      "PasswordInput": {
-        "properties": {
-          "current_password": {
-            "type": "string",
-            "maxLength": 1024,
-            "minLength": 1,
-            "format": "password",
-            "title": "Current Password",
-            "writeOnly": true
-          },
-          "new_password": {
-            "type": "string",
-            "maxLength": 1024,
-            "minLength": 15,
-            "format": "password",
-            "title": "New Password",
-            "writeOnly": true
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "current_password",
-          "new_password"
-        ],
-        "title": "PasswordInput"
       },
       "Policy": {
         "properties": {
@@ -7299,33 +6667,6 @@
           "claim_ids"
         ],
         "title": "ProjectionInput"
-      },
-      "RecoveryInput": {
-        "properties": {
-          "reset_token": {
-            "type": "string",
-            "maxLength": 256,
-            "minLength": 40,
-            "format": "password",
-            "title": "Reset Token",
-            "writeOnly": true
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 1024,
-            "minLength": 15,
-            "format": "password",
-            "title": "Password",
-            "writeOnly": true
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "reset_token",
-          "password"
-        ],
-        "title": "RecoveryInput"
       },
       "RenameInput": {
         "properties": {
@@ -7943,46 +7284,6 @@
         ],
         "title": "Selection"
       },
-      "SetupInput": {
-        "properties": {
-          "profile": {
-            "type": "string",
-            "const": "awm-adm-v3-setupinput/0.1",
-            "title": "Profile",
-            "default": "awm-adm-v3-setupinput/0.1"
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "minLength": 3,
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 1024,
-            "minLength": 15,
-            "format": "password",
-            "title": "Password",
-            "writeOnly": true
-          },
-          "bootstrap_token": {
-            "type": "string",
-            "maxLength": 256,
-            "minLength": 40,
-            "format": "password",
-            "title": "Bootstrap Token",
-            "writeOnly": true
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "email",
-          "password",
-          "bootstrap_token"
-        ],
-        "title": "SetupInput"
-      },
       "SourceInput": {
         "properties": {
           "source_id": {
@@ -8091,6 +7392,63 @@
           "evidence_group"
         ],
         "title": "SourcePermission"
+      },
+      "SystemInfo": {
+        "properties": {
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "operational": {
+            "type": "boolean",
+            "title": "Operational"
+          },
+          "implemented": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Implemented"
+          },
+          "available": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Available"
+          },
+          "request_limits": {
+            "$ref": "#/components/schemas/RequestLimits"
+          },
+          "local_service": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocalServiceInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product",
+          "version",
+          "stage",
+          "operational",
+          "implemented",
+          "available",
+          "request_limits"
+        ],
+        "title": "SystemInfo"
       },
       "TaskCommand": {
         "properties": {
@@ -8242,46 +7600,6 @@
           "granularity"
         ],
         "title": "TemporalScope"
-      },
-      "Token": {
-        "properties": {
-          "adms": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 100,
-            "minItems": 1,
-            "title": "Adms"
-          },
-          "permissions": {
-            "items": {
-              "type": "string",
-              "enum": [
-                "read",
-                "submit"
-              ]
-            },
-            "type": "array",
-            "maxItems": 2,
-            "minItems": 1,
-            "title": "Permissions"
-          },
-          "expires_in": {
-            "type": "integer",
-            "maximum": 2592000.0,
-            "minimum": 60.0,
-            "title": "Expires In",
-            "default": 3600
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "adms",
-          "permissions"
-        ],
-        "title": "Token"
       },
       "Upload": {
         "properties": {
@@ -8492,12 +7810,6 @@
           "vocabulary"
         ],
         "title": "VocabularyInput"
-      }
-    },
-    "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }

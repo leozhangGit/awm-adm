@@ -126,6 +126,7 @@ def test_legacy_migration_preserves_rows_requires_hold_and_never_invents_cost(ri
         from tests.migration_support import remove_conversations
 
         remove_conversations(db)
+        db.execute("DROP TABLE IF EXISTS local_workspace")
         db.execute("PRAGMA user_version=8")
     revived = Runtime(cfg, start_scheduler=False)
     try:

@@ -4,8 +4,10 @@ import json
 import re
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
+from awm_adm.api import create_app
 from awm_adm.runtime.service import Runtime
-from tests.test_admin import browser, csrf, setup
 from tests.test_application import app_runtime as app_runtime
 from tests.test_application import client
 
@@ -13,11 +15,15 @@ from .test_direct_ask import recorded, work
 from .test_learning_service import rig as rig
 
 
+def browser(rt):
+    return TestClient(create_app(rt.config, runtime=rt))
+
+
 def test_public_contract_is_current_and_unambiguous(app_runtime):
     with client(app_runtime) as c:
         contract = c.get("/api/v1/openapi.json").json()
         assert contract == json.loads((Path(__file__).parents[1] / "contracts/openapi.json").read_text())
-        assert contract["info"]["version"] == "0.3.0"
+        assert contract["info"]["version"] == "0.4.0"
         paths = contract["paths"]
         assert all(p.startswith("/api/v1/") or p.startswith("/health/") for p in paths)
         operations = [
@@ -65,8 +71,7 @@ def test_preview_and_chat_histories_are_separate_and_survive_restart(rig):
     key = rt.create("Separate histories")["id"]
     base = f"/api/v1/adms/{key}"
     with browser(rt) as c:
-        assert setup(c).status_code == 200
-        headers = csrf(c)
+        headers = {}
         # Same input identity is deliberately valid in the two independent resource stores.
         preview = c.post(
             base + "/interpretation-sessions",
@@ -82,19 +87,13 @@ def test_preview_and_chat_histories_are_separate_and_survive_restart(rig):
         preview_id = preview.json()["id"]
         chat_id = work(rt, key, chat.json()["id"])["conversation_id"]
         assert preview_id != chat_id
-        token = c.post(
-            "/api/v1/auth/tokens", json={"adms": [key], "permissions": ["read", "submit"]}, headers=headers
-        ).json()
-        scoped = {"Authorization": "Bearer " + token["token"]}
-        assert c.get(base + "/interpretation-sessions", headers=scoped).status_code == 200
-        assert c.get(base + "/conversations?channel=ask", headers=scoped).status_code == 403
-        cookies = c.cookies
+        assert c.get(base + "/interpretation-sessions").status_code == 200
+        assert c.get(base + "/conversations?channel=ask").status_code == 200
     rt.close()
     reopened = Runtime(rt.config, start_scheduler=False)
     try:
         with browser(reopened) as c:
-            c.cookies.update(cookies)
-            assert c.get("/api/v1/auth/me").status_code == 200
+            assert c.get("/api/v1/auth/me").status_code == 404
             assert [x["id"] for x in c.get(base + "/interpretation-sessions").json()["items"]] == [preview_id]
             assert [x["id"] for x in c.get(base + "/conversations?channel=ask").json()["items"]] == [chat_id]
             assert c.get(base + f"/interpretation-sessions/{chat_id}").status_code == 404

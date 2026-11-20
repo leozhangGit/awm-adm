@@ -1,6 +1,6 @@
 # Install and run with Docker
 
-The supported target is **Linux ARM64**, including Linux containers on Apple Silicon Docker Desktop. AMD64, Windows-native containers, public internet hosting and shared multi-user installations are not verified for 0.3.0.
+The supported target is **Linux ARM64**, including Linux containers on Apple Silicon Docker Desktop. AMD64, Windows-native containers, public internet hosting and shared multi-user installations are not verified for 0.4.0.
 
 ## Requirements
 
@@ -21,17 +21,11 @@ docker compose ps
 
 Setup creates separate owner, worker and gateway tokens plus a gateway encryption key under ignored `.local/secrets/`. Existing secrets are retained. The Docker build uses pinned bases, locked Python/Node dependencies and a checksum-verified Lean 4.19.0 distribution. No parent source directory or private release archive is required.
 
-The standard project is named `awm-adm`. Its app, learning worker and provider gateway must become healthy. The console is at **http://127.0.0.1:8080/**. Only the public application listener is published; private control and component listeners stay on the internal network.
+The standard project is named `awm-adm`. Its app, learning worker and provider gateway must become healthy. The console is at **http://127.0.0.1:9527/**. Only the public application listener is published; private control and component listeners stay on the internal network.
 
-## Establish the administrator
+## Open the workspace
 
-```sh
-python3 scripts/admin_credential.py bootstrap --project awm-adm
-```
-
-The helper writes a credential to a mode-0600 file and prints its path. Read it locally and paste the value into **Setup credential**. Choose your email identifier and a password of at least 15 characters, then create the administrator. The credential expires after 15 minutes and can be used once. Remove its file afterward. Run the same helper again if it expires before use.
-
-Subsequent login uses email/password. Email is only a local identifier; no mail is sent. For forgotten passwords, use `python3 scripts/admin_credential.py recovery --project awm-adm` and the **Forgot password?** form. See [Administrator](ADMINISTRATOR.md) for recovery/session behavior.
+Open **http://127.0.0.1:9527/** directly. There is no account setup or login. In Connections, enter the provider/model/key privately and click Enable when ready to use Ask/Teach. The same local API requires no service key. See [local access](LOCAL_ACCESS.md).
 
 ## Configure models and providers
 
@@ -43,7 +37,7 @@ Create an empty model or import a snapshot in **Domain models**. Ask and Teach a
 
 `deploy/config.toml` is the container configuration. Its loopback publication, private networking, process/resource limits and role-secret mounts form the supported deployment boundary. `config/default.toml` describes host/library defaults. Configuration is strict: unknown fields, invalid limits and foreign stores are rejected.
 
-The named `adm-data` volume stores accounts, models, conversations, requests and accounting. `gateway-data` stores provider state and encrypted credentials. `.local/secrets/gateway-master-key` is required to recover encrypted credentials. Keep that key private and back it up separately. The provider-secret mount is for explicit operator configuration; the normal secure Connections form uses managed credentials.
+The named `adm-data` volume stores models, conversations, requests, accounting and historical actor records. `gateway-data` stores provider state and encrypted credentials. `.local/secrets/gateway-master-key` is required to recover encrypted credentials. Keep that key private and back it up separately. The provider-secret mount is for explicit operator configuration; the normal secure Connections form uses managed credentials.
 
 ## Stop and restart
 
@@ -52,7 +46,7 @@ docker compose stop
 docker compose up -d --no-build --wait --wait-timeout 60
 ```
 
-Named volumes and existing secrets are reused. `docker compose down` removes containers/networks while preserving named volumes; **adding `-v` deletes model/account/provider data**. Do not use volume deletion as a repair or ordinary shutdown step.
+Named volumes and existing secrets are reused. `docker compose down` removes containers/networks while preserving named volumes; **adding `-v` deletes model/history/provider data**. Do not use volume deletion as a repair or ordinary shutdown step.
 
 For updates, take a consistent paired backup, build the new images, and recreate services with `docker compose up -d --no-build --wait`. Recheck health and retained state. Existing schema migrations remain transactional; downgrade to incompatible code requires a compatible backup rather than opening newer stores. [Operations](OPERATIONS.md) contains backup and restore commands.
 
@@ -62,10 +56,9 @@ System timezone: Docker setup captures the host default automatically; native ex
 
 | Symptom | Check |
 | --- | --- |
-| Build fails for the architecture | 0.3.0 verifies Linux ARM64; use an ARM64 Docker environment. |
+| Build fails for the architecture | 0.4.0 verifies Linux ARM64; use an ARM64 Docker environment. |
 | Build/start reports no space | Check both host and Docker VM free space. Remove only identified disposable build artifacts; preserve volumes and recovery keys. |
-| Port 8080 is occupied | Stop the conflicting service or configure an isolated project/port consistently. |
-| Setup credential expires | Issue a new credential and complete setup within its window. |
+| Port 9527 is occupied | Stop the conflicting service or configure an isolated project/port consistently. |
 | Remote calls unavailable | Check the single connection state and its reported failure, plus gateway health. |
 | Known local query works but chat is unavailable | Structured local execution is independent of the provider used for chat interpretation and explanation. |
 | A provider outcome is unknown | Inspect retained diagnostics/reservations; do not assume a free call or automatic safe retry. |

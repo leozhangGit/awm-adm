@@ -8,6 +8,8 @@ from pathlib import Path
 
 
 def main():
+    deployment = runpy.run_path(str(Path(__file__).with_name("check_local_deployment.py")))
+    deployment["main"]()
     root = Path(__file__).resolve().parents[1] / ".local/secrets"
     temporal = runpy.run_path(str(root.parents[1] / "src/awm_adm/temporal.py"))
     zone = temporal["system_timezone"]()

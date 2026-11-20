@@ -1317,6 +1317,10 @@ class LearningService:
                 return
             status = value["status"]
             data["decision"] = value["decision"]
+            data["decision_revision"] = current["revision_id"]
+            data["decision_context"] = current["context"]
+            data["effects"] = value.get("effects")
+            data["accepted_revision"] = None
             with self.store.db(key) as db, self.store.transaction(db):
                 db.execute(
                     "UPDATE learning_receipts SET status=?,data=? WHERE id=?",
@@ -1346,10 +1350,13 @@ class LearningService:
                         (dumps(context), context["theory_version"]),
                     )
                     db.execute("UPDATE control SET revision=? WHERE id=1", (revision,))
+                    data["accepted_revision"] = revision
+                    data["accepted_context"] = context
+                    db.execute("UPDATE learning_receipts SET data=? WHERE id=?", (dumps(data), receipt["id"]))
                     ep.update(status="accepted", reason=None)
                     if ep.get("parent_task"):
                         self.runtime.conversations.teaching.execution.published(
-                            db, key, ep, revision, context
+                            db, key, ep, revision, context, value.get("effects")
                         )
                     # Explicit learning interests authorize a NEW local attempt under
                     # the new theory. Existing attempts/revisions remain immutable.

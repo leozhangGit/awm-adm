@@ -26,11 +26,9 @@ def test_console_model_is_pinned_and_scoped(app_runtime):
         assert c.get(f"/api/v1/adms/{key}/requirements").json()["policy_epoch"] == 1
         other = rt.create("other")["id"]
         assert c.get(f"/api/v1/adms/{other}/model?revision={revision}").status_code == 404
-        token = c.post("/api/v1/auth/tokens", json={"adms": [other], "permissions": ["read"]}).json()
-        headers = {"Authorization": "Bearer " + token["token"]}
-        assert c.get(f"/api/v1/adms/{key}/model", headers=headers).status_code == 403
-        assert c.get("/api/v1/operations", headers=headers).status_code == 403
-        assert c.get("/api/v1/auth/me", headers=headers).status_code == 403
+        assert c.get(f"/api/v1/adms/{key}/model", headers={"Authorization": ""}).status_code == 200
+        assert c.get("/api/v1/operations").status_code == 200
+        assert c.get("/api/v1/auth/me").status_code == 404
 
 
 def test_displayed_revision_cas_preserves_idempotent_replay(app_runtime):
@@ -53,21 +51,15 @@ def test_displayed_revision_cas_preserves_idempotent_replay(app_runtime):
         assert c.post(url, json=envelope("new")).status_code == 202  # API clients may opt out.
 
 
-def test_console_sessions_can_recover_without_revealing_credentials(app_runtime):
-    with client(app_runtime) as owner:
-        from tests.test_admin import setup
-
-        issued = setup(owner).json()
-        owner.headers.pop("authorization")
-        status = owner.get("/api/v1/auth/me")
-        assert status.status_code == 200
-        assert status.json()["id"] == issued["id"]
-        assert set(status.json()) == {"id", "administrator", "csrf", "request_limits"}
-        assert status.json()["csrf"] == issued["csrf"]
-        assert OWNER not in status.text and "token" not in status.json()
-        assert owner.post("/api/v1/auth/logout").status_code == 403
-        assert owner.post("/api/v1/auth/logout", headers={"X-CSRF-Token": issued["csrf"]}).status_code == 200
-        assert owner.get("/api/v1/auth/me").status_code == 401
+def test_console_reads_require_no_session_and_expose_no_credentials(app_runtime):
+    with TestClient(create_app(app_runtime.config, runtime=app_runtime)) as c:
+        result = c.get("/api/v1/system")
+        assert result.status_code == 200
+        assert result.json()["local_service"]["profile"] == "awm-adm-local/1"
+        assert result.json()["request_limits"]["max_work"] > 0
+        assert OWNER not in result.text
+        assert not result.cookies
+        assert c.get("/api/v1/adms").status_code == 200
 
 
 def test_recent_pages_and_operation_summaries_are_bounded(app_runtime):
@@ -106,6 +98,6 @@ def test_packaged_examples_import_as_independent_models(app_runtime):
 
 
 def test_console_assets_contain_no_saved_owner_credential(app_runtime):
-    with TestClient(create_app(app_runtime.config, runtime=app_runtime, owner_token=OWNER)) as c:
-        assert c.get("/api/v1/operations").status_code == 401
-        assert c.get("/api/v1/auth/me").status_code == 401
+    with TestClient(create_app(app_runtime.config, runtime=app_runtime)) as c:
+        assert c.get("/api/v1/operations").status_code == 200
+        assert c.get("/api/v1/auth/me").status_code == 404

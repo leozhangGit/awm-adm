@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "awm-adm-codex-plugin"
+version = "0.4.0"
+description = "Native Codex connector for project Algebraic Domain Models"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13,<3.14"
+dependencies = ["mcp==2.2.0"]
+
+[project.scripts]
+awm-adm-codex = "awm_adm_plugin.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/awm_adm_plugin"]
+
+[tool.uv]
+required-version = "==0.13.7"

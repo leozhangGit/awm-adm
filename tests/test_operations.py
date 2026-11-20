@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from cryptography.fernet import Fernet, InvalidToken
 
-from awm_adm.application.auth import Authority
+from awm_adm.application.auth import AppendAuthority
 from awm_adm.gateway.service import Gateway
 from awm_adm.gateway.store import GatewayStore
 from awm_adm.operations.backup import backup, restore, verify
@@ -46,7 +46,7 @@ def test_backup_recovery_preserves_theories_history_and_fences_authority(tmp_pat
     execute(rt, key)
     pending = rt.coordinator.submit(key, envelope("pending"))
     assert rt.store.claim_request(key) is not None
-    token = Authority(rt.store, OWNER).issue(adms=[key], permissions=["read"])
+    token = AppendAuthority(rt.store).issue(adms=[key])
     other = rt.create("Acquiring")["id"]
     c = connection(rt, gateway)
     ep = episode(rt, other, c)
@@ -85,7 +85,9 @@ def test_backup_recovery_preserves_theories_history_and_fences_authority(tmp_pat
         assert not recovered_vault.begin("authored-dispatched-id", "authored-digest")
         with client(restored) as http:
             response = http.get("/api/v1/adms", headers={"Authorization": "Bearer " + token["token"]})
-            assert response.status_code == 401
+            assert response.status_code == 200
+        with restored.store.db() as db:
+            assert db.execute("SELECT revoked FROM credentials WHERE id=?", (token["id"],)).fetchone()[0] == 1
         assert restored.learning.episode(other, ep["id"])["status"] == "stopped"
     finally:
         restored.close()
@@ -181,12 +183,11 @@ def test_diagnostics_owner_only_no_content_and_storage_work_observable(app_runti
     assert report["storage"]["bytes"] > 0
     assert b"PRIVATE NAME SENTINEL" not in dumps(report)
     assert len(dumps(report)) < 1_048_576
-    token = Authority(rt.store, OWNER).issue(adms=[key], permissions=["read", "submit"])
     with client(rt) as http:
         for url in ("/api/v1/operations/diagnostics", "/api/v1/operations/retention"):
             assert http.get(url).status_code == 200
-            assert http.get(url, headers={"Authorization": "Bearer " + token["token"]}).status_code == 403
-        assert http.get("/api/v1/operations/diagnostics", headers={"Authorization": ""}).status_code == 401
+            assert http.get(url, headers={"Origin": "null"}).status_code == 403
+        assert http.get("/api/v1/operations/diagnostics", headers={"Authorization": ""}).status_code == 200
 
 
 def test_real_sqlite_full_transaction_rolls_back_source_batch(app_runtime):  # noqa: F811

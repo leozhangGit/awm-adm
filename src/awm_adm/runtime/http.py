@@ -117,13 +117,6 @@ def create_internal(runtime, tokens):
     async def storage_error(_request, _error):
         return JSONResponse({"error": "storage_unavailable"}, status_code=503)
 
-    @app.post("/internal/v3/auth/{purpose}", dependencies=[Depends(owner)])
-    def auth_ticket(purpose: str):
-        from ..application.admin import Administrator
-        from ..application.auth import Authority
-
-        return Administrator(Authority(runtime.store, tokens["owner"])).ticket(purpose)
-
     @app.get("/internal/m2/adms", dependencies=[Depends(owner)])
     def instances():
         return runtime.store.list()

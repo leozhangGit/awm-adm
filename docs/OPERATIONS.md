@@ -34,7 +34,7 @@ On native Linux, the backup directory must also be writable by UID/GID 10001; pr
 
 The `operations` service is a short-lived tools-profile process with no network, no secret mounts, no published port and only the app/gateway data volumes plus the backup destination. It acquires **both** existing process-owner locks before reading. A running app or gateway makes capture fail. The worker must also be stopped operationally; it has no database to capture. SQLite's backup API includes committed WAL content. Each copied database receives an integrity/application-ID/schema check. The bundle is staged privately, flushed and renamed only after all files and its manifest exist. An error before publication leaves the original stores intact and no completed bundle. If the final directory flush fails after rename, the command can report failure while a valid destination exists; inspect and verify that destination before retrying, and never overwrite it. A process killed during staging may leave a `.awm-recovery-*` directory; it is not a valid published backup and can be inspected/removed while no operation uses it.
 
-Current capture is schema 16; verified bundles from owned schemas 7–15 also support restore and subsequent startup migration. The envelope is at most 1,003 files and 6 GiB of logical database content. Larger configured installations need a separately tested backup envelope. Symlink paths, foreign databases, missing established stores, unregistered databases, unsupported schemas and existing destinations are refused. Do not copy just a running SQLite main file. Backup may take time proportional to retained storage; it is an offline operation without a serving-availability guarantee.
+Current capture is schema 17; verified bundles from owned schemas 7–16 also support restore and subsequent startup migration. The envelope is at most 1,003 files and 6 GiB of logical database content. Larger configured installations need a separately tested backup envelope. Symlink paths, foreign databases, missing established stores, unregistered databases, unsupported schemas and existing destinations are refused. Do not copy just a running SQLite main file. Backup may take time proportional to retained storage; it is an offline operation without a serving-availability guarantee.
 
 On native installations the equivalent command is `awm-adm operations backup --app-data APP_ROOT --gateway-data GATEWAY_ROOT --output NEW_DIRECTORY`, with both storage owners stopped. Local file paths are operator arguments and never accepted through the public API.
 
@@ -69,7 +69,7 @@ Paths resolve relative to the first Compose file. Preserve any effective port/co
 Recovery intentionally changes operational authority while preserving accepted theories and historical results:
 
 - Disable the single connection and advance dispatch authority; cancel unfinished activation tests.
-- Revoke persisted sessions and scoped API tokens. Restoring an account-bearing bundle also revokes outstanding reset/setup credentials and advances the administrator generation. Sign in with the restored password or use [local operator recovery](ADMINISTRATOR.md); a schema-7 restored copy establishes its administrator after migration. Issue new scoped tokens deliberately.
+- Revoke retained legacy credentials and setup/reset tickets. Historical account references remain private provenance; they do not gate access. Open the restored workspace directly without login. Provider dispatch remains disabled until explicitly enabled.
 - Pause every feed and advance its generation. Resuming is an explicit owner action against current state.
 - Clear component leases. Startup gives new app/component generations and reconciles interrupted local requests, episodes and receipts through the ordinary recovery path.
 - Mark captured ready/leased/dispatched app grants as `outcome_unknown`, retaining their reservations. A ready grant in an old backup cannot prove it remained undispatched in the abandoned timeline.
@@ -81,7 +81,7 @@ Check identities, accepted/support roots, policies, selected results, pending st
 
 ## Upgrade and failure recovery
 
-Only owned schemas 1–15 migrate to schema 16; foreign operational stores and future schemas are refused. Supported model snapshots are rechecked through model import, not database adoption. Migrations use one transaction per database. A migration failure rolls that database back; a service contains multiple databases, so an upgrade is not a single cross-database transaction.
+Only owned schemas 1–16 migrate to schema 17; foreign operational stores and future schemas are refused. Supported model snapshots are rechecked through model import, not database adoption. Migrations use one transaction per database. A migration failure rolls that database back; a service contains multiple databases, so an upgrade is not a single cross-database transaction.
 
 Before upgrading, capture a current service backup and record the previous image/configuration identities. Test the upgrade on a recovered copy. If startup or verification fails, stop all components and restore the pre-upgrade bundle into new paths using the matching supported version. Do not start an older binary on a partly migrated directory or edit `user_version` to bypass checks. Preserve the failed directory for diagnosis. There is no automatic destructive downgrade.
 
@@ -93,7 +93,7 @@ App SIGKILL, child time/resource exhaustion and expired component heartbeats are
 
 ## Metrics and bounded diagnostic export
 
-The console's **Operations** dashboard shows component health, model activity and storage in readable cards and tables. Backup/recovery are operator procedures in this guide; there is no Retention panel. Technical integrations retain owner-only `/api/v1/operations/diagnostics` and `/operations/retention`. The bounded diagnostic API report is at most 1 MiB, uses fixed labels and includes:
+The console's **Operations** dashboard shows component health, model activity and storage in readable cards and tables. Backup/recovery are operator procedures in this guide; there is no Retention panel. Technical integrations retain local `/api/v1/operations/diagnostics` and `/operations/retention`. The bounded diagnostic API report is at most 1 MiB, uses fixed labels and includes:
 
 - Per-ADM retained row counts, request/attempt/source/feed status counts and database/WAL bytes.
 - Installation storage against its configured allowance; compare successive reports for growth.

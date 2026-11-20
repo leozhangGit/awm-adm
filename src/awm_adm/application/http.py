@@ -5,18 +5,17 @@ import json
 import time
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from fastapi import Request as HTTPRequest
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.security import HTTPBearer
 from pydantic import Field
 from starlette.exceptions import HTTPException
 
 from ..contracts import ClosedModel, Identifier, Request
 from ..runtime.protocol import RuntimeFault, dumps
 from ..wire import decode
-from .auth import Authority
+from .local_access import LocalWorkspace, local_peer
 from .models import Operation, RequestPage, RequestView
 from .store import failure
 
@@ -48,12 +47,6 @@ class Cursor(ClosedModel):
 
 class Export(ClosedModel):
     idempotency_key: Identifier
-
-
-class Token(ClosedModel):
-    adms: list[str] = Field(min_length=1, max_length=100)
-    permissions: list[Literal["read", "submit"]] = Field(min_length=1, max_length=2)
-    expires_in: int = Field(default=3600, ge=60, le=2_592_000)
 
 
 CODES = {
@@ -94,9 +87,9 @@ def error_response(code, status=None):
     messages = {
         "unauthorized": "Authentication required or expired",
         "forbidden": "Operation is not authorized",
-        "remote_calls_disabled": "Remote AI calls are disabled. Review Connections; the model remains available in Local debug",
+        "remote_calls_disabled": "Remote AI calls are disabled. Enable the connection in Connections to use Ask or Teach",
         "connection_unavailable": "The connection is disabled or not ready. Review Connections",
-        "purpose_unavailable": "The required connection purpose is disabled. Review Connections",
+        "purpose_unavailable": "The connection is not ready for this operation. Review Connections",
         "allowance_expired": "This conversation's allowance expired. Review a new allowance before sending",
         "allowance_closed": "This conversation's allowance is closed. Review a new allowance before sending",
         "allowance_exhausted": "This conversation's call, token or cost allowance is used up. Review a new allowance",
@@ -132,14 +125,25 @@ def error_response(code, status=None):
 
 
 class Boundary:
-    def __init__(self, app, maximum, port):
-        self.app, self.maximum, self.port = app, maximum, port
+    def __init__(self, app, maximum, port, ingress=()):
+        self.app, self.maximum, self.port, self.ingress = app, maximum, port, frozenset(ingress)
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
+        peer = (scope.get("client") or ("", 0))[0]
+        if not local_peer(peer, self.ingress):
+            return await error_response("forbidden")(scope, receive, send)
         headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
-        hosts = {f"127.0.0.1:{self.port}", f"localhost:{self.port}", f"[::1]:{self.port}", "testserver"}
+        # Duplicate Host/Origin fields must not be interpreted differently downstream.
+        for field in (b"host", b"origin"):
+            if sum(k.lower() == field for k, _ in scope["headers"]) > 1:
+                return await error_response("forbidden")(scope, receive, send)
+        if headers.get("sec-fetch-site") in {"cross-site", "same-site"}:
+            return await error_response("forbidden")(scope, receive, send)
+        hosts = {f"127.0.0.1:{self.port}", f"localhost:{self.port}", f"[::1]:{self.port}"}
+        if peer == "testclient":
+            hosts.add("testserver")
         host = headers.get("host", "")
         origin = headers.get("origin")
         if host not in hosts or (origin is not None and origin != f"http://{host}"):
@@ -193,8 +197,8 @@ class Boundary:
         await self.app(scope, receive, safe_send)
 
 
-def attach(app, runtime, owner):
-    auth = Authority(runtime.store, owner)
+def attach(app, runtime, *, ingress=()):
+    auth = LocalWorkspace(runtime.store)
     store = runtime.store
     coordinator = runtime.coordinator
     app.state.authority = auth
@@ -202,9 +206,12 @@ def attach(app, runtime, owner):
 
     attach_lifecycle(app, auth, runtime.lifecycle)
     app.add_middleware(
-        Boundary, maximum=runtime.config.server.max_body_bytes, port=runtime.config.server.port
+        Boundary,
+        maximum=runtime.config.server.max_body_bytes,
+        port=runtime.config.server.port,
+        ingress=ingress,
     )
-    router = APIRouter(prefix="/api/v1", dependencies=[Depends(HTTPBearer(auto_error=False))])
+    router = APIRouter(prefix="/api/v1")
 
     @app.exception_handler(RuntimeFault)
     async def fault(_request, error):
@@ -244,19 +251,6 @@ def attach(app, runtime, owner):
         from ..operations.service import retention
 
         return retention(runtime)
-
-    @router.post("/auth/tokens")
-    def token(request: HTTPRequest, body: Token):
-        auth.require(request, owner=True)
-        for key in body.adms:
-            store.info(key)
-        return auth.issue(adms=body.adms, permissions=body.permissions, seconds=body.expires_in)
-
-    @router.delete("/auth/tokens/{uid}")
-    def revoke(request: HTTPRequest, uid: str):
-        auth.require(request, owner=True)
-        auth.revoke(uid)
-        return {"status": "revoked"}
 
     @router.get("/adms")
     def adms(request: HTTPRequest):
@@ -560,9 +554,6 @@ def attach(app, runtime, owner):
 
     feed_routes(router, auth, runtime.sources)
     app.include_router(router)
-    from .admin_http import attach as admin_routes
-
-    admin_routes(app, auth, runtime)
 
     from ..allowances.http import attach as allowance_routes
 

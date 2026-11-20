@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   nextReference,
+  resolveReference,
   newMessage,
   outcomeNote,
   replyText,
@@ -10,6 +11,7 @@ import {
 import type { Exchange } from "../src/direct-chat.ts";
 const item = (id: string, status = "completed"): Exchange => ({
   id,
+  sequence: 1,
   status,
   text: "Question",
   origin: "console",
@@ -25,6 +27,22 @@ test("API activity cannot select another tab’s conversation context", () => {
   assert.equal(nextReference([item("mine"), item("api")], "mine"), "mine");
   assert.equal(nextReference([item("mine", "queued")], "mine"), null);
   assert.equal(nextReference([item("api")], null), null);
+});
+test("a previous exchange outside the visible window still supplies the explicit reply reference", async () => {
+  const reads: string[] = [];
+  const read = async (id: string) => {
+    reads.push(id);
+    return item(id);
+  };
+  assert.equal(await resolveReference([item("newer")], "older", read), "older");
+  assert.deepEqual(reads, ["older"]);
+  assert.equal(await resolveReference([item("older")], "older", read), "older");
+  assert.equal(await resolveReference([], null, read), null);
+  assert.deepEqual(reads, ["older"]);
+  assert.equal(
+    await resolveReference([], "busy", async () => item("busy", "queued")),
+    null,
+  );
 });
 test("local checked outcome survives missing explanation", () => {
   assert.equal(replyText(item("a")), "Value: true");
