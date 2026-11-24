@@ -89,6 +89,7 @@ class Learning(ClosedModel):
     remote_calls_enabled: bool = False
     publication: Literal["review", "checked_auto"] = "review"
     default_conflict_mode: Literal["backward", "forward"] = "backward"
+    preparation_timeout_ms: int = Field(default=180_000, ge=1, le=300_000)
     call: CallLimits = Field(default_factory=CallLimits)
     episode: EpisodeLimits = Field(default_factory=EpisodeLimits)
     quotas: Quotas = Field(default_factory=Quotas)

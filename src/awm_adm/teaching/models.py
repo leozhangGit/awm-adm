@@ -7,6 +7,7 @@ from pydantic import Field, model_validator
 from ..contracts import ClosedModel, Identifier
 from ..language.models import Vocabulary
 from ..sources.models import Projection, SourcePermission
+from ..temporal_evidence.models import Catalog
 
 
 class Material(ClosedModel):
@@ -60,6 +61,19 @@ class Plan(ClosedModel):
         if (self.kind == "mixed" and len(kinds) < 2) or (self.kind != "mixed" and kinds != {self.kind}):
             raise ValueError("Parent intent must match its typed children")
         return self
+
+
+class TemporalMaterial(Material):
+    projection: Catalog
+
+
+class TemporalChild(Child):
+    material: TemporalMaterial | None = None
+
+
+class TemporalPlan(Plan):
+    profile: Literal["awm-adm-teaching-plan/2"] = "awm-adm-teaching-plan/2"
+    children: list[TemporalChild] = Field(min_length=1, max_length=4)
 
 
 class Reply(ClosedModel):

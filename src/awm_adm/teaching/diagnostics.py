@@ -7,6 +7,7 @@ from pydantic import ValidationError
 MESSAGES = {
     "wire": "The provider returned malformed preparation JSON.",
     "envelope": "The provider response does not match the preparation format.",
+    "assessment": "The provider's readiness assessment is inconsistent or invalid. No learning started.",
     "plan_json": "The provider returned malformed JSON inside the teaching plan.",
     "plan": "The proposed teaching plan has invalid or missing fields.",
     "types": "The proposed finite types are invalid, cyclic or outside the supported bounds.",
@@ -15,6 +16,7 @@ MESSAGES = {
     "dependencies": "The proposed capability dependencies are cyclic.",
     "vocabulary": "The proposed vocabulary does not refer to valid model capabilities or parameters.",
     "sources": "The proposed source coverage or permissions are invalid.",
+    "materials": "The preparation could not bind the selected supplied material. No knowledge was accepted.",
     "requirements": "The proposed requirements are invalid or would replace installed owner checks.",
 }
 
@@ -27,6 +29,12 @@ class PreparationError(ValueError):
 
 def diagnostic(stage, code="invalid_value", error=None):
     result = {"stage": stage, "code": code, "message": MESSAGES[stage], "issues": []}
+    if stage == "sources":
+        result["message"] = {
+            "multiple_projections": "The provider proposed different evidence mappings within one teaching request. One shared mapping is required; no new knowledge was accepted.",
+            "shared_projection_required": "The provider selected source material without the required shared evidence mapping. No new knowledge was accepted.",
+            "unused_shared_projection": "The provider proposed an evidence mapping without selecting source material. No new knowledge was accepted.",
+        }.get(code, result["message"])
     if isinstance(error, ValidationError):
         # Locations may contain attacker-authored map keys. Keep schema fields
         # and indexes only, not input values, validator context or raw messages.
@@ -35,6 +43,13 @@ def diagnostic(stage, code="invalid_value", error=None):
             "status",
             "message",
             "plan",
+            "missing_information",
+            "unsupported_capabilities",
+            "question",
+            "subject",
+            "detail",
+            "requested_capability",
+            "limitation",
             "kind",
             "summary",
             "children",
@@ -42,7 +57,22 @@ def diagnostic(stage, code="invalid_value", error=None):
             "input_ids",
             "interfaces",
             "material",
+            "material_ids",
             "projection",
+            "source_projection",
+            "evidence_scope",
+            "precision",
+            "timezone_basis",
+            "statement_level",
+            "actor",
+            "modality",
+            "qualifiers",
+            "scope_kinds",
+            "metric",
+            "meaning",
+            "reported_time",
+            "observed_time",
+            "occurrence_id",
             "sources",
             "namespace",
             "entities",
@@ -85,6 +115,10 @@ def diagnostic(stage, code="invalid_value", error=None):
             "plan_json",
         }
         for issue in error.errors(include_url=False, include_input=False, include_context=False)[:8]:
+            if stage == "sources" and "evidence_scope" in issue["loc"]:
+                result["message"] = (
+                    "The proposed temporal evidence catalog has invalid fields. No knowledge was accepted."
+                )
             result["issues"].append(
                 {
                     "path": [
@@ -93,6 +127,24 @@ def diagnostic(stage, code="invalid_value", error=None):
                     "code": issue["type"][:64],
                 }
             )
+            path = result["issues"][-1]["path"]
+            # Fixed contract hints only: never interpolate provider values or
+            # validator messages. Keep retained non-temporal diagnostics stable.
+            if "evidence_scope" in path:
+                if "predicates" in path and path[-1] == "symbol":
+                    result["issues"][-1].update(
+                        rule="qualified_predicate_symbol",
+                        hint="Use a complete dot-qualified predicate symbol; the namespace does not add a prefix.",
+                    )
+                elif "cells" in path:
+                    result["issues"][-1].update(
+                        rule="temporal_scope_contract",
+                        hint=(
+                            "Use canonical UTC bounds and an IANA timezone. An exact instant has "
+                            "second precision and no end; other kinds require a supported end after "
+                            "the start. Preserve uncertain time as a window; do not invent bounds."
+                        ),
+                    )
     cause = error
     while cause is not None:
         if isinstance(cause, json.JSONDecodeError):

@@ -1,5 +1,7 @@
 # Ask: interpretation, ADM execution and explanation
 
+See [knowledge intent](KNOWLEDGE_INTENT.md) for adopted rules, sourced observations, model-relative premises and exploratory or quoted material.
+
 Open a model's Ask tab and type a question. One enabled [connection](CONNECTION.md) makes remote interpretation and explanation available. No conversation setup, spending allowance or purpose selection is required. Ask is read-only: it never changes accepted knowledge, starts learning or changes the model's conflict mode.
 
 ## One visible history, independent exchanges
@@ -16,13 +18,17 @@ Temporal interpretation uses an explicit relevant user timezone or the service s
 
 Type checking cannot establish that the interpretation matches a person's intention. The independent [intent corpus](../contracts/ask-corpus.json) distinguishes semantic expectations from structural validity, including a deliberately incorrect but well-typed entity. The [interaction corpus](../contracts/interaction-corpus.json) covers ordinary messages and follow-ups. Recorded fixtures verify orchestration, not a live provider's general accuracy.
 
+Evidence recall uses `recall_evidence` to retrieve selected accepted subject/property records without requiring a search-time window. The result retains each record’s own scope, units, attribution and source references. Multiple supporting sources do not alone require a source-choice question; actual ambiguity or incompatible records remains explicit. An event’s time differs from its inspection time, and a supplied calculation is recalled as earlier work. See [queryable knowledge and recall](EVIDENCE_RECALL.md).
+
 ## Execution and explanation
 
 A valid interpretation queues one local request with `on_gap=report`. The ADM executes it against accepted definitions and evidence. Provider prose cannot supply missing facts, turn an unknown result into false or bypass the checked model. Planning retains witness, shortestness, exhausted-depth and unreachability distinctions. Historical lookup preserves explicit dates and provenance; absent or disputed support remains unknown.
 
-The explanation answers in ordinary language using a bounded packet of the computed outcome and the same selected owner wording used for interpretation. Owner wording helps express the answer; it is not additional evidence for the result. Routine assurance fields are retained in records rather than recited as chat warnings. A short, independently generated **Model answer: Yes/No/value** label keeps simple computed values visible beside the AI explanation. Historical values use the same compact label with a **Historical evidence** qualifier. Missing or disputed support and values that change within a requested period retain specific readable summaries. Complex and inconclusive outcomes retain their relevant limits. No label certifies the AI's prose.
+The explanation answers in ordinary language using a bounded packet of the computed outcome and the same selected owner wording used for interpretation. Owner wording helps express the answer; it is not additional evidence for the result. Routine assurance fields are retained in records rather than recited as chat warnings. A short, independently generated **Model answer: Yes/No/value** label keeps simple computed values visible beside the AI explanation. Historical values include their checked unit and a **Historical evidence** qualifier. Missing or disputed support and values that change within a requested period retain specific readable summaries. Complex and inconclusive outcomes retain their relevant limits. No label certifies the AI's prose.
 
-Exact packet/outcome digests and allowed claims/references are validated. This checks structural bindings, not the truth of every sentence. Source excerpts, credentials and unrelated conversations are excluded. The packet remains bounded at 32 KiB including owner wording; if it is too large or narration fails, the readable ADM outcome remains available. Existing saved explanations are not rewritten or regenerated when guidance changes.
+Successful historical outcomes include bounded `value_metadata`: the exact unit from the bound source fact and the requested `query_scope` (point instant or interval). Period answers carry a unit only when all supporting checked facts agree. The compact label, fallback answer and narration packet use this same metadata without conversion or inference from vocabulary, names or user wording. An explicitly stored unitless label is preserved. A null unit, absent legacy metadata or inconsistent metadata means no checked unit is available to the presentation; it does not establish that the value is unitless or that the source/user omitted its unit. Missing/disputed answers expose no successful-value metadata. Source excerpts and full source claims are not copied into the packet.
+
+Exact packet/outcome digests and allowed claims/references are validated. This checks structural bindings, not the truth of every sentence. Source excerpts, credentials and unrelated conversations are excluded. The packet remains bounded at 32 KiB including owner wording and value metadata; if it is too large or narration fails, the readable ADM outcome, including its checked unit, remains available. New narration dispatches record prompt `adm-ask-explanation/5`. Existing saved packets and explanations are not rewritten or regenerated when guidance changes.
 
 ## Durability and limits
 
@@ -40,4 +46,8 @@ All paths below begin with `/api/v1` and use the existing login-free local works
 - `GET /adms/{adm}/presentations/{id}`: retained exact presentation and result bindings for programmatic inspection.
 - `GET /adms/{adm}/history-options`: bounded accepted entity/predicate/time metadata, without fact values or a support verdict.
 
-The console uses these same routes. Internal conversations preserve each exchange's identity; users do not create or select them. Stored model, result and snapshot formats remain unchanged. Historical conversation records remain available for activity/history queries.
+The console uses these same routes. Internal conversations preserve each exchange's identity; users do not create or select them. Existing model artifacts and historical results retain their meaning. Snapshots containing typed temporal evidence use the [required-feature envelope](TEMPORAL_EVIDENCE.md); legacy-only snapshots keep their existing transport. Historical conversation records remain available for activity/history queries.
+
+## Typed temporal evidence
+
+Ask interprets mixed temporal knowledge with explicit `query_evidence` intents. An observation at an instant, an occurrence within a window, validity throughout a period and a value for the whole period are distinct. Attributed reports retain their actor, modality and reporting occurrence; an unspecified report version does not silently select the latest. Collections include bounded pagination and completeness instead of being collapsed to a single value. The same checked metadata feeds narration and deterministic output. No provider is required for the resulting structured local query. See [temporal evidence](TEMPORAL_EVIDENCE.md) for exact contracts and compatibility.

@@ -101,10 +101,16 @@ class Runtime:
 
     def query(self, key, query, *, limits=None):
         caps = self.limits(limits)
-        if query.get("op") in {"lookup_fact", "lookup_fact_period"}:
+        if query.get("op") in {"lookup_fact", "lookup_fact_period", "query_evidence", "recall_evidence"}:
             from ..contracts import FactLookup, FactPeriodLookup
+            from ..temporal_evidence.types import EvidenceQuery, RecallQuery
 
-            schema = FactLookup if query["op"] == "lookup_fact" else FactPeriodLookup
+            schema = {
+                "lookup_fact": FactLookup,
+                "lookup_fact_period": FactPeriodLookup,
+                "query_evidence": EvidenceQuery,
+                "recall_evidence": RecallQuery,
+            }[query["op"]]
             query = schema.model_validate(query).model_dump()
         else:
             query = normalize_query(query, caps)

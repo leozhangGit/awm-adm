@@ -14,6 +14,28 @@ from ..runtime.protocol import RuntimeFault, dumps, loads
 from .store import context_binding, failure
 
 
+def operation_error(error=None):
+    """Only fixed public diagnostics leave the operation boundary."""
+    known = {
+        ("resource_exhausted", "Instance limit reached"): (
+            "model_limit_reached",
+            "The model limit is reached. Delete an unused model before starting a new creation attempt.",
+        ),
+        ("resource_exhausted", "Installation storage allowance is exhausted"): (
+            "storage_limit_reached",
+            "Installation storage is full. Free space before trying again.",
+        ),
+    }
+    match = known.get((error.code, str(error))) if isinstance(error, RuntimeFault) else None
+    if match:
+        result = failure("resource_exhausted", match[1])
+        result["details"] = {"reason": match[0]}
+        return result
+    return failure(
+        "internal_error", "Operation interrupted or rejected; inspect before retrying", "reconcile"
+    )
+
+
 def wrap_result(key, lease, value):
     query = lease["envelope"]["query"]
     context = lease["context"]
@@ -95,7 +117,12 @@ class Coordinator:
     def submit(self, key, body, *, expected_revision=None):
         parsed = Request.model_validate(body).model_dump()
         parsed["limits"] = self.runtime.limits(parsed["limits"])
-        if parsed["query"]["op"] not in {"lookup_fact", "lookup_fact_period"}:
+        if parsed["query"]["op"] not in {
+            "lookup_fact",
+            "lookup_fact_period",
+            "query_evidence",
+            "recall_evidence",
+        }:
             parsed["query"] = normalize_query(parsed["query"], parsed["limits"])
         uid = self.store.submit(key, parsed, expected_revision=expected_revision)
         self.wake.set()
@@ -235,19 +262,36 @@ class Coordinator:
                     "SELECT 1 FROM instances WHERE id=? AND status IN ('deleting','deleted')", (row["adm"],)
                 ).fetchone()
             )
+            error = None
+            if row["error"]:
+                try:
+                    saved = loads(row["error"])
+                except (ValueError, TypeError):
+                    saved = None
+                error = (
+                    saved
+                    if isinstance(saved, dict) and saved.get("error_profile") == "awm-adm-error/2"
+                    else operation_error()
+                )
+            # Older installations could stop between reserving a model and saving
+            # its operation link. An orphan reservation requires reconciliation.
+            retry_creation = bool(
+                row["kind"] == "create"
+                and row["status"] == "failed"
+                and row["adm"] is None
+                and not db.execute(
+                    "SELECT 1 FROM instances i WHERE i.status IN ('creating','failed') "
+                    "AND NOT EXISTS(SELECT 1 FROM operations o WHERE o.adm=i.id) LIMIT 1"
+                ).fetchone()
+            )
             return {
                 "operation_id": row["id"],
                 "kind": row["kind"],
                 "adm_id": row["adm"],
                 "status": "deleted" if deleted else row["status"],
                 "result": loads(row["result"]) if row["result"] and not deleted else None,
-                "error": failure(
-                    "internal_error",
-                    "Operation interrupted or rejected; inspect before retrying",
-                    "reconcile",
-                )
-                if row["error"]
-                else None,
+                "error": error,
+                "retry_new_creation": retry_creation,
             }
 
     def run_operation(self):
@@ -264,9 +308,7 @@ class Coordinator:
                 # Reserve first; save the link before checking. Recovery can reconcile
                 # a committed instance without ever creating a duplicate.
                 with self.store.lock:
-                    key = self.store.reserve(body["name"])
-                    with self.store.db() as db:
-                        db.execute("UPDATE operations SET adm=? WHERE id=?", (key, row["id"]))
+                    key = self.store.reserve(body["name"], operation_id=row["id"])
                 try:
                     prepared = self.runtime.supervisor.run(
                         {
@@ -300,11 +342,11 @@ class Coordinator:
                 db.execute(
                     "UPDATE operations SET status='succeeded',result=? WHERE id=?", (dumps(result), row["id"])
                 )
-        except Exception:
+        except Exception as exc:
             with self.store.db() as db:
                 db.execute(
-                    "UPDATE operations SET status='failed',error='operation_failed' WHERE id=? AND status!='deleted'",
-                    (row["id"],),
+                    "UPDATE operations SET status='failed',error=? WHERE id=? AND status!='deleted'",
+                    (dumps(operation_error(exc)), row["id"]),
                 )
         return True
 

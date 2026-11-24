@@ -4,6 +4,8 @@ The service exposes model, learning, source, connection and conversational resou
 
 The public API runs at `http://127.0.0.1:9527/api/v1`. It exposes independent ADM initialization, durable local requests, exact result bindings, owner settings/requirements, bounded model operations and retained events. The [browser console](CONSOLE.md) uses these same routes for owner workflows. [Bounded learning and provider dispatch](LEARNING.md) use separate owner-authorized resources. A gap alone does not create a provider grant: an explicit episode can attach eligible requests, retain their learning interests, and trigger a new local attempt after checked publication. Provider output is never substituted for a request result.
 
+The request union includes `recall_evidence`: 1–32 exact entity/predicate selectors, `limit` up to 100 and a context-bound cursor, returning attributed accepted records across their recorded scopes. It adds no endpoint or model mutation. See [evidence recall](EVIDENCE_RECALL.md) and its [schema](../contracts/schemas/RecallQuery.schema.json).
+
 ## Direct interaction resources
 
 Historical structured queries support `lookup_fact` with `effective_at`, and `lookup_fact_period` with inclusive `effective_from` and exclusive `effective_to`. Both use canonical UTC instants, an `entity_id` and a `predicate`. Automatic Ask preserves calendar-date precision using the captured system timezone unless the user specifies one. See [temporal semantics](TEMPORAL_INTERPRETATION.md) and [sources](SOURCES.md) for full-period support requirements. Existing instant queries and stored artifact profiles are unchanged.
@@ -26,11 +28,13 @@ All paths below are relative to `/api/v1` and use the shared local workspace bou
 | `/adms/{adm}/interpretation-sessions`, `/interpretations` | Explicit preview, clarification and confirmation APIs |
 | `/adms/{adm}/attachments`, `/intake` | Immutable upload, selected originals and bounded producer routes |
 
-For example, send `{"text":"Can one more item be borrowed when one is already borrowed and one is available?","idempotency_key":"question-1"}` to the model's Ask endpoint. Read the returned interaction until its outcome is ready. Teach accepts the same shape and automatically checks and publishes clear requests; `reply_to` associates a clarification with its original exchange. Ask cannot silently teach.
+For example, send `{"text":"Can one more item be borrowed when one is already borrowed and one is available?","idempotency_key":"question-1"}` to the model's Ask endpoint. Read the returned interaction until its outcome is ready. Teach accepts the same shape and automatically checks and publishes clear requests; `reply_to` associates a clarification with its original exchange. Ask cannot silently teach. Teach replies preserve bounded unfinished-task inputs even after a clarification was answered; completed or cancelled work is not replayed. Preparation failures can include additive `failure_diagnostics` with bounded `stage`, `code`, `message` and field-path `issues`. `failed` / `invalid_preparation` is not a request for user clarification; no automatic preparation retry follows it.
 
 `GET /adms/{adm}/history-options` retains revision-bound historical lookup metadata. Existing structured requests, requirements, snapshots, sources, feeds, proofs and diagnostic APIs remain available. Manual chat setup/decisions/renewal, separate connection-test/global-enable controls and financial mutation routes are retired. Historical price/allowance reads remain for retained accounting, not permission to issue new work.
 
-URL versioning remains `/api/v1` with no v2/v3 aliases. Core serialized profiles and snapshots are unchanged; owned operational schema is 17. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
+Successful historical Ask outcomes include additive `value_metadata` with `unit` (exact checked string or null when unavailable) and `query_scope` (a point with `effective_at`, or an interval with inclusive `effective_from` and exclusive `effective_to`). Compact/fallback answers and narration use the same bound metadata. Null or absent legacy metadata does not mean unitless. Unsuccessful/unknown answers do not gain successful-value metadata. This presentation projection does not change the authoritative result, query/result digests or stored model/snapshot profiles; see [Ask](ASK.md).
+
+URL versioning remains `/api/v1` with no v2/v3 aliases; owned operational schema is 18. Core encodings remain compatible. Snapshots containing typed temporal evidence use the [required-feature service envelope](TEMPORAL_EVIDENCE.md); legacy-only snapshots retain their existing transport. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
 
 ## Open the local workspace
 
@@ -62,9 +66,11 @@ python3 scripts/api_client.py /api/v1/operations/OPERATION_UUID
 
 Creation returns `202` and an operation resource. Poll until `succeeded` or `failed`. A successful operation identifies the new ADM; an empty ADM has no domain declarations. HTTP disconnect does not cancel creation or lose its durable identity.
 
+Failed creations retain safe diagnostics, including `resource_exhausted` with `details.reason=model_limit_reached` when capacity is full. An operation's `retry_new_creation` is true only for a terminal failed creation with no allocated model and no unresolved legacy orphan reservation. It permits an explicitly requested new attempt after addressing the cause; it does not enqueue one. Reusing the old idempotency key always returns the old operation. Allocated or uncertain operations must be reconciled first. Historical generic errors remain generic rather than acquiring an invented cause.
+
 | Route, relative to `/api/v1` | Contract |
 | --- | --- |
-| `GET /adms` | Bounded by configured instance count; scoped clients see only authorized instances. |
+| `GET /adms` | List workspace models, bounded by the configured instance count; trusted local clients share workspace access. |
 | `POST /adms` | Owner-only idempotent operation. Body has key, name, mode and optional `snapshot`. |
 | `GET /operations` | Owner-only latest 50 metadata summaries, without snapshot bodies. |
 | `GET /operations/{id}` | Owner operation status, resulting ADM identity or snapshot, and safe failure. |
@@ -82,6 +88,10 @@ A snapshot transport is `{manifest: BASE64, files: {ARTIFACT_PATH: BASE64}}`, ca
 Imports recheck finite content, evidence closure, typed state and the actual owner policy. They do not import proof status or operational authority. Exports preserve the source ADM identity as provenance and exclude requests, credentials, attempts, consumers and jobs. Neither operation is an operational backup.
 
 Creation and model-operation idempotency keys are installation-scoped. Request keys are ADM-scoped. Identical validated canonical input returns the same resource; changed input under the same key returns `409`. The shared local HTTP boundary is checked on every replay. Failed operations keep their identity; an explicit new key is needed for a new operation. A committed instance can be reconciled with its operation after restart without creating a duplicate. A failed validation never produces a ready instance.
+
+## Teaching readiness metadata
+
+Ordinary Teach interaction reads may include `preparation_assessment`, described in [preparation readiness](PREPARATION_READINESS.md). A `missing_information` assessment yields `needs_input` with the natural-language question in `reply`; continue through the existing `reply_to` field. `unsupported_capability` yields `unsupported`. Inconsistent provider assessments fail preparation with sanitized diagnostics. This optional metadata changes no endpoint, request shape or model validation; historical interactions need not contain it.
 
 ## Durable local requests
 
@@ -187,3 +197,11 @@ Connection failures, malformed or incomplete output, transport errors and unknow
 Direct Ask/Teach accept an optional `If-Match` revision ID. The connector supplies it on every new submission. The service resolves an identical idempotent replay before testing freshness; stale new work returns `409 stale_context` before provider dispatch. A changed body under an existing identity remains a conflict.
 
 Teach views include typed `admissions`, projected from retained local receipts. Each identifies its objective, receiver sequence, actual status/mode, base and decision revisions, accepted revision, declaration/support effects and checked diagnostics when available. Classifications distinguish `accepted`, `preservation_conflict`, `checked_violation` and `unresolved`. Backward rejection of a replacement is not a proof of logical contradiction. Older receipts may lack added revision/effect metadata; missing values stay null. Both acquisition and source-projection receipts are included, ordered by receiver sequence. Accepted `effects.change_report` compares checked before/after definitions and evidence; `teaching.summary.changes` combines bounded publication reports with receipt/revision references. Preserved dependent definitions are distinct from logical rule changes even if their artifact IDs were replaced. Completeness and abbreviation flags are explicit; no receipt implies every objective succeeded. See [change reporting](CHANGE_REPORTING.md).
+
+## Temporal evidence
+
+Typed temporal evidence uses `query_evidence` on the same durable request route. Its five intents, semantic catalog, result metadata, bounded collection cursors and snapshot feature envelope are specified in [Temporal evidence](TEMPORAL_EVIDENCE.md). Current material-aware preparation uses reply `/5` with `evidence_scope`; earlier reply/profile readers remain selected by retained task provenance.
+
+## Preparation provider failures
+
+A failed Teach preparation retains its specific `failure_code` and optional `failure_diagnostics` in the task and direct interaction. The latter includes `stage: provider`, a fixed readable message, `grant_id`, `dispatch_status`, `configured_timeout_ms`, `provider_diagnostics`, known `usage`, `usage_unresolved` and `automatic_retry: false`. Gateway outcomes carry optional allowlisted transport reason/stage, elapsed and available time, observed HTTP status and child exit code. See [provider failures](PROVIDER_FAILURES.md). The preparation default is three minutes; an existing grant retains its original deadline. Public paths, plugin signatures, local validators and stored model profiles are unchanged.

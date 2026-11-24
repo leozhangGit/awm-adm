@@ -1,6 +1,10 @@
 # Teaching through conversation
 
+See [knowledge intent](KNOWLEDGE_INTENT.md) for adopted rules, sourced observations, model-relative premises and exploratory or quoted material.
+
 Open a model's Teach tab, describe a rule or supply a text/Markdown file, and send. An enabled [connection](CONNECTION.md) is the only remote setup. The service prepares the intended finite meaning, acquires candidate definitions or extracts supplied facts, checks them locally and publishes accepted work automatically. It asks a question when meaning or a necessary protected decision is unclear. There is no routine prepare/start/approve sequence or financial allowance.
+
+Preparation makes the intended subject/property/value or event scope queryable, keeping observation and source clocks separate. A saved calculation is earlier attributed evidence; a reusable computation requires an executable capability. Successful admission does not certify every intended natural-language question. See [queryable knowledge](EVIDENCE_RECALL.md).
 
 ## What the model learns
 
@@ -10,7 +14,29 @@ Shared [meaning and representation guidance](TEMPORAL_INTERPRETATION.md) explain
 
 The service captures current revision, support, owner policy, source policy and vocabulary. A clear local Teach submission authorizes its checked execution. This authority is recorded as automatic teaching, not as individual human review. Existing independent requirements remain mandatory and cannot be weakened through a teaching proposal. A request to create new independent acceptance requirements needs a separate policy decision; the structured requirements API remains available.
 
+## Preparation inputs and evidence
+
+Preparation provider calls have a three-minute default deadline, within the exchange's existing active-work bound. A timeout ends preparation without starting learning and preserves unknown provider completion/usage. The chat and plugin retain a specific failure reason, timing and dispatch identity rather than treating every failure as a disabled or unavailable connection. See [provider deadlines and diagnostics](PROVIDER_FAILURES.md); local plan and admission validation remains unchanged.
+
+[Preparation readiness](PREPARATION_READINESS.md) uses separate structured information gaps and capability limits. The service derives `needs_input`, `unsupported` or readiness from this assessment. Missing inputs produce a focused question; invalid generated structure fails preparation. No partial plan or assessment bypasses local validation.
+
+Each new task retains a service-owned `awm-adm-teaching-materials/1` manifest before dispatch. The [provider reply contract](../contracts/teaching-readiness-reply.schema.json), `awm-adm-teaching-reply/6`, proposes one finite `plan.evidence_scope` catalog for all selected source material. It can combine exact instants, uncertain occurrences, validity intervals and whole-period values, preserving attributed reports separately from actual outcomes. Each source child selects its own `material_ids` from the manifest; it cannot invent source permissions or physical evidence identities. Capability-only plans use a null catalog. The service expands the shared catalog into the checked `awm-adm-teaching-plan/2` contract. Existing material, carrier, scope, source and admission checks remain authoritative. Retained preparation profiles use their recorded decoders, including the [shared-projection reply](../contracts/teaching-shared-reply.schema.json); they are never silently reinterpreted or retried. See [temporal evidence](TEMPORAL_EVIDENCE.md) for identity, limits and compatibility.
+
+The shared mapping describes permitted entities, predicates and time cells, not observed facts. Unobserved combinations remain unknown. Compatible facts may share a mapping within the current source-policy and finite limits, including at most 4,096 entity–predicate–time combinations. Different units, incompatible carriers or temporal meanings must not be coerced to fit; unsupported meaning reports its concrete limit, and missing meaning can require clarification.
+
+Fresh material-aware preparation uses prompt `adm-teaching-preparation/16` with reply profile 6; preparation without a material manifest uses prompt `/17` with reply profile 7. Retained work is decoded using its dispatched provenance: prompts 3–7 and 13 use reply 2, prompt 8 uses reply 3, prompt 9 uses reply 4, prompts 10–12 use reply 5, and prompts 14/15 use replies 6/7 respectively. Saved work is not rewritten or automatically retried.
+
+All intention turns remain linked through child `input_ids`. Evidence selection is separate: choose original messages and/or selected files containing observations or explicitly adopted model premises with their scope. Exclude replies that supply only instructions or representation bounds, while retaining them as linked context. Pasted originals in one explicit Teach lineage share a source collection and retain distinct items, exact UTF-8 digests and original conversation/turn origins. Selected uploads keep their original identities. Supplied materials share a conservative evidence group unless an existing independent source policy says otherwise; splitting a conversation does not establish independent corroboration. Cited URLs are attribution, not proof of fetching or external verification.
+
+The same resolver checks selected identities, input links, permissions and original bytes before execution and ingestion. Unknown, duplicated, foreign, unselected or changed references fail before source-policy mutation or publication. Instructions are not automatically observations, and a selected file does not suppress selected pasted evidence.
+
+An explicit reply to unfinished preparation retains its chosen task lineage even if the earlier clarification is already answered. It preserves up to four inputs and the existing 24 KiB encoded input limit. Separate branches do not acquire each other's replies. Accepted/executing/cancelled work is not replayed; accepted knowledge is consulted through the current model. Overflow requires a focused restatement, without silently dropping original facts.
+
+Entity identifiers, nonempty units (including `unitless` when appropriate), bounds and temporal encodings follow shared model-neutral guidance. Local validators remain authoritative; missing meaning asks a question, whereas an invalid generated field or evidence reference produces `failed` / `invalid_preparation` with bounded stage/code/path diagnostics. Such a failure creates no clarification question and no automatic preparation retry. Failed checked specifications are retained for diagnosis but cannot execute.
+
 ## Learning and admission
+
+Temporal catalogs receive field-level guidance for qualified predicate symbols, exact units, finite carriers and scope semantics. Exact instant coordinates use second precision and no end; uncertain occurrences retain bounded windows. Sanitized diagnostics preserve `evidence_scope` paths and add fixed identifier/time contract hints. No generated value is silently prefixed, coerced or repaired, and these annotations do not replace local validation.
 
 The existing private construction engine performs propose/check/diagnose/revise. Complete candidates pass full admission; partial and rejected drafts never serve queries. Children have immutable acquisition contracts and dependency order. Each child allows at most two acquisition attempts, with finite work and call time/output bounds. Checked diagnostics can guide a revision; an unknown dispatched outcome is never automatically retried. The running task has a finite execution window, but idle clarification replies do not expire.
 
@@ -27,6 +53,12 @@ Files are stored with their name, content hash and exact original bytes. Uploadi
 A prepared fact scope selects finite entities, predicates, units and time cells. The service installs an initial source mapping when justified by the teaching request, or reuses an existing mapping. A later request can reuse a subset or add finite coverage through the existing checked coverage-extension operation. Every retained time cell, predicate carrier and unit is preserved; overlapping reinterpretation or a changed value range requires clarification. Existing facts remain supported, and uncovered dates remain unknown.
 
 Managed source work uses the existing durable feed queue with throttling, per-item computation and dispatch identities. Clear extracted claims proceed through local validation and admission with `automatic_teach` provenance; they are not labeled individually owner-reviewed. Corrections retain source versions and supersession history. Missing, disputed, rejected or unsupported evidence remains unresolved. Source/feed APIs also remain available for explicit ingestion and bounded connector workflows.
+
+## Clarified source material
+
+For a one-shot source task continued through clarification, the service processes selected originals and linked textual replies together. It creates an immutable selected-material packet with original source/item/version references, content hashes and UTF-8 payload offsets. Unselected uploads and unrelated history are excluded. The packet is ordinary source text under the existing extraction, span, temporal, projection and admission checks; its metadata and instructions do not assert facts. No partial packet is dispatched if existing input or byte bounds are exceeded.
+
+Original messages/uploads remain intact. Accepted evidence and snapshots retain the complete packet, so its interpretation does not depend on later chat-history retention. Correcting an included original source holds affected packet-supported facts through the existing source-dispute mechanism. A fresh extraction or projection cannot reuse the packet to bypass a known original-source correction. Historical executions keep their original material/dispatch identities. Standing queues retain per-item processing.
 
 ## Completion, failure and recovery
 

@@ -6,6 +6,8 @@ from uuid import uuid4
 from ..feeds.service import FINAL as FEED_FINAL
 from ..learning.service import fault, fingerprint
 from ..runtime.protocol import RuntimeFault, dumps, loads
+from ..teaching.diagnostics import PreparationError
+from ..teaching.materials import originals
 from .coverage import extend
 from .models import AppendInput, Upload
 
@@ -101,14 +103,19 @@ class Intake:
 
     def disclosed(self, key, task):
         materials = []
+        seen = set()
         for entry in task["inputs"]:
             for meta in entry.get("attachments", []):
                 material = self.material(key, meta["id"])
                 if material["metadata"] != meta:
                     fault("stale_context", "Uploaded material binding changed")
+                if task.get("material_manifest") and meta["id"] in seen:
+                    continue
+                seen.add(meta["id"])
                 materials.append(
                     {
                         "input_id": entry["id"],
+                        **({"material_id": "upload_" + meta["id"]} if task.get("material_manifest") else {}),
                         **material["source"],
                         "byte_count": meta["byte_count"],
                         "content_digest": meta["content_digest"],
@@ -153,7 +160,7 @@ class Intake:
                     ],
                     "coverage": [
                         f"{c['effective_from']} to {c['effective_to']} (end excluded)"
-                        if c["kind"] == "interval"
+                        if c["kind"] in ("interval", "validity", "period_value", "occurrence")
                         else c["effective_from"]
                         for c in projection["cells"]
                     ],
@@ -199,12 +206,16 @@ class Intake:
         policy = self.sources.policy(key)
         projections = [c["material"]["projection"] for c in children]
         if any(p != projections[0] for p in projections):
-            fault("needs_specification", "Use one finite source projection per task")
+            raise PreparationError("sources", "multiple_projections")
         extend(policy.get("projection"), projections[0])
-        actual = {m["source_id"] for m in self.disclosed(key, task)}
-        allowed = {s["source_id"] for c in children for s in c["material"]["sources"]}
-        if not actual <= allowed or (not actual and not task.get("source_queue") and len(allowed) != 1):
-            fault("needs_specification", "Source mapping must cover the supplied attachments")
+        if task.get("material_manifest"):
+            for child in children:
+                self.selected(key, task, child)
+        else:
+            actual = {m["source_id"] for m in self.disclosed(key, task)}
+            allowed = {s["source_id"] for c in children for s in c["material"]["sources"]}
+            if not actual <= allowed or (not actual and not task.get("source_queue") and len(allowed) != 1):
+                raise PreparationError("materials", "legacy_source_mapping_mismatch")
         if task.get("source_queue") and len(task["specification"]["children"]) != 1:
             fault("needs_specification", "Use one material scope for a standing source queue")
         if any(not c["material"] for c in task["specification"]["children"]) and task.get("source_queue"):
@@ -217,6 +228,10 @@ class Intake:
         self.rt.learning._usable(
             task["execution"]["connection_id"], task["execution"]["connection_version"], "extraction"
         )
+
+    def selected(self, key, task, child):
+        with self.store.db(key) as db:
+            return originals(db, key, task, child, child.get("material_ids", []))
 
     def parent_valid(self, key, uid, *, allow_review=False):
         task = self.t.get(key, uid)
@@ -276,6 +291,8 @@ class Intake:
         children = [c for c in task["specification"]["children"] if c["material"]]
         if not children:
             return False
+        from . import context as source_context
+
         policy = self.sources.policy(key)
         permissions = {s["source_id"]: s for s in policy.get("sources", [])}
         for child in children:
@@ -284,6 +301,10 @@ class Intake:
                     **permissions.get(permission["source_id"], permission),
                     "allow_external": True,
                 }
+        if source_context.enabled(task):
+            for child in children:
+                permission = source_context.permission(task, child)
+                permissions[permission["source_id"]] = permission
         body = {
             "expected_revision": run["context"]["revision_id"],
             "expected_generation": policy["generation"],
@@ -331,7 +352,9 @@ class Intake:
             for uid in metas
             if metas[uid]["source_id"] in {s["source_id"] for s in child["material"]["sources"]}
         ]
-        if not selected and not task.get("source_queue"):
+        if task.get("material_manifest"):
+            selected = self.selected(key, task, child)
+        elif not selected and not task.get("source_queue"):
             source_ids = [s["source_id"] for s in child["material"]["sources"]]
             if len(source_ids) != 1:
                 step.update(status="unresolved", reason="material_missing")
@@ -349,15 +372,26 @@ class Intake:
                 }
                 for i in child["input_ids"]
             ]
+        from . import context as source_context
+
+        packet = None
+        if source_context.enabled(task):
+            with self.store.db(key) as db:
+                selected, packet = source_context.selected(db, key, task, child)
         # Durable intents survive acknowledgement loss, including a support-changing correction.
         if not step.get("source_intent"):
             with self.store.db(key) as db:
                 cursor = db.execute("SELECT COALESCE(max(seq),0) FROM source_versions").fetchone()[0]
-            step["source_intent"] = {"idempotency_key": step["id"], "items": selected}
+            step["source_intent"] = {
+                "idempotency_key": step["id"],
+                "items": selected + ([packet] if packet else []),
+            }
             step["source_cursor"] = cursor
             self.execution.persist(key, task)
         if step["source_intent"]["items"]:
             self.sources.ingest(key, step["source_intent"], parent_task=task["id"])
+        if packet:
+            selected = [packet]
         # Ingestion may advance support; use its atomic parent binding, not this stale copy.
         task = self.t.get(key, task["id"])
         run = task["execution"]
@@ -369,7 +403,9 @@ class Intake:
                 "name": child["objective"][:128],
                 "expected_revision": run["context"]["revision_id"],
                 "expected_source_generation": run["context"]["source_policy_generation"],
-                "source_ids": [s["source_id"] for s in child["material"]["sources"]],
+                "source_ids": [packet["source_id"]]
+                if packet
+                else [s["source_id"] for s in child["material"]["sources"]],
                 "enabled": True,
                 "publication": "review",
                 "extractor": "external",
@@ -481,10 +517,14 @@ class Intake:
             attention_items.append(
                 {
                     "label": (source.get("origin") or "Supplied material").removeprefix("attachment:")[:120],
-                    "reason": str(row.get("reason") or row["status"]).replace("_", " ")[:160],
+                    "diagnostic": row.get("diagnostic"),
+                    "reason": str(
+                        (row.get("diagnostic") or {}).get("message") or row.get("reason") or row["status"]
+                    ).replace("_", " ")[:300],
                 }
             )
         progress["attention_items"] = attention_items[:5]
+        progress["attention_complete"] = len(attention_items) <= 5
         changed = step.get("source_progress") != progress
         step["source_progress"] = progress
         for row in pending:
@@ -541,12 +581,21 @@ class Intake:
             )
         )
         if complete:
+            checked_reasons = list(
+                dict.fromkeys((r.get("diagnostic") or {}).get("message") for r in rows if r.get("diagnostic"))
+            )
             step.update(
                 status="accepted"
                 if counts["accepted"] == len(rows) and not (backlog and feed.get("intake_exhausted"))
                 else "unresolved",
                 reason=feed.get("intake_exhausted")
-                or (None if counts["accepted"] == len(rows) else "source_items_need_attention"),
+                or (
+                    None
+                    if counts["accepted"] == len(rows)
+                    else "; ".join(checked_reasons)
+                    if checked_reasons
+                    else "source_items_need_attention"
+                ),
             )
             with self.store.db(key) as db:
                 feed["enabled"] = False

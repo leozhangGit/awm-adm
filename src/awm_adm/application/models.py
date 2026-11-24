@@ -46,6 +46,7 @@ class EventPage(ClosedModel):
 
 
 class Operation(ClosedModel):
+    retry_new_creation: bool = False
     operation_id: str
     kind: str
     adm_id: str | None

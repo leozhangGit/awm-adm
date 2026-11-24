@@ -109,6 +109,13 @@
         "episode": {
           "$ref": "#/$defs/EpisodeLimits"
         },
+        "preparation_timeout_ms": {
+          "default": 180000,
+          "maximum": 300000,
+          "minimum": 1,
+          "title": "Preparation Timeout Ms",
+          "type": "integer"
+        },
         "publication": {
           "default": "review",
           "enum": [

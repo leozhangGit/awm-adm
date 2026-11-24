@@ -26,6 +26,8 @@ A deterministic summary reports accepted and unresolved objectives, vocabulary i
 
 Stable child creation intents prevent duplicate episodes after lost acknowledgments. Startup retains known work and accepted children. Unfinished preparation and uncertain outbound handoffs stop without automatic redispatch. Completion narration is not repeated on restart. Historical manual preparations remain readable and require a new ordinary submission to continue.
 
+Source failures retain their concrete child reasons and provider diagnostics in the completion packet. Empty extraction, missing evidence, queue expiry and a dispatched timeout remain distinct. If unresolved learning prevents vocabulary installation, the summary says that language setup was skipped.
+
 Vocabulary is checked against accepted declarations before installation. Existing internally bound local-query follow-up preserves the original request and creates a separately identified new result. Ordinary Ask gaps remain unknown until the user chooses to teach; they do not automatically initiate acquisition.
 
 [Change reports](CHANGE_REPORTING.md) compare the checked before/after definitions and evidence for acquisition and source publications. Completion distinguishes a changed definition, an unchanged dependent rechecked with updated bindings, evidence-only updates and active removals. Reports retain exact publication revisions and explicitly mark missing or abbreviated details. The existing narration call explains this packet; no additional provider call or query is needed.

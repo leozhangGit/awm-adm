@@ -104,12 +104,24 @@ def local_spans(source):
 
 def extract(task, budget):
     source, profile = task["source"], task.get("projection")
+    from ..temporal_evidence.identity import resolve as temporal_resolve
+    from ..temporal_evidence.legacy import is_catalog
+    from ..temporal_evidence.models import Claim as TemporalClaim
+    from ..temporal_evidence.models import Extracted, Extraction
+
+    modern = is_catalog(profile)
     raw = source["content"].encode()
     if task["purpose"] == "schema":
-        proposal = Projection.model_validate(loads(task.get("provider_text", source["content"]))).model_dump()
+        from ..temporal_evidence.models import Catalog
+
+        proposal = (
+            (Catalog if modern else Projection)
+            .model_validate(loads(task.get("provider_text", source["content"])))
+            .model_dump()
+        )
         return {"status": "proposed_schema", "proposal": proposal, "claims": [], "work": budget.used}
     if "provider_text" in task:
-        output = ExtractionOutput.model_validate(loads(task["provider_text"]))
+        output = (Extraction if modern else ExtractionOutput).model_validate(loads(task["provider_text"]))
         rows = [
             (c.model_dump(exclude={"start_byte", "end_byte"}), c.start_byte, c.end_byte)
             for c in output.claims
@@ -121,18 +133,18 @@ def extract(task, budget):
     claims = []
     for index, (value, start, end) in enumerate(rows):
         budget.tick()
-        fact = ExtractedFact.model_validate(value).model_dump()
+        fact = (Extracted if modern else ExtractedFact).model_validate(value).model_dump()
         if not 0 <= start < end <= len(raw):
             raise ValueError("Invalid source span")
         raw[:start].decode()
         raw[start:end].decode()
         raw[end:].decode()
-        cells, reason = resolve(profile, fact)
+        cells, reason = (temporal_resolve if modern else resolve)(profile, fact)
         record = source["record"]
         span = {k: record[k] for k in ("source_id", "item_id", "version_id", "content_digest")}
         span.update(start_byte=start, end_byte=end)
         uid = task["job_id"] + ":" + str(index)
-        item = FactClaim(
+        item = (TemporalClaim if modern else FactClaim)(
             claim_id=uid, source=span, status="candidate" if not reason else "needs_evidence", **fact
         ).model_dump()
         claims.append(
@@ -148,12 +160,17 @@ def extract(task, budget):
     return {"status": "extracted" if claims else "needs_specification", "claims": claims, "work": budget.used}
 
 
-def projected(checked, budget):
+def legacy_projected(checked, budget, modern=None):
     result, source_cache = {}, {}
     for symbol, origin_key in checked["support"].items():
         budget.tick()
         origin = read_json(checked["blobs"][origin_key])
         notes = [thaw(read_json(checked["blobs"][key]))["content"] for key in origin["evidence"]]
+        if modern is not None and any(
+            isinstance(n, dict) and str(n.get("profile", "")).startswith("awm-adm-temporal-binding/")
+            for n in notes
+        ):
+            modern.append(symbol)
         entries = [n for n in notes if isinstance(n, dict) and n.get("profile") == "awm-adm-projected-fact/1"]
         if not entries:
             continue
@@ -201,6 +218,23 @@ def projected(checked, budget):
     return result
 
 
+def temporal_entries(checked, budget):
+    from ..temporal_evidence.reader import read
+
+    return read(checked, budget, legacy_projected(checked, budget))
+
+
+def projected(checked, budget):
+    modern = []
+    old = legacy_projected(checked, budget, modern)
+    if not modern:
+        return old
+    from ..temporal_evidence.reader import read
+
+    entries = read(checked, budget, old)
+    return {s: e["legacy"] if e["legacy"] is not None else e for s, e in entries.items()}
+
+
 def declaration(profile, fact):
     pred = next(p for p in profile["predicates"] if p["symbol"] == fact["predicate"])
     carrier = (
@@ -228,6 +262,21 @@ def compute(task, budget):
         if not checked["conformance"].get("contracts"):
             raise ValueError("Checked automatic feeds require installed independent behavioral requirements")
         return {"work": budget.used}
+    if task["operation"] == "source_coverage":
+        from ..temporal_evidence.legacy import is_catalog
+
+        if is_catalog(task["projection"]) or is_catalog(task["old_projection"]):
+            from ..temporal_evidence.coverage import check
+
+            check(task, checked, budget)
+            task = {
+                **task,
+                "operation": "source_dispute",
+                "coverage": task["projection"],
+                "all_sources": False,
+                "superseded": [],
+                "reason": "outside_selected_coverage",
+            }
     if task["operation"] == "source_coverage":
         old = Projection.model_validate(task["old_projection"]).model_dump()
         new = Projection.model_validate(task["projection"]).model_dump()
@@ -269,6 +318,16 @@ def compute(task, budget):
             "reason": "outside_selected_coverage",
         }
     if task["operation"] == "source_project":
+        from ..temporal_evidence.legacy import is_catalog
+
+        if is_catalog(task["policy"]["projection"]):
+            from ..temporal_evidence.compiler import project
+            from ..temporal_evidence.diagnostics import UnsupportedTemporal
+
+            try:
+                return project(task, checked, budget, temporal_entries(checked, budget))
+            except UnsupportedTemporal as error:
+                return {"status": "unsupported", "diagnostic": error.as_dict(), "work": budget.used}
         profile = Projection.model_validate(task["policy"]["projection"]).model_dump()
         existing = projected(checked, budget)
         declarations, artifacts, support, cells = {}, {}, {}, {}
@@ -374,13 +433,22 @@ def compute(task, budget):
         affected = []
         for symbol, entry in projected(checked, budget).items():
             identity = entry["claim"]["source"]
-            if task.get("coverage") and entry["cell"] in task["coverage"]["cells"]:
-                continue
+            from .bundles import references
+
+            source = thaw(read_json(blobs[entry["source_evidence"]]))["content"]
+            identities = [
+                [identity[k] for k in ("source_id", "item_id", "version_id")],
+                *references(source["content"]),
+            ]
+            if task.get("coverage"):
+                from ..temporal_evidence.coverage import retained
+
+                if retained(entry, task["coverage"]):
+                    continue
             if (
                 not task.get("coverage")
                 and not task.get("all_sources")
-                and [identity["source_id"], identity["item_id"], identity["version_id"]]
-                not in task["superseded"]
+                and not any(ref in task["superseded"] for ref in identities)
             ):
                 continue
             budget.tick()
@@ -421,9 +489,60 @@ def compute(task, budget):
     raise ValueError("Unknown source operation")
 
 
-def query(checked, query, limits, budget):
+def query(checked, query, limits, budget, *, context=None):
     """Return None for ordinary supported queries, or a bound local fact result/hold."""
     model, entries = checked["model"], projected(checked, budget)
+    if query["op"] in {"query_evidence", "recall_evidence"}:
+        from ..temporal_evidence.query import lookup
+        from ..temporal_evidence.recall import lookup as recall
+
+        read = recall if query["op"] == "recall_evidence" else lookup
+        return read(checked, query, temporal_entries(checked, budget), limits, budget, context=context)
+    if query["op"] in ("lookup_fact", "lookup_fact_period"):
+        modern = [
+            e
+            for e in entries.values()
+            if e.get("profile") == "awm-adm-temporal-binding/1"
+            and e["claim"]["entity_id"] == query["entity_id"]
+            and e["claim"]["predicate"] == query["predicate"]
+        ]
+        if modern:
+            unsafe = any(
+                e["series"]["statement_level"] != "direct" or e["cell"]["kind"] not in ("instant", "validity")
+                for e in modern
+            )
+            if unsafe:
+                return bind_result(
+                    model.version,
+                    query,
+                    {
+                        "status": "needs_input",
+                        "error": {
+                            "code": "needs_evidence",
+                            "message": "Use query_evidence to select the typed temporal meaning",
+                        },
+                        "unknown": True,
+                        "work": budget.used,
+                        "guarantee": None,
+                    },
+                    [],
+                )
+            entries = {
+                s: (
+                    {
+                        **e,
+                        "cell": {
+                            "kind": "point" if e["cell"]["kind"] == "instant" else "interval",
+                            "granularity": "second",
+                            "effective_from": e["cell"]["effective_from"],
+                            "effective_to": e["cell"]["effective_to"],
+                        },
+                    }
+                    if e in modern
+                    else e
+                )
+                for s, e in entries.items()
+            }
     if query["op"] == "lookup_fact_period":
         from .period import lookup
 

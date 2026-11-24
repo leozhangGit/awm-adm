@@ -638,6 +638,8 @@ class LearningService:
                 ):
                     continue
                 try:
+                    if body.get("queue_deadline") is not None and self.now() >= body["queue_deadline"]:
+                        fault("queue_timeout", "Provider work exceeded its bounded queue wait")
                     if (
                         body.get("source_job_id")
                         and getattr(self.runtime, "conversations", None)
@@ -651,7 +653,7 @@ class LearningService:
                     ):
                         continue
                     self._grant_valid(body)
-                except RuntimeFault:
+                except RuntimeFault as error:
                     self.allowances.settle(db, row["id"], not_dispatched=True)
                     db.execute(
                         "UPDATE grants SET status='not_dispatched',calls=0,input_tokens=0,output_tokens=0,unresolved=0,outcome=? WHERE id=?",
@@ -659,7 +661,9 @@ class LearningService:
                             dumps(
                                 {
                                     "status": "not_dispatched",
-                                    "error": "authority_changed",
+                                    "error": "queue_timeout"
+                                    if error.code == "queue_timeout"
+                                    else "authority_changed",
                                     "usage": None,
                                     "text": None,
                                 }

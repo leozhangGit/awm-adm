@@ -3,18 +3,11 @@
 from datetime import datetime
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic import Field, JsonValue, model_validator
 
-Identifier = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")]
-Digest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
-Symbol = Annotated[str, Field(max_length=200, pattern=r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$")]
-Module = Annotated[str, Field(max_length=200, pattern=r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")]
-ShortText = Annotated[str, Field(min_length=1, max_length=4096)]
-Epoch = Annotated[int, Field(ge=0, le=9_007_199_254_740_991)]
-Positive = Annotated[int, Field(ge=1, le=9_007_199_254_740_991)]
-Instant = Annotated[
-    str, Field(pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", json_schema_extra={"format": "date-time"})
-]
+from .boundary import ClosedModel, Digest, Epoch, Identifier, Instant, Module, Positive, ShortText, Symbol  # noqa: F401
+from .temporal_evidence.types import EvidenceQuery, RecallQuery
+
 Purpose = Literal[
     "connection_test",
     "interpretation",
@@ -65,10 +58,6 @@ ErrorCode = Literal[
     "not_implemented",
     "internal_error",
 ]
-
-
-class ClosedModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True, frozen=True, allow_inf_nan=False)
 
 
 class RequestLimits(ClosedModel):
@@ -160,7 +149,9 @@ Query = Annotated[
     | CheckCertificate
     | Explain
     | FactLookup
-    | FactPeriodLookup,
+    | FactPeriodLookup
+    | EvidenceQuery
+    | RecallQuery,
     Field(discriminator="op"),
 ]
 
@@ -533,6 +524,38 @@ class ProviderDiagnostics(ClosedModel):
     """Allowlisted metadata only; never arbitrary provider messages or reasoning."""
 
     http_status: int | None = Field(default=None, ge=100, le=599)
+    transport_failure: (
+        Literal[
+            "timeout",
+            "dns",
+            "tls",
+            "connection",
+            "http_protocol",
+            "response_too_large",
+            "transport_error",
+            "child_start_failed",
+            "child_exit",
+            "child_output_too_large",
+            "child_output_invalid",
+        ]
+        | None
+    ) = None
+    failure_stage: (
+        Literal[
+            "request",
+            "response_headers",
+            "response_body",
+            "transport",
+            "response_interpretation",
+            "gateway_start",
+            "gateway_wait",
+            "gateway_output",
+        ]
+        | None
+    ) = None
+    elapsed_ms: int | None = Field(default=None, strict=True, ge=0, le=86_400_000)
+    timeout_ms: int | None = Field(default=None, strict=True, ge=0, le=600_000)
+    child_exit_code: int | None = Field(default=None, strict=True, ge=-65536, le=65536)
     provider_status: (
         Literal["completed", "incomplete", "failed", "cancelled", "queued", "in_progress"] | None
     ) = None

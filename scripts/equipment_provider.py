@@ -4,7 +4,10 @@ from copy import deepcopy
 from pathlib import Path
 
 from awm_adm.runtime.protocol import dumps, loads
-from awm_adm.teaching.provider_format import PROFILE
+from awm_adm.teaching.provider_format import PROFILE, SHARED_PROFILE, TEMPORAL_PROFILE
+from awm_adm.teaching.readiness import LEGACY_PROFILE as ASSESSED_LEGACY_PROFILE
+from awm_adm.teaching.readiness import TEMPORAL_PROFILE as ASSESSED_PROFILE
+from awm_adm.temporal_evidence.legacy import view
 
 ROOT = Path(__file__).resolve().parents[1] / "examples/equipment"
 
@@ -146,16 +149,37 @@ def recorded_reply(wire):
             "vocabulary": {"aliases": {"borrow": ["equipment.can_borrow"]}},
             "requirements": None,
         }
-        return native_reply(
+        reply = native_reply(
             {
                 "status": "ready",
                 "message": "Review the borrowing rule and dated capacity scope.",
                 "plan_json": dumps(plan).decode(),
             }
         )
+        if "material_manifest" in ctx:
+            reply["profile"] = SHARED_PROFILE
+            material = reply["plan"]["children"][1]["material"]
+            reply["plan"]["source_projection"] = material.pop("projection")
+            material.pop("sources")
+            material["material_ids"] = [
+                entry["id"] for entry in ctx["material_manifest"]["entries"] if entry["kind"] == "upload"
+            ]
+        if any(p in body.get("instructions", "") for p in (TEMPORAL_PROFILE, ASSESSED_PROFILE)):
+            reply["profile"] = TEMPORAL_PROFILE
+            scope = view(reply["plan"].pop("source_projection"))
+            for cell in scope["cells"]:
+                cell.update(precision="second", timezone_basis="UTC")
+            reply["plan"]["evidence_scope"] = scope
+        for profile in (ASSESSED_PROFILE, ASSESSED_LEGACY_PROFILE):
+            if profile in body.get("instructions", ""):
+                reply.pop("status")
+                reply.update(
+                    profile=profile, missing_information=[], unsupported_capabilities=[], question=None
+                )
+        return reply
     if name == "adm_construction_v1":
         return fixture("recorded-acquisition.json")
-    if name == "adm_source_claims_v1":
+    if name in {"adm_source_claims_v1", "adm_temporal_claims_v1"}:
         content = ctx["source"]["content"]
         claims = []
         for year in (2025, 2026):
@@ -172,6 +196,15 @@ def recorded_reply(wire):
                     "end_byte": start + len(line.encode()),
                 }
             )
+        if name == "adm_temporal_claims_v1":
+            for claim in claims:
+                scope = claim["temporal_scope"]
+                scope["kind"] = "instant" if scope["kind"] == "point" else "validity"
+                scope.pop("granularity", None)
+                scope.update(precision="second", timezone_basis="UTC")
+                claim.update(
+                    observed_time={"kind": "unknown"}, reported_time={"kind": "unknown"}, occurrence_id=None
+                )
         return {"claims": claims}
     if name == "adm_teaching_completion":
         return {

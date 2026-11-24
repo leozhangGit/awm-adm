@@ -6,9 +6,9 @@
 
 - One trusted local workspace, multiple independent models, one local host; no user login.
 - Linux ARM64 Docker containers; Python 3.13, Node 22 and Lean 4.19.0 are pinned in the build.
-- Owned SQLite schema 17 with transactional compatibility and paired-restore checks.
+- Owned SQLite schema 18 with transactional compatibility and paired-restore checks.
 - One test-and-enable connection using fixed provider transports; recorded adapters for automatic tests.
-- The public API uses `/api/v1`, with separate `interpretation-sessions` for manual previews and `conversations` for Ask/Teach. Artifact/profile versions remain unchanged for compatibility.
+- The public API uses `/api/v1`, with separate `interpretation-sessions` for manual previews and `conversations` for Ask/Teach. Existing core encodings retain their meaning; new temporal evidence has distinct profiles and a required-feature snapshot envelope.
 
 ## Product capabilities
 
@@ -31,3 +31,7 @@ Federation, cluster reasoning/Byzantine coordination, public hosting, multiple a
 Follow [Installation](INSTALLATION.md). New stores start with no model or enabled provider connection. Existing supported installations retain their stores during ordinary restarts/updates; do not delete volumes for an update.
 
 Source exports contain standalone code, tests, fixtures and product documentation, with a SHA-256 inventory and no runtime credentials/history. See [Contributing](../CONTRIBUTING.md), [MIT license](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## Temporal evidence
+
+Mixed temporal evidence supports exact instants, uncertain occurrences, validity intervals, whole-period values and attributed reports in one ADM. Local scalar/collection queries retain exact units, source support and temporal intent. Partial accepted-interval resegmentation, implicit temporal aggregation and universal semantic alias resolution are not supported. See [temporal evidence](TEMPORAL_EVIDENCE.md).

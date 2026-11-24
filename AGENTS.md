@@ -20,7 +20,7 @@ Read `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md` and the relevant fea
 - Keep advanced model, proof, source, requirements and diagnostic capabilities accessible through appropriate APIs/library interfaces when their console panels are removed. Preserve current reasoning/resource defaults and full local validation; chat context is not the accepted theory. Distinguish automatic checking from actual human review in provenance.
 - Preserve immutable source bytes/spans, exact disclosure, typed historical intervals, unknown/disputed support and bounded push queues. Append credentials cannot read models or expand task/policy authority. No implicit pull connector is introduced.
 - Named deletion fences access/publication before durable cleanup. Preserve uncertain accounting, independent models and external backups. Logical deletion is not secure media erasure.
-- Current owned schema is 17. Preserve transactional supported migrations and paired restore. Foreign/future stores fail closed. Restore disables remote authority and revokes operational credentials.
+- Current owned schema is 18. Preserve transactional supported migrations and paired restore. Foreign/future stores fail closed. Restore disables remote authority and revokes operational credentials.
 
 ## Runtime and verification
 

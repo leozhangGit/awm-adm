@@ -64,5 +64,5 @@ stop:
 plugin-check:
 	.venv/bin/ruff check codex-plugin/src codex-plugin/tests codex-plugin/setup.py codex-plugin/launch.py
 	.venv/bin/ruff format --check codex-plugin/src codex-plugin/tests codex-plugin/setup.py codex-plugin/launch.py
-	$(UV) sync --locked --offline --no-editable --project codex-plugin --cache-dir .cache/uv --python .venv/bin/python --no-python-downloads
+	$(UV) sync --locked --offline --no-editable --reinstall-package awm-adm-codex-plugin --project codex-plugin --cache-dir .cache/uv --python .venv/bin/python --no-python-downloads
 	codex-plugin/.venv/bin/python -I -m unittest discover -s codex-plugin/tests -v

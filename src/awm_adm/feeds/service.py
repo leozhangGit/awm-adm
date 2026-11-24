@@ -398,6 +398,13 @@ class FeedService:
                     self.save_run(db, run)
                 return True
             job = self.sources.get(key, "source_jobs", run["job"])
+            if job["status"] in ("failed", "stopped", "cancelled", "needs_specification", "proposed_schema"):
+                from ..sources.diagnostics import outcome
+
+                run["diagnostic"] = outcome(job)
+                failure = self.sources.learning.provider_failure(job.get("grant_id"))
+                if failure:
+                    run["diagnostic"]["provider_failure"] = failure
             if job["status"] in ("failed", "stopped", "cancelled"):
                 self.finish(key, run, "dead_letter", job.get("error") or job["status"])
                 return True
@@ -435,6 +442,9 @@ class FeedService:
                 self.finish(key, run, ep["status"])
                 return True
             if ep["status"] in ("failed", "stopped", "cancelled"):
+                diagnostic = (ep.get("result") or {}).get("diagnostic")
+                if diagnostic:
+                    run["diagnostic"] = diagnostic
                 self.finish(key, run, "dead_letter", ep.get("error") or ep["status"])
                 return True
             if ep["status"] == "awaiting_review":

@@ -6,6 +6,7 @@ from pydantic import Field, model_validator
 
 from ..contracts import CallLimits, ClosedModel, Identifier
 from ..sources.models import Predicate, Projection
+from ..temporal_evidence.models import Catalog
 
 
 class FeedBudget(ClosedModel):
@@ -65,5 +66,5 @@ class CoverageInput(ClosedModel):
     expected_revision: Identifier
     expected_generation: int = Field(ge=1)
     kind: Literal["extend", "window"]
-    projection: Projection
+    projection: Projection | Catalog
     reason: str = Field(min_length=1, max_length=1024)

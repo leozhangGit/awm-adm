@@ -18,7 +18,7 @@ Private operator, worker and gateway channels retain their separate machine cred
 
 ## Persistence and upgrades
 
-Owned application schema 17 adds a persistent workspace identity. It preserves models, requirements, evidence, pending work, provider configuration and historical actor references. Legacy credential records are revoked; remaining account metadata is historical and does not gate access. New operations use an internal workspace actor, not a claimed authenticated human. Automatic checked learning is not individual human review.
+The service retains a persistent workspace identity alongside models, requirements, evidence, pending work, provider configuration and historical actor references. Migration revokes legacy credential records; remaining account metadata is historical and does not gate access. New operations use an internal workspace actor, not a claimed authenticated human. Automatic checked learning is not individual human review.
 
 Back up both stores before an upgrade. Schema-16 and other supported older backups remain readable; newer stores fail closed in older code. Restoring a backup disables provider dispatch and preserves uncertain accounting. Use the console directly after restoration; no password recovery is required. See [Operations](OPERATIONS.md).
 

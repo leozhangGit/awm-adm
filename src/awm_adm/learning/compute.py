@@ -149,8 +149,11 @@ def compute(task, budget):
             "work": budget.used,
         }
         if decision["status"] == "accepted":
+            from ..sources.compute import projected
             from .changes import publication_effects
 
+            after = {"model": instance._model, "support": instance._support, "blobs": instance._blobs}
+            projected(after, budget)
             result["effects"] = publication_effects(current, instance, budget)
             result.update(
                 snapshot=pack(instance.export_snapshot(budget=budget)),

@@ -95,6 +95,46 @@ def test_async_http_idempotency_and_atomic_completion(app_runtime):
         assert c.get("/api/v1/openapi.json").json()["paths"][url.replace(key, "{adm}")]["post"]
 
 
+def test_creation_reservation_and_operation_link_commit_together(app_runtime):
+    rt = app_runtime
+    with pytest.raises(RuntimeFault, match="no longer current"):
+        rt.store.reserve("Never committed", operation_id="absent-operation")
+    assert rt.store.list() == []
+    op = rt.coordinator.operation(
+        "create", {"name": "Atomic", "mode": "backward", "idempotency_key": "atomic"}
+    )
+
+    def failed_prepare(*args, **kwargs):
+        current = rt.coordinator.operation_info(op["operation_id"])
+        assert current["adm_id"] is not None
+        assert current["status"] == "running"
+        raise RuntimeError("private/path/and-sensitive-exception")
+
+    with patch.object(rt.supervisor, "run", side_effect=failed_prepare):
+        rt.coordinator.run_operation()
+    outcome = rt.coordinator.operation_info(op["operation_id"])
+    assert outcome["status"] == "failed" and outcome["retry_new_creation"] is False
+    assert "private/path" not in json.dumps(outcome)
+
+
+def test_legacy_failed_creation_requires_absence_of_orphan_reservation(app_runtime):
+    rt = app_runtime
+    op = rt.coordinator.operation(
+        "create", {"name": "Legacy", "mode": "backward", "idempotency_key": "legacy"}
+    )
+    with rt.store.db() as db:
+        db.execute(
+            "UPDATE operations SET status='failed',error='operation_failed' WHERE id=?", (op["operation_id"],)
+        )
+    before = rt.coordinator.operation_info(op["operation_id"])
+    assert before["retry_new_creation"] is True
+    assert before["error"]["code"] == "internal_error"  # Do not invent the lost historical cause.
+    orphan = rt.store.reserve("Interrupted legacy reservation")
+    assert rt.coordinator.operation_info(op["operation_id"])["retry_new_creation"] is False
+    rt.store.failed_creation(orphan)
+    assert rt.coordinator.operation_info(op["operation_id"])["retry_new_creation"] is False
+
+
 def test_concurrent_retries_share_one_resource(app_runtime):
     key = tank(app_runtime)
     with ThreadPoolExecutor(max_workers=8) as pool:

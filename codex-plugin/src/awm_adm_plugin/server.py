@@ -57,14 +57,20 @@ def adm_status(project_root: str | None = None, workspace_roots: list[str] | Non
     ),
 )
 def adm_project(
-    project_root: str | None = None, model_id: str | None = None, workspace_roots: list[str] | None = None
+    project_root: str | None = None,
+    model_id: str | None = None,
+    workspace_roots: list[str] | None = None,
+    retry_creation: str | None = None,
 ) -> dict[str, Any]:
     """Use AWM-ADM for the selected project. Create one empty backward model, or reuse its binding.
 
     An optional existing model_id must be explicitly selected by the user; never match by name.
+    After the user requests a new attempt for a failed creation, pass its exact operation UUID
+    as retry_creation only when adm_status reports retry_new_creation=true. Keep that value
+    for recovery; never rotate it automatically. Pending or uncertain work retains its identity.
     Existing forward/backward mode is preserved. No provider calls or configuration changes.
     """
-    return call("project", project_root, workspace_roots, model_id=model_id)
+    return call("project", project_root, workspace_roots, model_id=model_id, retry_creation=retry_creation)
 
 
 @server.tool(

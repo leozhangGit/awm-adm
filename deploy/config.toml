@@ -30,6 +30,7 @@ max_search_bytes = 16000000
 remote_calls_enabled = false
 publication = "review"
 default_conflict_mode = "backward"
+preparation_timeout_ms = 180000
 
 [learning.call]
 max_calls = 1

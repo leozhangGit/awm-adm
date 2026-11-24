@@ -6,6 +6,7 @@ import time
 
 from ..wire import decode
 from .diagnostics import account_outcome, response_metadata
+from .failures import TransportFailure, measured, reason, uncertain
 from .wire import ANTHROPIC_VERSION, ENDPOINTS
 
 MAX_RESPONSE = 2_097_152
@@ -21,9 +22,12 @@ def https(provider, body, credential, timeout):
     else:
         headers.update({"x-api-key": credential, "anthropic-version": ANTHROPIC_VERSION})
     end = time.monotonic() + timeout
+    stage, status = "request", None
     try:
         connection.request("POST", path, body=body, headers=headers)
+        stage = "response_headers"
         response = connection.getresponse()
+        status, stage = response.status, "response_body"
         # Read bounded errors solely to extract allowlisted codes. Never retain
         # arbitrary error bodies, headers or redirects in a dispatch outcome.
         maximum = MAX_RESPONSE if response.status == 200 else MAX_ERROR_RESPONSE
@@ -42,8 +46,12 @@ def https(provider, body, credential, timeout):
             if size > maximum:
                 if response.status != 200:
                     return response.status, b""
-                raise ValueError("Provider response exceeds byte limit")
+                raise TransportFailure("response_too_large", stage, status)
         return response.status, b"".join(chunks)
+    except TransportFailure:
+        raise
+    except Exception as error:
+        raise TransportFailure(reason(error), stage, status) from None
     finally:
         connection.close()
 
@@ -196,6 +204,7 @@ def acquire(configuration, wire, credential, timeout, *, transport=https, record
             "response_id": f"recorded-{recorded_index}",
             "returned_model": configuration["model"],
         }
+    started, stage = time.monotonic(), "transport"
     try:
         status, raw = transport(configuration["provider"], wire, credential, timeout)
         if status != 200:
@@ -211,13 +220,26 @@ def acquire(configuration, wire, credential, timeout, *, transport=https, record
                 if status in (400, 404, 422)
                 else "provider_error"
             )
-            return account_outcome(
-                {"status": "failed", "error": code, "usage": None, "text": None, "diagnostics": diagnostics},
-                configuration["provider"],
+            return measured(
+                account_outcome(
+                    {
+                        "status": "failed",
+                        "error": code,
+                        "usage": None,
+                        "text": None,
+                        "diagnostics": diagnostics,
+                    },
+                    configuration["provider"],
+                ),
+                started,
+                timeout,
             )
+        stage = "response_interpretation"
         result = interpret(configuration["provider"], raw, credential=credential)
         result.setdefault("diagnostics", {})["http_status"] = status
-        return result
-    except Exception:
-        # Dispatch may have reached the provider. Do not echo credential-bearing exceptions.
-        return {"status": "outcome_unknown", "error": "transport_uncertain", "usage": None, "text": None}
+        return measured(result, started, timeout)
+    except TransportFailure as error:
+        return measured(uncertain(error.reason, error.stage, http_status=error.http_status), started, timeout)
+    except Exception as error:
+        # Dispatch may have reached the provider. Never retain raw exceptions.
+        return measured(uncertain(reason(error), stage), started, timeout)

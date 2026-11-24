@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from .protocol import RuntimeFault, dumps, loads
 
 APPLICATION_ID = 0x41574D32
-SCHEMA_VERSION = 17
+SCHEMA_VERSION = 18
 
 
 def identifier(value):
@@ -123,6 +123,8 @@ def migrate(connection, kind):
             # Historical credentials/provenance remain intact but no longer gate public access.
             connection.execute("UPDATE credentials SET revoked=1")
             connection.execute("DELETE FROM auth_tickets")
+        if version < 18 and kind == "registry":
+            connection.execute("UPDATE installation_upgrade SET target=18,status='migrating' WHERE id=1")
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.commit()
     except BaseException:
@@ -228,7 +230,7 @@ class Store:
         if size + 2 * extra + 65_536 > self.limits.installation_storage_bytes:
             raise RuntimeFault("resource_exhausted", "Installation storage allowance is exhausted")
 
-    def reserve(self, name):
+    def reserve(self, name, *, operation_id=None):
         if not isinstance(name, str) or not 1 <= len(name) <= 128 or any(ord(c) < 32 for c in name):
             raise RuntimeFault("invalid_input", "Instance name must contain 1–128 printable characters")
         with self.db() as connection, self.transaction(connection):
@@ -242,6 +244,13 @@ class Store:
             self.capacity(65_536)
             key = str(uuid4())
             connection.execute("INSERT INTO instances VALUES (?,?,?)", (key, name, "creating"))
+            if operation_id is not None:
+                linked = connection.execute(
+                    "UPDATE operations SET adm=? WHERE id=? AND kind='create' AND status='running' AND adm IS NULL",
+                    (key, operation_id),
+                )
+                if linked.rowcount != 1:
+                    raise RuntimeFault("stale_context", "Creation operation is no longer current")
             return key
 
     def install(self, key, prepared, mode):

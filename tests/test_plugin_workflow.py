@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from awm_adm_plugin import client as module
 from awm_adm_plugin.connector import Connector
 from awm_adm_plugin.journal import Journal
@@ -31,6 +32,138 @@ def connector(rt, project, private):
 
     project.mkdir()
     return Connector(HTTP(), Journal(private)), str(project)
+
+
+def test_capacity_failure_then_explicit_retry_preserves_receipt_and_creates_once(app_runtime, tmp_path):
+    from tests.test_lifecycle import delete_input, finish
+
+    rt = app_runtime
+    rt.store.limits = rt.store.limits.model_copy(update={"max_adms": 1})
+    existing = rt.create("Existing model")["id"]
+    c, root = connector(rt, tmp_path / "project", tmp_path / "private")
+    first = c.project(root)
+    assert first["state"] == "creating"
+    assert rt.coordinator.run_operation()
+    status = c.status(root)
+    assert status["state"] == "creation_failed"
+    assert status["creation_pending"] is False
+    assert status["retry_new_creation"] is True
+    operation = status["creation"]["operation_id"]
+    assert status["creation"]["error"]["details"]["reason"] == "model_limit_reached"
+    finish(rt, rt.lifecycle.request(existing, delete_input(rt, existing))["operation_id"])
+    # Freeing capacity alone never resets the old operation or creates new work.
+    assert c.project(root)["state"] == "creation_failed"
+    fresh = c.project(root, retry_creation=operation)
+    assert fresh["operation_id"] != operation
+    assert rt.coordinator.run_operation()
+    bound = c.project(root, retry_creation=operation)
+    assert bound["state"] == "ready"
+    assert bound["model"]["mode"] == "backward"
+    assert c.project(root, retry_creation=operation)["model"]["id"] == bound["model"]["id"]
+    assert len(rt.store.list()) == 1
+    assert rt.coordinator.operation_info(operation)["status"] == "failed"
+    assert rt.learning.usage()["calls"] == 0
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        "Source: https://example.org/instrument/report, section 2. "
+        "The publisher explicitly labels this reading in µm. "
+        "This is a sourced report, not an independent measurement.",
+        "Source: https://example.org/instrument/manual, revision C, section 4. "
+        "The declared scale is 2 µm per tick. Inference: the reported 7 ticks "
+        "correspond to 14 µm (7 × 2), assuming the report's instrument uses revision C. "
+        "That revision is identified in the supplied report. Preserve the raw reading "
+        "and this derived value separately; the manual does not report the measurement.",
+    ],
+    ids=["sourced-fact", "labeled-derivation"],
+)
+def test_connector_researched_clarification_preserves_originals_and_provenance(rig, tmp_path, evidence):
+    """Recorded boundary check, not an evaluation of autonomous research quality."""
+    rt, gw = rig
+    key = rt.create("Research continuation")["id"]
+    recorded(rt, gw, {})
+    c, root = connector(rt, tmp_path / "project", tmp_path / "private")
+    c.project(root, model_id=key)
+    before = rt.store.info(key)
+    original = "Retain the instrument's reported reading of 7, from report revision C."
+    first = c.teach(root, text=original, operation="observation")
+    assert rt.conversations.teaching.tick()
+    respond(rt, {"status": "needs_clarification", "message": "What unit applies?", "plan_json": None})
+    assert c.work(root, work_id="observation")["state"] == "needs_input"
+    prior = rt.conversations.teaching.get(key, first["interaction_id"])
+
+    clarified = c.teach(root, text=evidence, operation="research", reply_to="observation")
+    task = rt.conversations.teaching.get(key, clarified["interaction_id"])
+    assert task["previous_task_id"] == first["interaction_id"]
+    assert [i["text"] for i in task["inputs"]] == [original, evidence]
+    assert task["material_manifest"]["lineage_id"] == first["interaction_id"]
+    assert task["material_manifest"]["entries"][0] == prior["material_manifest"]["entries"][0]
+    assert task["material_manifest"]["entries"][1]["byte_count"] == len(evidence.encode())
+
+    # Reopening the connector and recovering the same intent must not create a
+    # third message or reinterpret the evidence as already accepted knowledge.
+    restored = Connector(c.client, Journal(tmp_path / "private"))
+    again = restored.teach(root, text=evidence, operation="research", reply_to="observation")
+    assert again["interaction_id"] == clarified["interaction_id"]
+    assert again["admissions"] == []
+    assert (
+        rt.conversations.teaching.get(key, again["interaction_id"])["material_manifest"]
+        == task["material_manifest"]
+    )
+    assert rt.learning.usage()["calls"] == 1
+    assert rt.store.info(key)["revision_id"] == before["revision_id"]
+    assert rt.store.info(key)["mode"] == before["mode"] == "backward"
+
+
+def test_connector_preparation_failure_retains_diagnostic_without_clarification_loop(rig, tmp_path):
+    from tests.test_teaching_materials import facts_reply
+
+    rt, gw = rig
+    key = rt.create("Connector source preparation")["id"]
+    recorded(rt, gw, {})
+    c, root = connector(rt, tmp_path / "project", tmp_path / "private")
+    c.project(root, model_id=key)
+    item = c.teach(root, text="Retain this supplied observation.", operation="facts")
+    uid = item["interaction_id"]
+    assert rt.conversations.teaching.tick()
+    task = rt.conversations.teaching.get(key, uid)
+    respond(rt, facts_reply(task, ["invented-source-reference"]))
+    final = c.work(root, work_id="facts")
+    assert final["state"] == "failed"
+    assert final["failure_diagnostics"]["code"] == "unknown_material_reference"
+    assert final["admissions"] == []
+    calls = rt.learning.usage()["calls"]
+    assert c.work(root, work_id="facts")["interaction_id"] == uid
+    assert rt.learning.usage()["calls"] == calls == 1
+    with rt.store.db(key) as db:
+        assert db.execute("SELECT count(*) FROM chat_questions").fetchone()[0] == 0
+
+
+def test_connector_preserves_checked_historical_unit(rig, tmp_path):
+    from tests.test_ask_history import command
+    from tests.test_sources import ingest, install, project
+
+    rt, gw = rig
+    key = rt.create("Connector quantities")["id"]
+    install(rt, key)
+    assert project(rt, key, ingest(rt, key))["status"] == "accepted"
+    recorded(rt, gw, proposal(command()))
+    c, root = connector(rt, tmp_path / "project", tmp_path / "private")
+    c.project(root, model_id=key)
+    item = c.ask(root, text="What was recorded?", operation="units")
+    assert rt.conversations.ask.tick()
+    dispatch(rt, gw)
+    assert rt.conversations.ask.tick()
+    execute(rt, key)
+    assert rt.conversations.ask.tick()
+    narration(rt, work(rt, key, item["interaction_id"]), explanation="The recorded capacity was 10 places.")
+    result = c.work(root, work_id="units")
+    assert result["checked_outcome"]["value_metadata"]["unit"] == "places"
+    assert result["summary"].startswith("Model answer: 10 places.")
+    assert result["explanation"] == "The recorded capacity was 10 places."
+    assert rt.learning.usage()["calls"] == 2
 
 
 def test_connector_ask_checks_real_result_and_reuses_original_request(rig, tmp_path):

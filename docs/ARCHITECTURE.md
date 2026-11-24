@@ -31,7 +31,7 @@ The application and worker have no general provider egress. The supported Docker
 
 ## Accepted model and local serving
 
-The finite engine supports typed values, pure functions, transitions, goals, assertions and bounded algebraic constructions. Supported requests include capabilities, evaluation, claim checks, planning, certificates and explanation of a retained result. Historical source queries use explicit entity/predicate/time with checked evidence support.
+The finite engine supports typed values, pure functions, transitions, goals, assertions and bounded algebraic constructions. Supported requests include capabilities, evaluation, claim checks, planning, certificates and explanation of a retained result. Historical source queries use explicit entity/predicate/time with checked evidence support. Bounded [evidence recall](EVIDENCE_RECALL.md) selects exact subject/property pairs across recorded scopes without requiring a time filter; results remain attributed collections, not inferred current values.
 
 Each request pins an immutable revision. Results bind the request and attempt to the theory/support/policy context and exact query meaning. Explicit action lists differ from all-current-actions intent; witnesses, shortestness and unreachable claims are distinct. Work exhaustion is inconclusive, not proof of a knowledge gap. See [Engine](ENGINE.md) and [API](API.md).
 
@@ -59,11 +59,13 @@ The bundled `codex-plugin/` is a separate Python/MCP package. It binds the expli
 
 New Ask/Teach intents can carry a revision precondition; identical retries recover the original retained interaction before applying that precondition to new work. Machine-readable admission receipts distinguish preservation conflicts, checked violations and unresolved work, and bind accepted replacements/removals to actual publication. The connector keeps these local results separate from provider narration. See the [plugin guide](../codex-plugin/README.md).
 
+The project skill resolves discoverable factual gaps using relevant project material and Codex's available research tools before asking the user. Researched content keeps its sources; inferences retain premises, derivation and assumptions. Supported answers continue the existing Teach clarification, while unresolved evidence or user-owned choices still need a question. This adds no service web access, authority or validation exception, and externally researched answers are not checked model results.
+
 ## Persistence and recovery
 
 The registry, per-model SQLite stores and gateway ledger have separate transaction boundaries. Durable intents reconcile cross-store handoffs. Publication commits model/support/decision changes atomically within an ADM. Context generations, cancellation and deletion fence stale work.
 
-Current owned schema is 17. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
+Current owned schema is 18. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
 
 ## Repository map
 
@@ -80,3 +82,7 @@ Current owned schema is 17. Startup transactionally reconciles supported older s
 | `tests/`, `examples/`, `scripts/` | Regressions, examples, setup and reproducible local verification |
 
 Development history and private operational material are not build dependencies or public documentation. [Contributing](../CONTRIBUTING.md) describes standalone checks and exports.
+
+## Temporal evidence
+
+The service temporal adapter keeps instant observations, uncertain occurrences, interval validity, whole-period values and attributed reports distinct. It compiles accepted claims to ordinary finite constants with checked semantic/source bindings. Temporal filtering and coverage checking occur in bounded local compute, using the same publication, dependency and source-hold machinery. The algebraic kernel and certificate encodings are unchanged. See [temporal evidence](TEMPORAL_EVIDENCE.md).

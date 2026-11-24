@@ -34,7 +34,7 @@ On native Linux, the backup directory must also be writable by UID/GID 10001; pr
 
 The `operations` service is a short-lived tools-profile process with no network, no secret mounts, no published port and only the app/gateway data volumes plus the backup destination. It acquires **both** existing process-owner locks before reading. A running app or gateway makes capture fail. The worker must also be stopped operationally; it has no database to capture. SQLite's backup API includes committed WAL content. Each copied database receives an integrity/application-ID/schema check. The bundle is staged privately, flushed and renamed only after all files and its manifest exist. An error before publication leaves the original stores intact and no completed bundle. If the final directory flush fails after rename, the command can report failure while a valid destination exists; inspect and verify that destination before retrying, and never overwrite it. A process killed during staging may leave a `.awm-recovery-*` directory; it is not a valid published backup and can be inspected/removed while no operation uses it.
 
-Current capture is schema 17; verified bundles from owned schemas 7–16 also support restore and subsequent startup migration. The envelope is at most 1,003 files and 6 GiB of logical database content. Larger configured installations need a separately tested backup envelope. Symlink paths, foreign databases, missing established stores, unregistered databases, unsupported schemas and existing destinations are refused. Do not copy just a running SQLite main file. Backup may take time proportional to retained storage; it is an offline operation without a serving-availability guarantee.
+Current capture is schema 18; verified bundles from owned schemas 7–17 also support restore and subsequent startup migration. The envelope is at most 1,003 files and 6 GiB of logical database content. Larger configured installations need a separately tested backup envelope. Symlink paths, foreign databases, missing established stores, unregistered databases, unsupported schemas and existing destinations are refused. Do not copy just a running SQLite main file. Backup may take time proportional to retained storage; it is an offline operation without a serving-availability guarantee.
 
 On native installations the equivalent command is `awm-adm operations backup --app-data APP_ROOT --gateway-data GATEWAY_ROOT --output NEW_DIRECTORY`, with both storage owners stopped. Local file paths are operator arguments and never accepted through the public API.
 
@@ -81,7 +81,7 @@ Check identities, accepted/support roots, policies, selected results, pending st
 
 ## Upgrade and failure recovery
 
-Only owned schemas 1–16 migrate to schema 17; foreign operational stores and future schemas are refused. Supported model snapshots are rechecked through model import, not database adoption. Migrations use one transaction per database. A migration failure rolls that database back; a service contains multiple databases, so an upgrade is not a single cross-database transaction.
+Only owned schemas 1–17 migrate to schema 18; foreign operational stores and future schemas are refused. Supported model snapshots are rechecked through model import, not database adoption. Migrations use one transaction per database. A migration failure rolls that database back; a service contains multiple databases, so an upgrade is not a single cross-database transaction.
 
 Before upgrading, capture a current service backup and record the previous image/configuration identities. Test the upgrade on a recovered copy. If startup or verification fails, stop all components and restore the pre-upgrade bundle into new paths using the matching supported version. Do not start an older binary on a partly migrated directory or edit `user_version` to bypass checks. Preserve the failed directory for diagnosis. There is no automatic destructive downgrade.
 
@@ -121,3 +121,7 @@ Owner event pruning uses `POST /api/v1/adms/{adm}/events/prune` with `{"cursor":
 ## Verified envelope and release boundary
 
 The [test guide](TESTING.md) describes reproducible finite and runtime checks. [Release scope](RELEASE.md) defines the supported platform and operational limits. Bounded tests do not establish indefinite operation, arbitrary failure recovery or a formal refinement proof.
+
+## Temporal evidence
+
+Snapshots with typed temporal evidence use a service feature envelope around unchanged core bytes. Unsupported older readers reject that envelope; schema 18 likewise prevents opening the operational stores with older binaries. Keep a paired pre-upgrade backup for rollback. Legacy snapshots retain their old transport and knowledge bytes. See [temporal evidence](TEMPORAL_EVIDENCE.md).

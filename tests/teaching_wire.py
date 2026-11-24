@@ -3,7 +3,45 @@
 from copy import deepcopy
 
 from awm_adm.runtime.protocol import dumps, loads
-from awm_adm.teaching.provider_format import PROFILE
+from awm_adm.teaching.provider_format import MATERIAL_PROFILE, PROFILE, SHARED_PROFILE
+
+
+def selected_reply(reply, manifest):
+    """Author current synthetic selections for existing fixture helpers.
+
+    Explicit current-wire tests pass their own IDs unchanged. This conversion is
+    test-only: production never accepts invented provider source identities.
+    """
+    reply = deepcopy(native_reply(reply))
+    if reply.get("profile") != PROFILE:
+        return reply
+    reply["profile"] = MATERIAL_PROFILE
+    for child in (reply.get("plan") or {}).get("children", []):
+        if not child.get("material"):
+            continue
+        material = child["material"]
+        source_ids = {s["source_id"] for s in material.pop("sources")}
+        available = [e for e in manifest["entries"] if set(e["input_ids"]) & set(child["input_ids"])]
+        selected = [e for e in available if e["kind"] == "upload" and e["source_id"] in source_ids]
+        if not selected:
+            selected = [e for e in available if e["kind"] == "queue"] or [
+                e for e in available if e["kind"] == "message"
+            ]
+        material["material_ids"] = [e["id"] for e in selected]
+    return reply
+
+
+def shared_reply(reply, manifest):
+    """Author new-wire fixtures only; never merge different intended projections."""
+    reply = selected_reply(reply, manifest)
+    if reply.get("profile") != MATERIAL_PROFILE:
+        return reply
+    reply["profile"] = SHARED_PROFILE
+    if reply["plan"] is not None:
+        projections = [c["material"].pop("projection") for c in reply["plan"]["children"] if c["material"]]
+        assert not projections or all(p == projections[0] for p in projections)
+        reply["plan"]["source_projection"] = projections[0] if projections else None
+    return reply
 
 
 def native_reply(reply):
@@ -109,3 +147,68 @@ def native_reply(reply):
         else None,
     )
     return {"profile": PROFILE, **reply, "plan": new}
+
+
+def temporal_reply(reply, manifest):
+    from awm_adm.teaching.provider_format import TEMPORAL_PROFILE
+
+    reply = shared_reply(reply, manifest)
+    if reply.get("profile") != SHARED_PROFILE:
+        return reply
+    reply["profile"] = TEMPORAL_PROFILE
+    if reply["plan"] is not None:
+        old = reply["plan"].pop("source_projection")
+        catalog = deepcopy(old) if old else None
+        if catalog:
+            catalog["profile"] = "awm-adm-temporal-catalog/1"
+            catalog["predicates"] = [
+                {
+                    **p,
+                    "meaning": p["symbol"],
+                    "statement_level": "direct",
+                    "actor": None,
+                    "modality": None,
+                    "qualifiers": [],
+                    "scope_kinds": ["instant", "validity"],
+                    "metric": None,
+                }
+                for p in catalog["predicates"]
+            ]
+            for c in catalog["cells"]:
+                c["kind"] = {"point": "instant", "interval": "validity"}.get(c["kind"], c["kind"])
+                c.pop("granularity", None)
+        if catalog:
+            for cell in catalog["cells"]:
+                cell.update(precision="second", timezone_basis="UTC")
+        reply["plan"]["evidence_scope"] = catalog
+    return reply
+
+
+def assessed_reply(reply, input_ids, *, temporal=True):
+    """Upgrade authored fixtures only; production never guesses a gap from prose."""
+    reply = deepcopy(reply)
+    if reply.get("profile") in {"awm-adm-teaching-reply/6", "awm-adm-teaching-reply/7"}:
+        return reply
+    status = reply.pop("status")
+    reply["profile"] = "awm-adm-teaching-reply/6" if temporal else "awm-adm-teaching-reply/7"
+    reply.update(missing_information=[], unsupported_capabilities=[], question=None)
+    if status == "needs_clarification":
+        reply["question"] = reply["message"]
+        reply["missing_information"] = [
+            {
+                "kind": "meaning",
+                "input_ids": input_ids,
+                "subject": "Requested meaning",
+                "detail": reply["message"],
+            }
+        ]
+    elif status == "unsupported":
+        reply["unsupported_capabilities"] = [
+            {
+                "kind": "unsupported_representation",
+                "input_ids": input_ids,
+                "requested_capability": "Authored unsupported fixture",
+                "limitation": reply["message"],
+            }
+        ]
+    return reply

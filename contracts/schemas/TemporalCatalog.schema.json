@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "Qualifier": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "Qualifier",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective From",
+          "type": "string"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "kind": {
+          "enum": [
+            "instant",
+            "occurrence",
+            "validity",
+            "period_value"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "enum": [
+            "second",
+            "minute",
+            "hour",
+            "day",
+            "month",
+            "year",
+            "window",
+            "legacy"
+          ],
+          "title": "Precision",
+          "type": "string"
+        },
+        "timezone_basis": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Timezone Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "effective_from",
+        "precision",
+        "timezone_basis"
+      ],
+      "title": "Scope",
+      "type": "object"
+    },
+    "Series": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor"
+        },
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "default": 100,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "meaning": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Meaning",
+          "type": "string"
+        },
+        "metric": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metric"
+        },
+        "minimum": {
+          "default": 0,
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "modality": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modality"
+        },
+        "qualifiers": {
+          "items": {
+            "$ref": "#/$defs/Qualifier"
+          },
+          "maxItems": 16,
+          "title": "Qualifiers",
+          "type": "array"
+        },
+        "scope_kinds": {
+          "items": {
+            "enum": [
+              "instant",
+              "occurrence",
+              "validity",
+              "period_value"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Scope Kinds",
+          "type": "array"
+        },
+        "statement_level": {
+          "default": "direct",
+          "enum": [
+            "direct",
+            "reported"
+          ],
+          "title": "Statement Level",
+          "type": "string"
+        },
+        "symbol": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "kind",
+        "unit",
+        "meaning",
+        "scope_kinds"
+      ],
+      "title": "Series",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:TemporalCatalog",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/Scope"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "entities": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Entities",
+      "type": "array"
+    },
+    "namespace": {
+      "maxLength": 200,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+      "title": "Namespace",
+      "type": "string"
+    },
+    "predicates": {
+      "items": {
+        "$ref": "#/$defs/Series"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Predicates",
+      "type": "array"
+    },
+    "profile": {
+      "const": "awm-adm-temporal-catalog/1",
+      "default": "awm-adm-temporal-catalog/1",
+      "title": "Profile",
+      "type": "string"
+    }
+  },
+  "required": [
+    "namespace",
+    "entities",
+    "predicates",
+    "cells"
+  ],
+  "title": "Catalog",
+  "type": "object"
+}

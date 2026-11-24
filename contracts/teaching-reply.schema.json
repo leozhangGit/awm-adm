@@ -279,7 +279,8 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string"
-                                }
+                                },
+                                "description": "Stable entity identifiers, not display names: 1–128 ASCII characters, beginning with a letter or digit, followed by letters, digits, underscore, dot, colon or hyphen; no spaces. Preserve existing accepted identifiers. Distinct entities must not collapse onto the same identifier. Choosing an identifier does not change or resolve ambiguous entity meaning."
                               },
                               "predicates": {
                                 "type": "array",
@@ -300,7 +301,8 @@
                                       "description": "Source predicate kind: boolean, integer or enum. These spellings differ from the bool/int kinds in plan.types. Integer bounds define a numeric carrier, not string enum labels."
                                     },
                                     "unit": {
-                                      "type": "string"
+                                      "type": "string",
+                                      "description": "Required nonempty unit, at most 100 characters, consistent with the supplied meaning and extracted facts. Use 'unitless' only for genuinely unitless predicates. Never fill an unknown physical unit or alter a numeric scale merely to satisfy the format."
                                     },
                                     "minimum": {
                                       "type": "integer",

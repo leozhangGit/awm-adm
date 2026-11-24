@@ -28,9 +28,9 @@ The longer-term aim is for an ADM to become a **logic guide for an LLM-driven sy
 
 - **Ask** questions in a durable chat. The enabled provider interprets the request and explains the outcome; the ADM computes supported answers through its own engine.
 - **Teach** capabilities through conversation and attach Markdown or text. A clear request starts learning and local validation automatically; the model asks when meaning or a necessary decision is unclear.
-- **Use evidence over time.** Retain source provenance, dated facts and corrections. Missing evidence stays unknown. Managed push queues accept ongoing material within explicit limits.
+- **Use evidence over time.** Keep exact observations, values valid throughout an interval, and measurements for a whole reporting period in the same model, with their units, source provenance and corrections. [Temporal queries](docs/TEMPORAL_EVIDENCE.md) preserve those meanings; missing evidence stays unknown. Managed push queues accept ongoing material within explicit limits.
 - **Own independent models.** Create, name, clone, import/export snapshots, archive or delete a model. Each model has its own accepted theory and history.
-- **Choose conflict behavior.** Backward mode retains earlier-arriving conflicting knowledge; forward mode prefers the later result, subject to validation and dependent-conclusion handling. Switching applies to future decisions.
+- **Choose conflict behavior.** New models default to backward mode, which retains earlier-arriving conflicting knowledge. Forward mode prefers the later result, subject to validation and dependent-conclusion handling. Switching applies to future decisions.
 - **Use checked knowledge.** Search accepted declarations and evidence, and find console/API activity in History. Structured API requests evaluate functions, check claims, plan and look up facts without a provider.
 
 ## Quick start with Docker
@@ -79,7 +79,7 @@ docker compose up -d --no-build --wait --wait-timeout 60
 
 These commands preserve the named volumes. Keep `.local/secrets/` private: it includes the gateway encryption key needed to recover encrypted provider credentials. **Do not use `docker compose down -v` for normal shutdown; it deletes model and service storage.**
 
-[Operational backup/restore](docs/OPERATIONS.md) captures both stopped storage owners. Model snapshots create independent models; they are not account/service backups. Recovery and updates must preserve uncertain provider reservations and accepted knowledge.
+[Operational backup/restore](docs/OPERATIONS.md) captures both stopped storage owners. Model snapshots create independent models; they are not full service backups. Recovery and updates must preserve uncertain provider reservations and accepted knowledge.
 
 System timezone: Docker setup captures the host default automatically; native execution uses the service system default. Explicit user/source timezones take precedence. See [temporal interpretation](docs/TEMPORAL_INTERPRETATION.md) for date precision and replay semantics.
 

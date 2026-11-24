@@ -36,3 +36,7 @@ The console retains a deterministic change note for revisions, even when fluent 
 An illustrative outcome is: “Changed the limit from 2 to 3. The eligibility rule stayed unchanged and was checked against the new limit.” That statement requires matching checked records. Whether a particular input now qualifies is a separate query, not an inference promoted from the explanation.
 
 Tests cover transitive dependent preservation, interface changes, additions/removals, evidence-only and value-changing source publications, historical bindings, bounded/legacy reports, rejected candidates, source-teaching delivery and partial failures. See [testing](TESTING.md) and [automatic teaching](TEACHING_EXECUTION.md).
+
+## Temporal evidence
+
+Typed temporal before/after facts also carry semantic series, observed/reported clocks and subject-scope kind. Whole-period values are labeled separately from validity; report attribution is not rendered as an actual outcome. Exact replacement preserves and rechecks dependent bodies. Unsupported partial interval rewrites report no publication. See [temporal evidence](TEMPORAL_EVIDENCE.md).

@@ -221,6 +221,11 @@
     "Operation": {
       "additionalProperties": false,
       "properties": {
+        "retry_new_creation": {
+          "default": false,
+          "title": "Retry New Creation",
+          "type": "boolean"
+        },
         "operation_id": {
           "title": "Operation Id",
           "type": "string"

@@ -66,7 +66,7 @@ def test_history_local_answer_and_unknown(rig, year, expected, origin):
         assert result["result"]["value"]["fact"]["claim"]["source"]["version_id"] == "v1"
         assert (
             presentation["outcome_text"]
-            == "Model answer: 10.\nBased on the model's accepted historical evidence."
+            == "Model answer: 10 places.\nBased on the model's accepted historical evidence."
         )
     assert rt.learning.usage()["calls"] == 2
 

@@ -81,6 +81,8 @@ Named deletion fences access and publication before durable cleanup. It preserve
 
 ## API and operational boundaries
 
+Model creation commits its reservation and operation link in one transaction. Failure receipts preserve safe application-authored causes without exposing raw exception text. A failed creation is distinct from pending work; explicit retry is available only when the service confirms no allocated model or unresolved legacy orphan reservation. Polling and repeated reads do not create a new attempt. The plugin retains the failed receipt and uses one durable replacement intent for each user-directed retry.
+
 The unified `/api/v1` API exposes models, local requests, interpretation previews, learning, sources/feeds, snapshots, events, diagnostics, connections, direct Ask/Teach exchanges, attachments, managed intake and lifecycle controls. Manual preview history uses `interpretation-sessions`; Ask/Teach uses `conversations`. URL versioning is independent of serialized profiles and storage formats. Use [API](API.md) and [OpenAPI](../contracts/openapi.json) for exact methods, pagination and permissions.
 
 Paired backup/restore is an **offline operator CLI**, not a public backup HTTP endpoint. It locks both stopped storage owners, checks schemas and hashes, and restores only into a fresh destination. Supported operational restore preserves knowledge/history and uncertain accounting while revoking operational credentials, disabling remote authority and pausing feeds. An old backup cannot reconstruct later external expenditure.

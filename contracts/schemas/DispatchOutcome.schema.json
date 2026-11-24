@@ -95,6 +95,56 @@
       "additionalProperties": false,
       "description": "Allowlisted metadata only; never arbitrary provider messages or reasoning.",
       "properties": {
+        "child_exit_code": {
+          "anyOf": [
+            {
+              "maximum": 65536,
+              "minimum": -65536,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Child Exit Code"
+        },
+        "elapsed_ms": {
+          "anyOf": [
+            {
+              "maximum": 86400000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elapsed Ms"
+        },
+        "failure_stage": {
+          "anyOf": [
+            {
+              "enum": [
+                "request",
+                "response_headers",
+                "response_body",
+                "transport",
+                "response_interpretation",
+                "gateway_start",
+                "gateway_wait",
+                "gateway_output"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Stage"
+        },
         "http_status": {
           "anyOf": [
             {
@@ -233,6 +283,20 @@
           ],
           "default": null
         },
+        "timeout_ms": {
+          "anyOf": [
+            {
+              "maximum": 600000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Ms"
+        },
         "token_details": {
           "anyOf": [
             {
@@ -243,6 +307,31 @@
             }
           ],
           "default": null
+        },
+        "transport_failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "timeout",
+                "dns",
+                "tls",
+                "connection",
+                "http_protocol",
+                "response_too_large",
+                "transport_error",
+                "child_start_failed",
+                "child_exit",
+                "child_output_too_large",
+                "child_output_invalid"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transport Failure"
         },
         "usage_assessment": {
           "anyOf": [

@@ -223,6 +223,10 @@ class Interactions:
             result["status"] = task["status"]
             result["task_id"] = task["id"]
             result["failure_code"] = task.get("failure_code") or (task.get("execution") or {}).get("reason")
+            if task.get("failure_diagnostics"):
+                result["failure_diagnostics"] = task["failure_diagnostics"]
+            if task.get("preparation_assessment"):
+                result["preparation_assessment"] = task["preparation_assessment"]
             result["teaching"] = (
                 self.s.teaching.execution.view(task["execution"]) if task.get("execution") else None
             )
@@ -235,6 +239,14 @@ class Interactions:
                 result["explanation"] = run["narration"]["explanation"]
                 result["outcome_text"] = result["reply"]
             summary = run.get("summary") or {}
+            if summary.get("source_failures"):
+                result["failure_code"] = result["failure_code"] or "source_processing_failed"
+                result["failure_diagnostics"] = {
+                    "stage": "source_processing",
+                    "code": "source_processing_failed",
+                    "items": summary["source_failures"],
+                    "complete": summary.get("source_failures_complete", False),
+                }
             if (
                 run.get("delivered")
                 and summary.get("status") == "succeeded"

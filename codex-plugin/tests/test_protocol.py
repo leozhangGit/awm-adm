@@ -35,6 +35,7 @@ class ProtocolTests(unittest.TestCase):
                             ["adm_status", "adm_project", "adm_ask", "adm_teach", "adm_work", "adm_set_mode"],
                         )
                         self.assertTrue(tools[0].annotations.read_only_hint)
+                        self.assertIn("retry_creation", tools[1].input_schema["properties"])
                         cases = [
                             ({}, "no_project"),
                             ({"project_root": str(project)}, "invalid_endpoint"),

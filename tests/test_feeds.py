@@ -530,7 +530,7 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         assert new.store.run_info(key, result["execution"]["run_id"])["result"] == result
         assert new.sources.feeds.overview(key)["feeds"] == []
         with new.store.db(key) as db:
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 17
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 18
     finally:
         new.close()
 

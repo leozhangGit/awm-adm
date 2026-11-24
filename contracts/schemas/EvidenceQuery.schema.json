@@ -1,0 +1,232 @@
+{
+  "$defs": {
+    "Anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "kind": {
+          "default": "unknown",
+          "enum": [
+            "exact",
+            "window",
+            "unknown"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "enum": [
+                "second",
+                "minute",
+                "hour",
+                "day",
+                "month",
+                "year",
+                "window"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Precision"
+        },
+        "timezone_basis": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone Basis"
+        }
+      },
+      "title": "Anchor",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective From",
+          "type": "string"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "kind": {
+          "enum": [
+            "instant",
+            "occurrence",
+            "validity",
+            "period_value"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "enum": [
+            "second",
+            "minute",
+            "hour",
+            "day",
+            "month",
+            "year",
+            "window",
+            "legacy"
+          ],
+          "title": "Precision",
+          "type": "string"
+        },
+        "timezone_basis": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Timezone Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "effective_from",
+        "precision",
+        "timezone_basis"
+      ],
+      "title": "Scope",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:EvidenceQuery",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cursor": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cursor"
+    },
+    "entity_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "title": "Entity Id",
+      "type": "string"
+    },
+    "intent": {
+      "enum": [
+        "value_at",
+        "value_throughout",
+        "value_for_period",
+        "observations_in",
+        "reports_about"
+      ],
+      "title": "Intent",
+      "type": "string"
+    },
+    "limit": {
+      "default": 100,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "op": {
+      "const": "query_evidence",
+      "title": "Op",
+      "type": "string"
+    },
+    "predicate": {
+      "maxLength": 200,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+      "title": "Predicate",
+      "type": "string"
+    },
+    "relation": {
+      "default": "contained",
+      "enum": [
+        "contained",
+        "possibly_overlapping"
+      ],
+      "title": "Relation",
+      "type": "string"
+    },
+    "reported_time": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Anchor"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    }
+  },
+  "required": [
+    "op",
+    "intent",
+    "entity_id",
+    "predicate",
+    "scope"
+  ],
+  "title": "EvidenceQuery",
+  "type": "object"
+}

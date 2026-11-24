@@ -68,10 +68,20 @@ def description(body, fact=None):
             f"{json.dumps(claim['value']['value'], ensure_ascii=False)} {claim['unit']}; "
             + (
                 f"at {cell['effective_from']}"
-                if cell["kind"] == "point"
+                if cell["kind"] in ("point", "instant")
                 else f"{cell['effective_from']} to {cell['effective_to'] or 'open end'} (end excluded)"
             )
         )
+        if fact.get("profile") == "awm-adm-temporal-binding/1":
+            text += "; " + cell["kind"]
+            series = fact["series"]
+            if series.get("statement_level") == "reported":
+                clock = claim["reported_time"]
+                text += f"; reported by {series['actor']} ({series['modality']}) at {clock['effective_from']}"
+                if clock.get("effective_to"):
+                    text += " to " + clock["effective_to"] + " (uncertain occurrence; end excluded)"
+            if series.get("metric"):
+                text += "; metric " + series["metric"]
         text += "; support held" if fact["disputed"] else "; accepted source support"
     elif body["kind"] == "function":
         params = ", ".join(f"{k}: {carrier(v)}" for k, v in body["params"].items()) or "no inputs"
@@ -156,6 +166,15 @@ def publication_effects(current, instance, budget, *, before_facts=None, after_f
                     "cell": f["cell"],
                     "source": f["claim"]["source"],
                     "support_held": f["disputed"],
+                    **(
+                        {
+                            "series": f["series"],
+                            "reported_time": f["claim"]["reported_time"],
+                            "observed_time": f["claim"]["observed_time"],
+                        }
+                        if f.get("profile") == "awm-adm-temporal-binding/1"
+                        else {}
+                    ),
                 }
         size = len(encode(entry))
         if used + size > BYTE_LIMIT:

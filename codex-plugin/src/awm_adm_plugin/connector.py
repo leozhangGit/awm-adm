@@ -55,12 +55,18 @@ class Connector:
         with self.journal.project(project["project_root"]) as (state, save):
             service = self.checked_service(state)
             if not state["binding"]:
+                creation = state["creation"]
+                operation = (
+                    self.client.operation(creation["operation_id"])
+                    if creation and creation["operation_id"]
+                    else None
+                )
                 return {
-                    "state": "unbound",
-                    "summary": "The local service is ready. This project has no model binding yet.",
+                    **self.creation_view(operation),
                     "project": project,
                     "service": service,
-                    "creation_pending": state["creation"] is not None,
+                    "creation_pending": bool(creation)
+                    and (operation is None or operation.get("status") in {"received", "running"}),
                 }
             model = self.bound(state)
             return {
@@ -76,10 +82,36 @@ class Connector:
                 "work_count": len(state["work"]),
             }
 
-    def project(self, project_root, *, model_id=None, workspace_roots=None):
+    @staticmethod
+    def creation_view(operation):
+        value = {
+            "state": "unbound",
+            "summary": "The local service is ready. This project has no model binding yet.",
+        }
+        if operation is None:
+            return value
+        value["creation"] = operation
+        if operation.get("status") == "failed":
+            reason = (operation.get("error") or {}).get("details", {}).get("reason")
+            value.update(
+                state="creation_failed",
+                summary=(
+                    "The model limit was reached. Free a slot, then request a new creation attempt."
+                    if reason == "model_limit_reached"
+                    else "The retained model creation failed. It is not pending and has not been retried."
+                ),
+                retry_new_creation=operation.get("retry_new_creation") is True,
+            )
+        return value
+
+    def project(self, project_root, *, model_id=None, retry_creation=None, workspace_roots=None):
         project = project_context(project_root, workspace_roots)
         if project["state"] != "project_selected":
             return project
+        if retry_creation is not None:
+            identifier(retry_creation)
+            if model_id is not None:
+                raise Problem("invalid_input", "Choose either an existing model or a new creation attempt.")
         with self.journal.project(project["project_root"]) as (state, save):
             if model_id is not None:
                 # An explicit target is required; never search or match names.
@@ -116,6 +148,33 @@ class Connector:
                 if state["binding"]:
                     model = self.bound(state)
                 else:
+                    if retry_creation is not None:
+                        intent = state["creation"]
+                        if not intent:
+                            raise Problem("creation_changed", "There is no retained creation to retry.")
+                        # Repeated recovery of this decision resumes its one new
+                        # intent, including after a lost acknowledgement.
+                        if intent.get("retry_of") != retry_creation:
+                            if intent["operation_id"] != retry_creation:
+                                raise Problem(
+                                    "creation_changed",
+                                    "The retained creation changed. Check its current status.",
+                                )
+                            failed = self.client.operation(retry_creation)
+                            if not (
+                                failed.get("status") == "failed"
+                                and failed.get("kind") == "create"
+                                and failed.get("adm_id") is None
+                                and failed.get("retry_new_creation") is True
+                            ):
+                                raise Problem(
+                                    "creation_unresolved",
+                                    "The service has not confirmed a failed creation without an allocated model. Recover the original operation first.",
+                                )
+                            state.setdefault("creation_history", []).append(
+                                {"intent": dict(intent), "outcome": failed}
+                            )
+                            state["creation"] = None
                     if not state["creation"]:
                         state["creation"] = {
                             "origin": self.client.origin,
@@ -123,6 +182,7 @@ class Connector:
                             "idempotency_key": "project-" + str(uuid4()),
                             "name": project["project_name"][:128],
                             "operation_id": None,
+                            "retry_of": retry_creation,
                         }
                         save()
                     intent = state["creation"]
@@ -155,10 +215,7 @@ class Connector:
                             save()
                             break
                         if operation.get("status") not in {"received", "running"}:
-                            raise Problem(
-                                "creation_failed",
-                                "Model creation did not complete. Its original operation is retained for inspection; it has not been retried as new work.",
-                            )
+                            return self.creation_view(operation)
                         if time.monotonic() >= deadline:
                             return {
                                 "state": "creating",

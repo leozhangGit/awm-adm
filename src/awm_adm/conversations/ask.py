@@ -152,7 +152,11 @@ class Ask:
             with self.store.lock:
                 self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
                 work["fact_projection"] = self.rt.sources.policy(key).get("projection")
-            spec["instructions"] += history.INSTRUCTIONS
+            from ..temporal_evidence.guidance import ASK as TEMPORAL_ASK
+            from ..temporal_evidence.guidance import RECALL
+
+            spec["instructions"] += history.INSTRUCTIONS + TEMPORAL_ASK + RECALL
+            spec["prompt_version"] = "adm-ask-interpretation/temporal-3"
             spec["context"]["owner_fact_projection"] = work["fact_projection"]
             if work["preferences"].get("snapshot_history"):
                 work["accepted_fact_projections"] = checked["accepted_fact_projections"]

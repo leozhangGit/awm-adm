@@ -201,7 +201,7 @@ def test_recorded_followup_reaches_local_unknown_and_pins_default_before_dispatc
     assert rt.conversations.ask.tick()
     narration(rt, work(rt, key, first["id"]))
     answer = rt.interactions.get(key, first["id"])
-    assert answer["outcome_label"] == "Model answer: 10 · Historical evidence"
+    assert answer["outcome_label"] == "Model answer: 10 places · Historical evidence"
     assert answer["outcome"]["binding"] == result["result"]["binding"]
     assert work(rt, key, first["id"])["packet"]["temporal_resolution"]["timezone"] == "America/New_York"
     second, wire = start(rt, key, "And on 1 July 2027?", reply_to=first["id"])

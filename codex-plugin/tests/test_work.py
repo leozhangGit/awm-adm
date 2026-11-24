@@ -106,6 +106,33 @@ class WorkTests(unittest.TestCase):
         self.assertEqual(self.c.work(self.path, work_id="stale")["state"], "not_submitted")
         self.assertEqual(self.service.post_count, 1)
 
+    def test_source_child_diagnostics_survive_work_reads_without_resubmission(self):
+        self.c.teach(self.path, text="Keep supplied observations", operation="source")
+        failure = {
+            "stage": "source_processing",
+            "code": "source_processing_failed",
+            "complete": True,
+            "items": [
+                {
+                    "diagnostic": {
+                        "code": "provider_timeout",
+                        "job_id": "retained-job",
+                        "provider_failure": {"unresolved": True, "calls": 1},
+                    }
+                }
+            ],
+        }
+        next(iter(self.service.messages.values())).update(
+            status="failed",
+            failure_code="source_processing_failed",
+            failure_diagnostics=failure,
+            reply="Extraction timed out. Language setup was skipped.",
+        )
+        value = self.c.work(self.path, work_id="source")
+        self.assertEqual(value["failure_diagnostics"], failure)
+        self.assertEqual(value["failure_code"], "source_processing_failed")
+        self.assertEqual(self.service.post_count, 1)
+
     def test_checked_outcome_survives_explanation_failure_and_later_revision(self):
         self.c.ask(self.path, text="May it run?", operation="question")
         model = next(iter(self.service.models.values()))

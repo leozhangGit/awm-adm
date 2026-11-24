@@ -88,6 +88,7 @@ def present(c, model, key, item):
         "explanation": (value.get("explanation") or "")[:2000] or None,
         "explanation_authority": "explanation_only",
         "failure_code": value.get("failure_code") or (item.get("error") or {}).get("code"),
+        "failure_diagnostics": value.get("failure_diagnostics"),
         "teaching_summary": teaching.get("summary"),
         "admissions": admissions[:32],
         "admissions_complete": len(admissions) <= 32,

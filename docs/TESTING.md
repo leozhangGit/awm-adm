@@ -2,6 +2,8 @@
 
 The test suite checks the documented finite engine and local service. It uses independent expected outcomes, synthetic fixtures and recorded/simulated providers. No automatic test needs an account key or makes a paid provider call.
 
+Evidence-recall tests distinguish storage from intended question support. Recorded Teach→Ask fixtures preserve event/inspection/report clocks and supplied-calculation provenance; independent measurements, inventory and forecasts cover collection limits, context-bound cursors, held evidence and snapshot reads. These are offline integration checks, not live-provider reliability measurements.
+
 ## Reproduce
 
 Use the commands in [Contributing](../CONTRIBUTING.md): `make bootstrap`, `make check`, `make build` and `make isolate`. Set `AWM_ADM_LEAN` to an absolute Lean 4.19.0 executable for real host kernel checks. The Docker test target includes that compiler and runs non-editably without a parent project. Run it with network disabled, a read-only root, dropped capabilities and bounded resources as shown there.
@@ -19,6 +21,7 @@ Use the commands in [Contributing](../CONTRIBUTING.md): `make bootstrap`, `make 
 | Learning and dispatch | Private construction, bounded diagnostics, at-most-once grants, unknown holds, finite task stopping and restart |
 | Chat and teaching | Direct inputs, bounded automatic context, invalid preparation, source-field contracts, automatic admission, cancellation and local outcomes versus narration |
 | Sources and lifecycle | Exact spans, corrections/held support, unknown dates, bounded queues, deletion races and independent copies |
+| Temporal evidence | Mixed instant/occurrence/validity/period meanings, attributed reports, source clocks, precise units, legacy coexistence, conflict identity, paginated local queries and snapshot feature fencing |
 | Access and operations | Local peer/origin boundaries, private channel isolation, schema compatibility, paired recovery, conservative accounting and egress restrictions |
 | Public API | Unified `/api/v1`, separate interpretation/chat histories across restart, retired routes without side effects and generated OpenAPI drift |
 | Codex project workflow | Project-required readiness, stable binding/reuse, durable Ask/Teach recovery, stale-revision refusal, explicit mode changes, bounded knowledge reads and native MCP stdio |
@@ -27,6 +30,10 @@ Use the commands in [Contributing](../CONTRIBUTING.md): `make bootstrap`, `make 
 `contracts/workflows/` contains versioned specification oracles and authored equipment/access fixtures, including historical accounting profiles. `scripts/verify_workflow_contracts.py` validates them; its abstract state/price models are not proofs that the runtime refines those models or current spending prerequisites. Current direct-interaction cases are in `contracts/interaction-corpus.json`. Integration tests separately exercise actual SQLite, workers and APIs.
 
 Conversational regressions cover linked owner-context disclosure, changed scenario inputs, retained unresolved assumptions, missing/ambiguous inputs, range rejection, model changes during interpretation, exact result bindings and separate narration. Presentation checks keep computed values visible, retain complex/uncertain outcomes and preserve accepted teaching objectives. These recorded-provider tests verify the integration contract; they do not measure a live model's ability to resolve references or phrase explanations correctly.
+
+`tests/test_temporal_contracts.py`, `test_temporal_evidence.py`, `test_temporal_teaching.py` and `test_temporal_recovery.py` check the service temporal adapter independently of the finite kernel. Synthetic oracles distinguish exact observations, uncertain occurrence windows, validity coverage and whole-period values. Fault injection after revision writes, support updates and receipt/event writes verifies transaction rollback and stopped-work recovery with no partial knowledge. Compatibility checks retain legacy bytes and reject stripped feature envelopes, forged evidence and unsupported temporal rewrites. These are implementation checks, not external-source truth or a formal verification of the Python adapter.
+
+`tests/test_preparation_readiness.py` distinguishes information gaps from capability limits using unrelated synthetic subjects and unchanged model-neutral guidance. It checks structural routing without prose matching, invalid assessments, exact input references, old-profile decoding, ready-plan schema/validation parity, durable clarification after restart, retained attachments, idempotency and the absence of premature learning or automatic retries. These tests do not certify provider semantic classification.
 
 Correction regressions in `tests/test_teaching_revision.py` cover transitive dependent preservation, atomic overlapping corrections, provider tampering, invalid retained assertions and honest partial outcomes. `tests/test_revision_vocabulary.py` checks revision-compatible inherited metadata without weakening new metadata validation or silently retargeting ambiguous aliases. These service-layer checks leave the finite engine's admission rules unchanged.
 
@@ -103,3 +110,13 @@ A passing finite fixture establishes its expected behavior under the checked rep
 Keep failed live outcomes and uncertainty honest. New live trials require explicit disclosure, model/connection and budgets, and are distinct from automatic regression. No model comparison is needed to establish model-neutral guidance.
 
 Temporal regressions in `tests/test_temporal_interaction.py` and source-guidance tests cover service defaults, explicit zones, DST, captured disclosure, strict source validation, representable-date boundaries, period coverage, disputes, changing values, snapshots and unknown follow-ups. Connection regressions distinguish queued work from actual calls and expire unclaimed tests without retrying uncertain dispatches. Authored provider replies do not measure live interpretation accuracy.
+
+Temporal guidance regressions check model-independent ordered wire descriptions, rejection without coercion of malformed identifiers and scopes, sanitized durable diagnostics with no automatic retry, and retained/current preparation decoders through complete recorded Teach/Ask flows. These are offline checks; they do not establish provider reliability.
+
+Knowledge-intent regressions cover both extraction formats with authored assertion, quotation, negation and hypothetical replies. They check actual dispatched guidance/schema, exact original content, held non-assertions, candidate-only extraction, unchanged revision/mode and no automatic repeat. Preparation stays model-neutral, and retained preparation formats remain decodable. These recorded responses do not measure live classification accuracy or certify model-premise adoption; see [knowledge intent](KNOWLEDGE_INTENT.md).
+
+## Preparation transport assurance
+
+Offline regressions cover three-minute preparation versus unchanged Ask/local bounds, shortened remaining deadlines, simulated responses after sixty seconds, DNS/TLS/connection/HTTP failures, body-size refusal, gateway child start/exit/output/timeout errors and child reaping. Tests assert fixed diagnostics without raw exception/credential disclosure, retained HTTP status only when observed, distinction between time and output-token exhaustion, and no invented cause for historical uncertainty. Public Teach history and the bundled connector preserve the same failure identity/details across reads and restart; failed preparation creates no learning, request, acceptance or automatic retry. Known usage remains counted and unknown usage stays unresolved. A signal exit alone is not proof of an out-of-memory event.
+
+Clarified intake regressions exercise combined message/upload extraction, exact Unicode bytes and spans, exclusion of unselected material, source correction holds in current/imported models, refusal to reprocess packets with superseded originals, malformed-span rejection, separate queue/call deadlines, and retained child diagnostics without provider access. The finite algebraic kernel, claim validators and proof checkers remain unchanged by these orchestration paths.

@@ -9,12 +9,18 @@ from typing import Literal
 from pydantic import Field
 
 from ..contracts import ClosedModel, Identifier
+from ..sources.models import Projection
+from ..temporal_evidence.models import Catalog
 from ..wire import decode
 from .diagnostics import PreparationError
 from .models import Material
-from .source_guidance import BOUNDS, KIND, NAMESPACE, SYMBOL, VALUES
+from .readiness import Assessment
+from .source_guidance import BOUNDS, ENTITIES, KIND, NAMESPACE, SHARED, SYMBOL, UNIT, VALUES
 
 PROFILE = "awm-adm-teaching-reply/2"
+MATERIAL_PROFILE = "awm-adm-teaching-reply/3"
+SHARED_PROFILE = "awm-adm-teaching-reply/4"
+TEMPORAL_PROFILE = "awm-adm-teaching-reply/5"
 
 
 class Member(ClosedModel):
@@ -89,9 +95,110 @@ class WireReply(ClosedModel):
     plan: WirePlan | None
 
 
-def response_schema():
+class SelectedMaterial(ClosedModel):
+    projection: Projection
+    material_ids: list[Identifier] = Field(min_length=1, max_length=36)
+
+
+class SelectedChild(WireChild):
+    material: SelectedMaterial | None
+
+
+class SelectedPlan(WirePlan):
+    children: list[SelectedChild] = Field(min_length=1, max_length=4)
+
+
+class SelectedReply(WireReply):
+    profile: Literal["awm-adm-teaching-reply/3"]
+    plan: SelectedPlan | None
+
+
+class MaterialSelection(ClosedModel):
+    material_ids: list[Identifier] = Field(min_length=1, max_length=36)
+
+
+class SharedChild(WireChild):
+    material: MaterialSelection | None
+
+
+class SharedPlan(ClosedModel):
+    kind: Literal["capability", "facts", "correction", "mixed"]
+    summary: str = Field(min_length=1, max_length=2000)
+    types: list[TypeNode] = Field(max_length=128)
+    source_projection: Projection | None
+    children: list[SharedChild] = Field(min_length=1, max_length=4)
+    aliases: list[Alias] = Field(max_length=128)
+    parameters: list[Parameter] = Field(max_length=128)
+    value_aliases: list[ValueAlias] = Field(max_length=128)
+    requirements_json: str | None = Field(max_length=32768)
+
+
+class SharedReply(WireReply):
+    profile: Literal["awm-adm-teaching-reply/4"]
+    plan: SharedPlan | None
+
+
+class TemporalWirePlan(ClosedModel):
+    kind: Literal["capability", "facts", "correction", "mixed"]
+    summary: str = Field(min_length=1, max_length=2000)
+    types: list[TypeNode] = Field(max_length=128)
+    evidence_scope: Catalog | None
+    children: list[SharedChild] = Field(min_length=1, max_length=4)
+    aliases: list[Alias] = Field(max_length=128)
+    parameters: list[Parameter] = Field(max_length=128)
+    value_aliases: list[ValueAlias] = Field(max_length=128)
+    requirements_json: str | None = Field(max_length=32768)
+
+
+class TemporalReply(WireReply):
+    profile: Literal["awm-adm-teaching-reply/5"]
+    plan: TemporalWirePlan | None
+
+
+class AssessedTemporalReply(Assessment):
+    profile: Literal["awm-adm-teaching-reply/6"]
+    plan: TemporalWirePlan | None
+
+
+class AssessedLegacyReply(Assessment):
+    profile: Literal["awm-adm-teaching-reply/7"]
+    plan: WirePlan | None
+
+
+def expand_shared_projection(value, field="source_projection"):
+    """Expand one explicit projection into the unchanged local child contract.
+
+    No union, normalization, new coverage or inference from child objectives.
+    Runs only for replies dispatched under the shared-projection profile.
+    """
+    from copy import deepcopy
+
+    projection = value.pop(field)
+    has_material = any(c["material"] is not None for c in value["children"])
+    if has_material and projection is None:
+        raise PreparationError("sources", "shared_projection_required")
+    if not has_material and projection is not None:
+        raise PreparationError("sources", "unused_shared_projection")
+    for child in value["children"]:
+        if child["material"] is not None:
+            child["material"]["projection"] = deepcopy(projection)
+
+
+def response_schema(*, material_refs=False, shared_projection=False, temporal_evidence=False, assessed=False):
     """Inline the acyclic schema; limits and refinements remain local checks."""
-    schema = WireReply.model_json_schema()
+    schema = (
+        AssessedTemporalReply
+        if assessed and temporal_evidence
+        else AssessedLegacyReply
+        if assessed
+        else TemporalReply
+        if temporal_evidence
+        else SharedReply
+        if shared_projection
+        else SelectedReply
+        if material_refs
+        else WireReply
+    ).model_json_schema()
     definitions = schema.get("$defs", {})
 
     def simplify(node):
@@ -110,14 +217,44 @@ def response_schema():
         return result
 
     result = simplify(schema)
-    projection = result["properties"]["plan"]["anyOf"][0]["properties"]["children"]["items"]["properties"][
-        "material"
-    ]["anyOf"][0]["properties"]["projection"]["properties"]
+    if assessed:
+        from .readiness import INSTRUCTIONS
+
+        result["properties"]["missing_information"]["description"] = INSTRUCTIONS
+    plan = result["properties"]["plan"]["anyOf"][0]["properties"]
+    if temporal_evidence:
+        from ..temporal_evidence.guidance import ASSESSED_PREPARATION, INSTRUCTIONS, describe_scope
+
+        plan["evidence_scope"]["description"] = ASSESSED_PREPARATION if assessed else INSTRUCTIONS
+        catalog = plan["evidence_scope"]["anyOf"][0]["properties"]
+        catalog["namespace"]["description"] = NAMESPACE
+        catalog["entities"]["description"] = ENTITIES
+        predicate = catalog["predicates"]["items"]["properties"]
+        for name, description in (
+            ("symbol", SYMBOL),
+            ("unit", UNIT),
+            ("kind", KIND),
+            ("values", VALUES),
+            ("minimum", BOUNDS),
+            ("maximum", BOUNDS),
+        ):
+            predicate[name]["description"] = description
+        describe_scope(catalog["cells"]["items"])
+        return result
+    if shared_projection:
+        plan["source_projection"]["description"] = SHARED
+        projection = plan["source_projection"]["anyOf"][0]["properties"]
+    else:
+        projection = plan["children"]["items"]["properties"]["material"]["anyOf"][0]["properties"][
+            "projection"
+        ]["properties"]
     # Annotations explain local constraints without changing the shallow wire grammar.
     projection["namespace"]["description"] = NAMESPACE
+    projection["entities"]["description"] = ENTITIES
     predicate = projection["predicates"]["items"]["properties"]
     for name, description in (
         ("symbol", SYMBOL),
+        ("unit", UNIT),
         ("kind", KIND),
         ("values", VALUES),
         ("minimum", BOUNDS),

@@ -1,0 +1,281 @@
+{
+  "$defs": {
+    "Anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective From"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "kind": {
+          "default": "unknown",
+          "enum": [
+            "exact",
+            "window",
+            "unknown"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "enum": [
+                "second",
+                "minute",
+                "hour",
+                "day",
+                "month",
+                "year",
+                "window"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Precision"
+        },
+        "timezone_basis": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone Basis"
+        }
+      },
+      "title": "Anchor",
+      "type": "object"
+    },
+    "FactValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "boolean",
+            "integer",
+            "enum"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FactValue",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_from": {
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+          "title": "Effective From",
+          "type": "string"
+        },
+        "effective_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective To"
+        },
+        "kind": {
+          "enum": [
+            "instant",
+            "occurrence",
+            "validity",
+            "period_value"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "enum": [
+            "second",
+            "minute",
+            "hour",
+            "day",
+            "month",
+            "year",
+            "window",
+            "legacy"
+          ],
+          "title": "Precision",
+          "type": "string"
+        },
+        "timezone_basis": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Timezone Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "effective_from",
+        "precision",
+        "timezone_basis"
+      ],
+      "title": "Scope",
+      "type": "object"
+    },
+    "Spanned": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_kind": {
+          "enum": [
+            "assertion",
+            "quotation",
+            "hypothetical",
+            "negation"
+          ],
+          "title": "Assertion Kind",
+          "type": "string"
+        },
+        "end_byte": {
+          "minimum": 1,
+          "title": "End Byte",
+          "type": "integer"
+        },
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "observed_time": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "occurrence_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Occurrence Id"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        },
+        "reported_time": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "start_byte": {
+          "minimum": 0,
+          "title": "Start Byte",
+          "type": "integer"
+        },
+        "temporal_scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "unit": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FactValue"
+        }
+      },
+      "required": [
+        "entity_id",
+        "predicate",
+        "value",
+        "unit",
+        "temporal_scope",
+        "assertion_kind",
+        "start_byte",
+        "end_byte"
+      ],
+      "title": "Spanned",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:TemporalExtraction",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Spanned"
+      },
+      "maxItems": 100,
+      "title": "Claims",
+      "type": "array"
+    }
+  },
+  "required": [
+    "claims"
+  ],
+  "title": "Extraction",
+  "type": "object"
+}

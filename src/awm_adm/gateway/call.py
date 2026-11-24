@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 
+from ..providers.failures import measured, uncertain
 from ..providers.transport import acquire
 from ..runtime.protocol import dumps, loads
 
@@ -16,23 +17,39 @@ def bounded_acquire(configuration, wire, credential, timeout, *, recorded_index=
     body = dumps(
         {"configuration": configuration, "wire": wire.decode(), "credential": credential, "timeout": timeout}
     )
-    end = time.monotonic() + timeout
-    process = subprocess.Popen(
-        [sys.executable, "-I", "-m", "awm_adm.gateway.call", str(os.getpid())],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-        env={"PATH": os.defpath, "LANG": "C.UTF-8"},
-        cwd="/tmp",
-    )
+    started = time.monotonic()
+    end = started + timeout
+    try:
+        process = subprocess.Popen(
+            [sys.executable, "-I", "-m", "awm_adm.gateway.call", str(os.getpid())],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            env={"PATH": os.defpath, "LANG": "C.UTF-8"},
+            cwd="/tmp",
+        )
+    except OSError:
+        return measured(uncertain("child_start_failed", "gateway_start"), started, timeout)
     try:
         output, _ = process.communicate(body, timeout=max(0.001, end - time.monotonic()))
-        if process.returncode != 0 or len(output) > 1_048_576:
-            raise ValueError("Incomplete gateway child")
-        return loads(output)
-    except (subprocess.TimeoutExpired, ValueError):
-        return {"status": "outcome_unknown", "error": "transport_uncertain", "usage": None, "text": None}
+        if process.returncode != 0:
+            result = uncertain("child_exit", "gateway_wait", child_exit_code=process.returncode)
+        elif len(output) > 1_048_576:
+            result = uncertain("child_output_too_large", "gateway_output")
+        else:
+            from ..learning.models import Outcome
+
+            result = Outcome.model_validate(loads(output)).model_dump(exclude_none=True)
+            result.setdefault("usage", None)
+            result.setdefault("text", None)
+        return measured(result, started, timeout)
+    except subprocess.TimeoutExpired:
+        return measured(uncertain("timeout", "gateway_wait"), started, timeout)
+    except ValueError:
+        return measured(uncertain("child_output_invalid", "gateway_output"), started, timeout)
+    except OSError:
+        return measured(uncertain("transport_error", "gateway_wait"), started, timeout)
     finally:
         try:
             os.killpg(process.pid, signal.SIGKILL)

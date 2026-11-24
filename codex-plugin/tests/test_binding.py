@@ -92,6 +92,88 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(recovered["state"], "ready")
         self.assertEqual(len(self.service.creates), 1)
 
+    def failed_creation(self, **changes):
+        operation = str(uuid4())
+        self.service.operations[operation] = {
+            "operation_id": operation,
+            "kind": "create",
+            "adm_id": None,
+            "status": "failed",
+            "result": None,
+            "retry_new_creation": True,
+            "error": {"details": {"reason": "model_limit_reached"}},
+            **changes,
+        }
+        with self.journal.project(self.project) as (state, save):
+            state["creation"] = {
+                "origin": self.service.origin,
+                "installation_id": self.service.installation,
+                "name": "project",
+                "operation_id": operation,
+                "idempotency_key": "failed-original",
+            }
+            save()
+        return operation
+
+    def test_failed_creation_is_not_pending_and_does_not_retry_by_read_or_repeat(self):
+        operation = self.failed_creation()
+        status = self.c.status(str(self.project))
+        self.assertEqual(status["state"], "creation_failed")
+        self.assertFalse(status["creation_pending"])
+        self.assertTrue(status["retry_new_creation"])
+        for _ in range(2):
+            self.assertEqual(self.c.project(str(self.project))["creation"]["operation_id"], operation)
+        self.assertEqual(len(self.service.creates), 0)
+
+    def test_explicit_creation_retry_survives_lost_reply_and_concurrent_recovery(self):
+        old = self.failed_creation()
+        self.service.lose = True
+        with self.assertRaises(Problem):
+            self.c.project(str(self.project), retry_creation=old)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(
+                pool.map(lambda _: self.c.project(str(self.project), retry_creation=old), range(6))
+            )
+        self.assertEqual(len(self.service.creates), 1)
+        self.assertEqual(len({r["model"]["id"] for r in results}), 1)
+        with self.journal.project(self.project) as (state, _):
+            self.assertEqual(state["creation_history"][0]["outcome"]["operation_id"], old)
+            self.assertEqual(state["creation_history"][0]["intent"]["idempotency_key"], "failed-original")
+
+    def test_creation_retry_requires_exact_resolved_failure(self):
+        for changes in (
+            {"status": "running"},
+            {"adm_id": str(uuid4())},
+            {"retry_new_creation": False},
+            {"kind": "export"},
+        ):
+            with self.subTest(changes=changes):
+                old = self.failed_creation(**changes)
+                with self.assertRaises(Problem):
+                    self.c.project(str(self.project), retry_creation=old)
+        old = self.failed_creation()
+        with self.assertRaises(Problem):
+            self.c.project(str(self.project), retry_creation=str(uuid4()))
+        self.assertEqual(len(self.service.creates), 0)
+
+    def test_failed_retry_never_rotates_again_for_same_decision(self):
+        old = self.failed_creation()
+
+        def fail(name, identity):
+            operation = str(uuid4())
+            self.service.creates[identity] = {"operation_id": operation}
+            self.service.operations[operation] = {
+                **self.service.operations[old],
+                "operation_id": operation,
+            }
+            return self.service.creates[identity]
+
+        self.service.create = fail
+        first = self.c.project(str(self.project), retry_creation=old)
+        second = self.c.project(str(self.project), retry_creation=old)
+        self.assertEqual(first["creation"]["operation_id"], second["creation"]["operation_id"])
+        self.assertEqual(len(self.service.creates), 1)
+
     def test_same_names_different_roots_and_changed_installation(self):
         other = self.root / "other" / "project"
         other.mkdir(parents=True)

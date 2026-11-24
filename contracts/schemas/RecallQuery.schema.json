@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "Selector": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "predicate": {
+          "maxLength": 200,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+          "title": "Predicate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "predicate"
+      ],
+      "title": "Selector",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:RecallQuery",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cursor": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cursor"
+    },
+    "limit": {
+      "default": 100,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "op": {
+      "const": "recall_evidence",
+      "title": "Op",
+      "type": "string"
+    },
+    "selectors": {
+      "items": {
+        "$ref": "#/$defs/Selector"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Selectors",
+      "type": "array"
+    }
+  },
+  "required": [
+    "op",
+    "selectors"
+  ],
+  "title": "RecallQuery",
+  "type": "object"
+}

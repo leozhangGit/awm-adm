@@ -8,6 +8,8 @@ from .contracts import SCHEMAS
 from .feeds.models import CoverageInput, FeedControl, FeedInput, Reprocess
 from .interaction.models import DirectMessage, DisableConnection, EnableConnection
 from .sources.models import BatchInput, ExtractionOutput, JobInput, PolicyInput, Projection, ProjectionInput
+from .temporal_evidence.models import Catalog, Claim, Extraction
+from .temporal_evidence.types import EvidenceQuery, RecallQuery
 
 
 def documents():
@@ -21,6 +23,11 @@ def documents():
         "FactProjection": Projection,
         "ProjectionEpisode": ProjectionInput,
         "SourceExtraction": ExtractionOutput,
+        "TemporalCatalog": Catalog,
+        "TemporalClaim": Claim,
+        "TemporalExtraction": Extraction,
+        "EvidenceQuery": EvidenceQuery,
+        "RecallQuery": RecallQuery,
         "Feed": FeedInput,
         "FeedControl": FeedControl,
         "FeedReprocess": Reprocess,

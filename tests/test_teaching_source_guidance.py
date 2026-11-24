@@ -193,7 +193,15 @@ def settle(rt, reply):
     assert rt.conversations.tick()
 
 
-def test_source_failure_is_durable_settles_known_usage_and_never_retries(rig):
+def test_source_failure_is_durable_settles_known_usage_and_never_retries(rig, monkeypatch):
+    # Keep the saved historical reply paired with its original decoding contract.
+    def retained_spec(*args):
+        spec = specification(*args)
+        spec["prompt_version"] = "adm-teaching-preparation/7"
+        spec["schema"] = response_schema()
+        return spec
+
+    monkeypatch.setattr(service, "specification", retained_spec)
     rt, gw = rig
     key = rt.create("Preparation regression")["id"]
     recorded(rt, gw, {})

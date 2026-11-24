@@ -21,8 +21,25 @@ from ..runtime.protocol import unpack
 from ..wire import check_tree, decode
 from .dependencies import preserve_dependents
 from .diagnostics import PreparationError, diagnostic
-from .models import Plan, Reply
-from .provider_format import PROFILE, WireReply, local_plan
+from .materials import bind_plan
+from .models import Plan, Reply, TemporalPlan
+from .provider_format import (
+    MATERIAL_PROFILE,
+    PROFILE,
+    SHARED_PROFILE,
+    TEMPORAL_PROFILE,
+    AssessedLegacyReply,
+    AssessedTemporalReply,
+    SelectedReply,
+    SharedReply,
+    TemporalReply,
+    WireReply,
+    expand_shared_projection,
+    local_plan,
+)
+from .readiness import LEGACY_PROFILE as ASSESSED_LEGACY_PROFILE
+from .readiness import TEMPORAL_PROFILE as ASSESSED_TEMPORAL_PROFILE
+from .readiness import normalize as normalize_assessment
 
 
 class Headers:
@@ -131,12 +148,18 @@ def compute(task, budget):
         code = "invalid_fields" if isinstance(error, ValidationError) else "invalid_value"
         if isinstance(error, ValidationError) and stage["name"] == "envelope":
             first = error.errors(include_url=False, include_input=False, include_context=False)[0]["loc"]
+            if task.get("reply_format") in {ASSESSED_TEMPORAL_PROFILE, ASSESSED_LEGACY_PROFILE} and (
+                not first or first[0] != "plan"
+            ):
+                stage["name"] = "assessment"
             if first and first[0] == "plan":
                 stage["name"] = "plan"
                 for field, section in (
                     ("types", "types"),
                     ("interfaces", "interfaces"),
                     ("material", "sources"),
+                    ("source_projection", "sources"),
+                    ("evidence_scope", "sources"),
                     ("aliases", "vocabulary"),
                     ("parameters", "vocabulary"),
                     ("value_aliases", "vocabulary"),
@@ -155,14 +178,48 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         raise PreparationError("wire", "reply_too_large")
     value = decode(text.encode())
     stage["name"] = "envelope"
-    if task.get("reply_format") == PROFILE:
-        value = WireReply.model_validate(value).model_dump()
+    bindings = None
+    assessment = None
+    if task.get("reply_format") in {ASSESSED_TEMPORAL_PROFILE, ASSESSED_LEGACY_PROFILE}:
+        schema = (
+            AssessedTemporalReply
+            if task["reply_format"] == ASSESSED_TEMPORAL_PROFILE
+            else AssessedLegacyReply
+        )
+        value = schema.model_validate(value).model_dump()
+        assessment = normalize_assessment(value, task["input_ids"])
+        if assessment["status"] != "ready":
+            return {"reply": assessment, "work": budget.used}
+        # Adapt only the checked outer envelope. Ready plans follow the existing
+        # validators below; neither their grammar nor semantic checks change.
+        fmt = TEMPORAL_PROFILE if task["reply_format"] == ASSESSED_TEMPORAL_PROFILE else PROFILE
+        task = {**task, "reply_format": fmt}
+        value = {"profile": fmt, "status": "ready", "message": value["message"], "plan": value["plan"]}
+        stage["name"] = "envelope"
+    if task.get("reply_format") in {PROFILE, MATERIAL_PROFILE, SHARED_PROFILE, TEMPORAL_PROFILE}:
+        schema = {
+            PROFILE: WireReply,
+            MATERIAL_PROFILE: SelectedReply,
+            SHARED_PROFILE: SharedReply,
+            TEMPORAL_PROFILE: TemporalReply,
+        }[task["reply_format"]]
+        value = schema.model_validate(value).model_dump()
         if (value["status"] == "ready") != (value["plan"] is not None):
             raise PreparationError("envelope", "status_plan_mismatch")
         reply = {"status": value["status"], "message": value["message"], "plan_json": None}
+        if assessment:
+            reply["assessment"] = assessment["assessment"]
         if reply["status"] != "ready":
             return {"reply": reply, "work": budget.used}
         stage["name"] = "plan"
+        if task["reply_format"] in {SHARED_PROFILE, TEMPORAL_PROFILE}:
+            stage["name"] = "sources"
+            expand_shared_projection(
+                value["plan"],
+                "evidence_scope" if task["reply_format"] == TEMPORAL_PROFILE else "source_projection",
+            )
+        if task["reply_format"] in {MATERIAL_PROFILE, SHARED_PROFILE, TEMPORAL_PROFILE}:
+            bindings = bind_plan(value["plan"], task.get("material_manifest"))
         value = local_plan(value["plan"], budget)
     elif task.get("reply_format") is None:
         # Only recorded/in-flight legacy contracts use the historical envelope.
@@ -175,7 +232,13 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         raise PreparationError("envelope", "unsupported_format")
     stage["name"] = "plan"
     check_tree(value)
-    plan = Plan.model_validate(value).model_dump()
+    if task.get("reply_format") == TEMPORAL_PROFILE:
+        value["profile"] = "awm-adm-teaching-plan/2"
+    plan = (
+        (TemporalPlan if task.get("reply_format") == TEMPORAL_PROFILE else Plan)
+        .model_validate(value)
+        .model_dump()
+    )
     stage["name"] = "dependencies"
     retained = preserve_dependents(model, plan, budget)
     allowed = set(task["input_ids"])
@@ -258,6 +321,7 @@ def check_reply(task, budget, model, vocabulary, base, stage):
     return {
         "reply": {**reply, "plan_json": None},
         "plan": plan,
+        **({"material_bindings": bindings} if bindings is not None else {}),
         "contracts": contracts,
         "dependencies": dependencies,
         "preserve_declarations": retained,

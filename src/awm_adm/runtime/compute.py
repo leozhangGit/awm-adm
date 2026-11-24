@@ -43,6 +43,12 @@ def compute(task):
             if task.get("snapshot") is not None
             else Instance(mode=task["mode"], budget=budget)
         )
+        if (task.get("snapshot") or {}).get("profile") == "awm-adm-service-snapshot/1":
+            from ..sources.compute import projected
+
+            projected(
+                {"model": instance._model, "support": instance._support, "blobs": instance._blobs}, budget
+            )
         snapshot = instance.export_snapshot(state=instance.initial_state(), budget=budget)
         return {"snapshot": pack(snapshot), "context": instance.info()}
     if task["operation"] in ("export", "requirements"):
@@ -82,7 +88,7 @@ def compute(task):
     from ..sources.compute import query as source_query
 
     try:
-        result = source_query(checked, task["query"], limits, budget)
+        result = source_query(checked, task["query"], limits, budget, context=task["context"])
     except ResourceLimit as error:
         result = bind_result(
             model.version,

@@ -5,6 +5,11 @@ from ..sources.models import Projection
 
 
 def extend(current, proposed):
+    from ..temporal_evidence.legacy import extend as temporal_extend
+    from ..temporal_evidence.legacy import is_catalog
+
+    if is_catalog(current) or is_catalog(proposed):
+        return temporal_extend(current, proposed)
     if not current or current == proposed:
         return proposed
     if current["namespace"] != proposed["namespace"]:

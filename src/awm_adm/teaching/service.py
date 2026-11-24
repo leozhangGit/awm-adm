@@ -7,8 +7,10 @@ from ..contracts import CallLimits
 from ..learning.service import fault, fingerprint
 from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
-from .prompt import NATIVE_PROMPT_VERSIONS, specification
-from .provider_format import PROFILE
+from .diagnostics import PreparationError
+from .materials import manifest
+from .prompt import ASSESSED_PROMPT_FORMATS, NATIVE_PROMPT_VERSIONS, TEMPORAL_PROMPT_VERSIONS, specification
+from .provider_format import MATERIAL_PROFILE, PROFILE, SHARED_PROFILE, TEMPORAL_PROFILE
 from .review import headers
 
 
@@ -69,8 +71,20 @@ class Teaching:
 
     def direct_task(self, db, key, conv, work, turn, previous):
         prior = None
-        if previous and work.get("question"):
-            prior = self.get(key, previous["preferences"]["task_id"])
+        if previous:
+            candidate = self.get(key, previous["preferences"]["task_id"])
+            if (
+                (
+                    candidate["status"] in {"needs_input", "unsupported"}
+                    or (
+                        candidate["status"] == "failed"
+                        and candidate.get("failure_code") == "invalid_preparation"
+                    )
+                )
+                and not candidate.get("execution")
+                and candidate.get("failure_code") not in {"outcome_unknown", "stale_context", "cancelled"}
+            ):
+                prior = candidate
         inputs = list(prior["inputs"]) if prior else []
         inputs.append(
             {
@@ -101,8 +115,15 @@ class Teaching:
             "specification": None,
             "execution_authorized": False,
             "intent_authority": "local_teach_submission",
+            "source_context_profile": "awm-adm-selected-material/1",
             "previous_task_id": prior["id"] if prior else None,
         }
+        task["material_manifest"] = {
+            "lineage_id": prior.get("material_manifest", {}).get("lineage_id", prior["id"])
+            if prior
+            else task["id"]
+        }
+        task["material_manifest"] = manifest(db, key, task)
         db.execute(
             "INSERT INTO teaching_tasks(id,conversation,status,body) VALUES(?,?,?,?)",
             (task["id"], conv["id"], task["status"], dumps(task)),
@@ -114,6 +135,8 @@ class Teaching:
             task.update(status=status, failure_code=code)
             if work.get("failure_diagnostics"):
                 task["failure_diagnostics"] = work["failure_diagnostics"]
+            if work.get("preparation_assessment"):
+                task["preparation_assessment"] = work["preparation_assessment"]
             with self.store.db(key) as db, self.store.transaction(db):
                 self.save(db, task)
 
@@ -165,7 +188,15 @@ class Teaching:
                             continue
                         outcome = loads(grant["outcome"])
                         if outcome["status"] != "succeeded":
-                            fault("provider_unavailable", "Teaching provider response failed")
+                            from .provider_failure import preparation_failure
+
+                            diagnostic = preparation_failure(
+                                work["grant_id"], outcome, loads(grant["body"])["limits"]
+                            )
+                            work.update(failure_code=diagnostic["code"], failure_diagnostics=diagnostic)
+                            self.stop(key, work, "failed", diagnostic["code"])
+                            self.s._finish(key, work, "failed", diagnostic["message"])
+                            return True
                         with self.store.lock:
                             self.rt.learning._grant_valid(loads(grant["body"]))
                         task = self.get(key, work["preferences"]["task_id"])
@@ -175,8 +206,17 @@ class Teaching:
                             "teaching_check",
                             provider_text=outcome.get("text", ""),
                             input_ids=[i["id"] for i in task["inputs"]],
+                            material_manifest=task.get("material_manifest"),
                             reply_format=(
-                                PROFILE
+                                ASSESSED_PROMPT_FORMATS[work["provenance"]["prompt_version"]]
+                                if work["provenance"]["prompt_version"] in ASSESSED_PROMPT_FORMATS
+                                else TEMPORAL_PROFILE
+                                if work["provenance"]["prompt_version"] in TEMPORAL_PROMPT_VERSIONS
+                                else SHARED_PROFILE
+                                if work["provenance"]["prompt_version"] == "adm-teaching-preparation/9"
+                                else MATERIAL_PROFILE
+                                if work["provenance"]["prompt_version"] == "adm-teaching-preparation/8"
+                                else PROFILE
                                 if work["provenance"]["prompt_version"] in NATIVE_PROMPT_VERSIONS
                                 else None
                                 if work["provenance"]["prompt_version"]
@@ -191,6 +231,8 @@ class Teaching:
                         return True
                     except (RuntimeFault, ValueError, TypeError, KeyError) as error:
                         code = error.code if isinstance(error, RuntimeFault) else "invalid_preparation"
+                        if isinstance(error, PreparationError):
+                            work["failure_diagnostics"] = error.diagnostic
                         work["failure_code"] = code
                         self.stop(key, work, "failed", code)
                         self.s._finish(
@@ -214,6 +256,7 @@ class Teaching:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
             conn = self.rt.interactions.connection_for(work, "task_preparation")
             limits = self.rt.config.learning.call.model_dump()
+            limits["max_duration_ms"] = self.rt.config.learning.preparation_timeout_ms
             limits["max_output_tokens"] = min(8192, limits["max_output_tokens"])
             raw, estimate = make_wire(conn, spec, limits["max_output_tokens"])
             if len(raw) > self.rt.config.server.max_body_bytes:
@@ -260,7 +303,7 @@ class Teaching:
                 work,
                 "failed",
                 checked["failure"]["message"] + " No configuration was installed and no learning started. "
-                "The call usage is recorded. Please clarify or rephrase the request before trying again.",
+                "The call usage is recorded. This is a preparation error, not a request for you to repair internal fields.",
             )
 
     def complete(self, key, work, task, checked):
@@ -269,6 +312,9 @@ class Teaching:
             task["temporal_context"] = work["temporal_context"]
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
+            if reply.get("assessment"):
+                task["preparation_assessment"] = reply["assessment"]
+                work["preparation_assessment"] = reply["assessment"]
             if reply["status"] != "ready":
                 status = "needs_input" if reply["status"] == "needs_clarification" else "unsupported"
                 self.stop(key, work, status)
@@ -303,6 +349,11 @@ class Teaching:
                         "depends_on": [
                             task["id"] + f"-child-{parent + 1}" for parent in checked["dependencies"][i]
                         ],
+                        **(
+                            {"material_ids": checked["material_bindings"][i]}
+                            if "material_bindings" in checked
+                            else {}
+                        ),
                     }
                     for i, (child, contract) in enumerate(
                         zip(plan["children"], checked["contracts"], strict=True)
@@ -346,24 +397,34 @@ class Teaching:
             }
             try:
                 self.s.intake.start_check(key, task, {"source_consent": True})
-            except RuntimeFault as error:
+            except (RuntimeFault, PreparationError) as error:
                 task.pop("execution")
+                code = error.code if isinstance(error, RuntimeFault) else "invalid_preparation"
+                # Retain the bounded checked proposal for diagnosis, never execution.
+                task["failed_specification"] = task["specification"]
+                if isinstance(error, PreparationError):
+                    task["failure_diagnostics"] = error.diagnostic
+                    work["failure_diagnostics"] = error.diagnostic
                 task.update(
-                    status="unsupported" if error.code == "unsupported" else "needs_input",
+                    status="unsupported"
+                    if code == "unsupported"
+                    else "needs_input"
+                    if code == "needs_specification"
+                    else "failed",
                     specification=None,
-                    failure_code=error.code,
+                    failure_code=code,
                 )
+                work["failure_code"] = code
                 with self.store.db(key) as db:
                     self.save(db, task)
                 self.s._finish(
                     key,
                     work,
                     task["status"],
-                    str(error),
-                    {
-                        "kind": "unavailable" if task["status"] == "unsupported" else "clarification",
-                        "text": str(error),
-                    },
+                    str(error) + " No new knowledge was accepted.",
+                    {"kind": "clarification", "text": str(error)}
+                    if task["status"] == "needs_input"
+                    else None,
                 )
                 return
             task.pop("execution")

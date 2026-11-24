@@ -276,7 +276,7 @@ def test_owned_15_migration_preserves_configurations_and_disables_without_dispat
     db.execute("UPDATE learning_control SET enabled=1 WHERE id=1")
     originals = [tuple(r) for r in db.execute("SELECT * FROM connections")]
     migrate(db, "registry")
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 17
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 18
     assert [tuple(r) for r in db.execute("SELECT * FROM connections")] == originals
     control = db.execute("SELECT * FROM connection_control").fetchone()
     assert control["state"] == "disabled"

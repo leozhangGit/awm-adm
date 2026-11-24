@@ -75,3 +75,7 @@ The append API remains `POST /sources/batches`. Feed IDs target one ADM through 
 ## Verification scope
 
 Recorded-provider tests exercise intake, cursors, bounded scheduling, shared interests, pause/resume, correction holds and ordinary ordered admission. See [Testing](TESTING.md) for reproducible checks and limits. These tests do not establish the accuracy of arbitrary source material or indefinite ingestion capacity.
+
+## Temporal evidence
+
+Typed temporal catalogs use the same feed queue, source-generation fences, limits and original-claim admission. Different temporal kinds in one original share an extraction. Additive catalog changes preserve semantic descriptors; a window removes supported coverage through holds. Partial interval resegmentation is unsupported and preserves accepted coverage. A push credential cannot widen these meanings. See [temporal evidence](TEMPORAL_EVIDENCE.md).

@@ -2,10 +2,10 @@
 
 from uuid import uuid4
 
-from awm_adm.runtime.protocol import dumps
+from awm_adm.runtime.protocol import dumps, loads
 
 from .ported.provider_fixtures import wire_expression
-from .teaching_wire import native_reply
+from .teaching_wire import assessed_reply, native_reply, selected_reply, shared_reply, temporal_reply
 
 TEXT = "The site has capacity ten places from 2020 through the end of 2023."
 
@@ -73,6 +73,34 @@ def respond(rt, reply):
     reply = native_reply(reply)
     job = rt.learning.claim()
     assert job is not None
+    with rt.store.db() as db:
+        grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (job["grant_id"],)).fetchone()[0])
+    if grant["provenance"]["prompt_version"] in {
+        "adm-teaching-preparation/8",
+        "adm-teaching-preparation/9",
+        "adm-teaching-preparation/10",
+        "adm-teaching-preparation/11",
+        "adm-teaching-preparation/12",
+        "adm-teaching-preparation/14",
+        "adm-teaching-preparation/15",
+        "adm-teaching-preparation/16",
+        "adm-teaching-preparation/17",
+    }:
+        task = rt.conversations.teaching.get(grant["adm"], grant["conversation_work_id"])
+        convert = (
+            temporal_reply
+            if grant["provenance"]["prompt_version"].endswith(("/10", "/11", "/12", "/14", "/16"))
+            else shared_reply
+            if grant["provenance"]["prompt_version"].endswith("/9")
+            else selected_reply
+        )
+        version = grant["provenance"]["prompt_version"]
+        if not version.endswith(("/15", "/17")):
+            reply = convert(reply, task["material_manifest"])
+        if version.endswith(("/14", "/15", "/16", "/17")):
+            reply = assessed_reply(
+                reply, [i["id"] for i in task["inputs"]], temporal=version.endswith(("/14", "/16"))
+            )
     rt.learning.authorize(job["grant_id"], job["lease"])
     rt.learning.outcome(
         job["grant_id"],
@@ -127,6 +155,42 @@ def command(rt, key, uid, action, **kw):
 def reply(rt, value):
     job = rt.learning.claim()
     assert job
+    with rt.store.db() as db:
+        grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (job["grant_id"],)).fetchone()[0])
+    if grant["provenance"]["prompt_version"] in {
+        "adm-source-extraction/3",
+        "adm-source-extraction/4",
+        "adm-source-extraction/6",
+        "adm-source-extraction/6-context-1",
+        "adm-source-extraction/7",
+        "adm-source-extraction/7-context-1",
+    }:
+        from copy import deepcopy
+
+        value = deepcopy(value)
+        for c in value.get("claims", []):
+            scope = c["temporal_scope"]
+            if scope["kind"] in ("point", "interval"):
+                scope["kind"] = "instant" if scope["kind"] == "point" else "validity"
+                scope.pop("granularity", None)
+                scope.update(precision="second", timezone_basis="UTC")
+                c.update(
+                    observed_time={
+                        "kind": "unknown",
+                        "effective_from": None,
+                        "effective_to": None,
+                        "precision": None,
+                        "timezone_basis": None,
+                    },
+                    reported_time={
+                        "kind": "unknown",
+                        "effective_from": None,
+                        "effective_to": None,
+                        "precision": None,
+                        "timezone_basis": None,
+                    },
+                    occurrence_id=None,
+                )
     rt.learning.authorize(job["grant_id"], job["lease"])
     rt.learning.outcome(
         job["grant_id"],

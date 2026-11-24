@@ -4661,6 +4661,81 @@
   },
   "components": {
     "schemas": {
+      "Anchor": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "window",
+              "unknown"
+            ],
+            "title": "Kind",
+            "default": "unknown"
+          },
+          "effective_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective From"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "second",
+                  "minute",
+                  "hour",
+                  "day",
+                  "month",
+                  "year",
+                  "window"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precision"
+          },
+          "timezone_basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone Basis"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Anchor"
+      },
       "AppendCredential": {
         "properties": {
           "context": {
@@ -4844,6 +4919,61 @@
           "op"
         ],
         "title": "Capabilities"
+      },
+      "Catalog": {
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "awm-adm-temporal-catalog/1",
+            "title": "Profile",
+            "default": "awm-adm-temporal-catalog/1"
+          },
+          "namespace": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+            "title": "Namespace"
+          },
+          "entities": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+            },
+            "type": "array",
+            "maxItems": 128,
+            "minItems": 1,
+            "title": "Entities"
+          },
+          "predicates": {
+            "items": {
+              "$ref": "#/components/schemas/Series"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Predicates"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/Scope"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "minItems": 1,
+            "title": "Cells"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "namespace",
+          "entities",
+          "predicates",
+          "cells"
+        ],
+        "title": "Catalog"
       },
       "Change": {
         "properties": {
@@ -5093,7 +5223,15 @@
             "title": "Kind"
           },
           "projection": {
-            "$ref": "#/components/schemas/Projection"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Projection"
+              },
+              {
+                "$ref": "#/components/schemas/Catalog"
+              }
+            ],
+            "title": "Projection"
           },
           "reason": {
             "type": "string",
@@ -5667,6 +5805,90 @@
           "expression"
         ],
         "title": "Evaluate"
+      },
+      "EvidenceQuery": {
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "query_evidence",
+            "title": "Op"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "value_at",
+              "value_throughout",
+              "value_for_period",
+              "observations_in",
+              "reports_about"
+            ],
+            "title": "Intent"
+          },
+          "entity_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "title": "Entity Id"
+          },
+          "predicate": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "title": "Predicate"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/Scope"
+          },
+          "reported_time": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Anchor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "contained",
+              "possibly_overlapping"
+            ],
+            "title": "Relation",
+            "default": "contained"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 100
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "op",
+          "intent",
+          "entity_id",
+          "predicate",
+          "scope"
+        ],
+        "title": "EvidenceQuery"
       },
       "ExecuteInput": {
         "properties": {
@@ -6400,6 +6622,11 @@
       },
       "Operation": {
         "properties": {
+          "retry_new_creation": {
+            "type": "boolean",
+            "title": "Retry New Creation",
+            "default": false
+          },
           "operation_id": {
             "type": "string",
             "title": "Operation Id"
@@ -6490,9 +6717,13 @@
                 "$ref": "#/components/schemas/Projection"
               },
               {
+                "$ref": "#/components/schemas/Catalog"
+              },
+              {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Projection"
           },
           "sources": {
             "items": {
@@ -6668,6 +6899,74 @@
         ],
         "title": "ProjectionInput"
       },
+      "Qualifier": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "title": "Name"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "Qualifier"
+      },
+      "RecallQuery": {
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "recall_evidence",
+            "title": "Op"
+          },
+          "selectors": {
+            "items": {
+              "$ref": "#/components/schemas/Selector"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Selectors"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 100
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "op",
+          "selectors"
+        ],
+        "title": "RecallQuery"
+      },
       "RenameInput": {
         "properties": {
           "expected_name": {
@@ -6766,6 +7065,12 @@
               },
               {
                 "$ref": "#/components/schemas/FactPeriodLookup"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceQuery"
+              },
+              {
+                "$ref": "#/components/schemas/RecallQuery"
               }
             ],
             "title": "Query",
@@ -6779,7 +7084,9 @@
                 "explain": "#/components/schemas/Explain",
                 "find_plan": "#/components/schemas/FindPlan",
                 "lookup_fact": "#/components/schemas/FactLookup",
-                "lookup_fact_period": "#/components/schemas/FactPeriodLookup"
+                "lookup_fact_period": "#/components/schemas/FactPeriodLookup",
+                "query_evidence": "#/components/schemas/EvidenceQuery",
+                "recall_evidence": "#/components/schemas/RecallQuery"
               }
             }
           },
@@ -7248,6 +7555,68 @@
         ],
         "title": "Review"
       },
+      "Scope": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "instant",
+              "occurrence",
+              "validity",
+              "period_value"
+            ],
+            "title": "Kind"
+          },
+          "effective_from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+            "format": "date-time",
+            "title": "Effective From"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "precision": {
+            "type": "string",
+            "enum": [
+              "second",
+              "minute",
+              "hour",
+              "day",
+              "month",
+              "year",
+              "window",
+              "legacy"
+            ],
+            "title": "Precision"
+          },
+          "timezone_basis": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Timezone Basis"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "effective_from",
+          "precision",
+          "timezone_basis"
+        ],
+        "title": "Scope"
+      },
       "Selection": {
         "properties": {
           "kind": {
@@ -7283,6 +7652,164 @@
           "kind"
         ],
         "title": "Selection"
+      },
+      "Selector": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "title": "Entity Id"
+          },
+          "predicate": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "title": "Predicate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "predicate"
+        ],
+        "title": "Selector"
+      },
+      "Series": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "title": "Symbol"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "integer",
+              "enum"
+            ],
+            "title": "Kind"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Unit"
+          },
+          "minimum": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": -9007199254740991.0,
+            "title": "Minimum",
+            "default": 0
+          },
+          "maximum": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": -9007199254740991.0,
+            "title": "Maximum",
+            "default": 100
+          },
+          "values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Values"
+          },
+          "meaning": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Meaning"
+          },
+          "statement_level": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "reported"
+            ],
+            "title": "Statement Level",
+            "default": "direct"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "qualifiers": {
+            "items": {
+              "$ref": "#/components/schemas/Qualifier"
+            },
+            "type": "array",
+            "maxItems": 16,
+            "title": "Qualifiers"
+          },
+          "scope_kinds": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "instant",
+                "occurrence",
+                "validity",
+                "period_value"
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Scope Kinds"
+          },
+          "metric": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "symbol",
+          "kind",
+          "unit",
+          "meaning",
+          "scope_kinds"
+        ],
+        "title": "Series"
       },
       "SourceInput": {
         "properties": {
