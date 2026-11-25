@@ -49,7 +49,11 @@ class Execution:
             }
         }
         value["steps"] = [
-            {k: v for k, v in s.items() if k in {"id", "status", "reason", "source_progress", "feed_id"}}
+            {
+                k: v
+                for k, v in s.items()
+                if k in {"id", "status", "reason", "source_progress", "feed_id", "failure_diagnostics"}
+            }
             for s in run["steps"]
         ]
         review = run.get("review")
@@ -504,16 +508,16 @@ class Execution:
             "disclose_model": True,
             "limits": {
                 "max_calls": 2,
-                "max_input_tokens": 2 * max(32000, run["input_bound"]),
+                "max_input_tokens": 2 * run["input_bound"],
                 "max_output_tokens": 16384,
                 "max_work": cap,
                 "max_duration_ms": remaining,
                 "no_progress_attempts": 2,
             },
             "call_limits": CallLimits(
-                max_input_tokens=max(32000, run["input_bound"]),
+                max_input_tokens=run["input_bound"],
                 max_output_tokens=min(8192, self.rt.config.learning.call.max_output_tokens),
-                max_duration_ms=min(60000, remaining, self.rt.config.learning.call.max_duration_ms),
+                max_duration_ms=min(remaining, self.rt.config.learning.acquisition_timeout_ms),
             ).model_dump(),
         }
         # Persist immutable creation intent before crossing the registry/ADM boundary.
@@ -552,6 +556,8 @@ class Execution:
             reason=ep.get("reason"),
             episode_status=ep["status"],
         )
+        if ep.get("failure_diagnostics"):
+            step["failure_diagnostics"] = ep["failure_diagnostics"]
         self.persist(key, task)
         return True
 
@@ -760,6 +766,7 @@ class Execution:
                 {
                     "objective": objectives[s["id"]],
                     "reason": s.get("reason", run.get("reason", "not_completed")),
+                    **({"diagnostic": s["failure_diagnostics"]} if s.get("failure_diagnostics") else {}),
                 }
                 for s in run["steps"]
                 if s["status"] != "accepted"
@@ -914,7 +921,10 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
             text += (
                 "Still unresolved: "
                 + "; ".join(
-                    s["objective"].strip().rstrip(".") + " (" + str(s["reason"]).replace("_", " ") + ")"
+                    s["objective"].strip().rstrip(".")
+                    + " ("
+                    + (s.get("diagnostic", {}).get("message") or str(s["reason"]).replace("_", " "))
+                    + ")"
                     for s in summary["unresolved"]
                 )
                 + ". "

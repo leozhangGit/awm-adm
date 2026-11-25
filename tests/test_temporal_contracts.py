@@ -186,7 +186,7 @@ def test_temporal_preparation_schema_is_published_and_has_no_model_branch():
     b = specification({**task, "provider_model": "another-provider-choice"}, {}, {}, None)
     # Capture the same default for the comparison; no model-specific semantic/schema changes.
     a["context"]["temporal_context"] = b["context"]["temporal_context"]
-    assert a == b and a["prompt_version"] == "adm-teaching-preparation/16"
+    assert a == b and a["prompt_version"] == "adm-teaching-preparation/18"
 
 
 def test_calendar_window_resolves_default_zone_and_preserves_intent():

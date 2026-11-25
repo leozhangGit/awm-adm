@@ -463,6 +463,14 @@ main#main {
 .operation-list .text-button {
   margin-left: auto;
 }
+.operation-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
 .empty {
   padding: 45px 28px;
   text-align: center;

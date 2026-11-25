@@ -14,7 +14,9 @@ Automatic source admission records the local Teach task and local checks. It doe
 
 ## Work and stopping
 
-Each acquisition child has at most two diagnostic attempts, a finite private draft and no-progress stopping. Per-call token/time bounds and per-computation work/time bounds remain enforced. The active execution has a 15-minute operational deadline; preparation has a five-minute exchange deadline. These bound running work, not a user’s idle clarification response. See [limits](LIMITS.md) for the configured envelopes.
+Each acquisition child has at most two diagnostic attempts, a finite private draft and no-progress stopping. Acquisition calls default to three minutes, with a child deadline of 12 minutes or the parent's remaining time, whichever is shorter. Per-call token/time bounds and per-computation work/time bounds remain enforced. The active execution has a 15-minute operational deadline; preparation has a five-minute exchange deadline and its own three-minute provider cap. Extraction and completion narration use the ordinary 60-second provider cap. These bound running work, not a user’s idle clarification response. See [limits](LIMITS.md) for the configured envelopes.
+
+At default settings each child has a 128,000 per-call input reservation and 256,000 aggregate input reservation. The full acquisition request, including instructions and schema, is checked before dispatch. An input-capacity stop retains required/available figures in the episode and child `failure_diagnostics`; the completion packet includes that diagnostic with the unresolved objective. Readable summaries explain the limit rather than reporting only `invalid_limits` or skipped language setup. Previously accepted children remain accepted, and the diagnostic's no-dispatch statement concerns only the rejected call.
 
 A task can succeed, partially succeed, fail, exhaust its finite work, be cancelled or need input. Accepted independent children survive a later unresolved child. No task promises to close its knowledge gap, changes providers silently, or repeats a call with an unknown outcome.
 

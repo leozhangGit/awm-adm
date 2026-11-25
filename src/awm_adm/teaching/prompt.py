@@ -3,16 +3,19 @@
 from ..knowledge_guidance import PREPARATION, QUERYABLE_KNOWLEDGE
 from ..temporal import MEANING, context
 from ..temporal_evidence.guidance import ASSESSED_PREPARATION as TEMPORAL_INSTRUCTIONS
+from .field_guidance import INSTRUCTIONS as FIELD_INSTRUCTIONS
 from .provider_format import response_schema
 from .readiness import INSTRUCTIONS as READINESS_INSTRUCTIONS
 from .readiness import LEGACY_PROFILE, TEMPORAL_PROFILE
 from .source_guidance import INSTRUCTIONS as SOURCE_INSTRUCTIONS
 
-PROMPT_VERSION = "adm-teaching-preparation/16"
-LEGACY_PROMPT_VERSION = "adm-teaching-preparation/17"
+PROMPT_VERSION = "adm-teaching-preparation/18"
+LEGACY_PROMPT_VERSION = "adm-teaching-preparation/19"
 ASSESSED_PROMPT_FORMATS = {
     PROMPT_VERSION: TEMPORAL_PROFILE,
     LEGACY_PROMPT_VERSION: LEGACY_PROFILE,
+    "adm-teaching-preparation/16": TEMPORAL_PROFILE,
+    "adm-teaching-preparation/17": LEGACY_PROFILE,
     "adm-teaching-preparation/14": TEMPORAL_PROFILE,
     "adm-teaching-preparation/15": LEGACY_PROFILE,
 }
@@ -61,6 +64,7 @@ def specification(task, catalog, requirements, source_policy):
             f"Use profile {TEMPORAL_PROFILE if selected else LEGACY_PROFILE}. "
             "Classify capability (executable rule), facts (source-backed finite propositions), correction, or mixed. "
             "Use separate typed children for mixed intentions. Cite exact inputs[].id; preserve every input. "
+            f"{FIELD_INSTRUCTIONS}"
             "Each child has an interfaces ARRAY of headers keyed by symbol, not types/functions groups. "
             "A header has only symbol, kind, type_id, params, returns_id, state_id, parameters_id. "
             "Use qualified declaration symbols. Function: params plus returns_id. Assertion: params. "

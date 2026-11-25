@@ -4,11 +4,17 @@ An enabled connection can have an unsuccessful call without being disabled. Read
 
 ## Preparation time
 
-Teaching preparation has its own `learning.preparation_timeout_ms` installation bound, default **180,000 ms (three minutes)**, allowed from 1 through 300,000 ms. It applies to every domain, provider and model. Ask, narration, extraction, acquisition and connection tests retain their existing per-call limits, normally 60,000 ms. Input/output limits, concurrency and local compute limits are unchanged.
+Teaching preparation has its own `learning.preparation_timeout_ms` installation bound, default **180,000 ms (three minutes)**, allowed from 1 through 300,000 ms. It applies to every domain, provider and model. Acquisition has a separate three-minute bound described below. Ask, narration, extraction and connection tests use the ordinary per-call limit, normally 60,000 ms. Token, concurrency and local compute limits are separate from these deadlines.
 
 The three-minute setting bounds a new preparation grant; its deadline is the earlier of that bound from reservation and the exchange's existing five-minute active-work deadline. Claim and dispatch cannot extend it. The gateway's actual remaining deadline may therefore be shorter than the configured limit. The worker waits for that grant's duration plus its existing delivery grace; the gateway bounds the complete child process, including response reads. A longer deadline is not a guarantee that a provider will complete a plan.
 
 New configuration defaults apply to new preparation work. Retained grants keep their original limits and identity; upgrades never extend, replay or reclassify an uncertain historical call. Waiting for a semantic clarification is separate from running work and requires no spending permission renewal.
+
+## Acquisition time
+
+Acquisition uses `learning.acquisition_timeout_ms`, default **180,000 ms**, allowed from 1 through 600,000 ms. Explicit episodes use a three-minute call default and check submitted limits against that installation cap. The general episode allows up to 12 minutes for its bounded attempts and local checking. Automatic Teach captures a child deadline no later than the remaining 15-minute execution deadline and clips each call accordingly. At claim, the execution lease is the earlier of the captured call duration and the episode deadline; the gateway enforces the remaining time for its complete child process. Worker RPC delivery grace does not extend that execution deadline.
+
+Input capacity and elapsed time are independent limits: a larger request cap does not imply proportionally longer execution or a larger output allowance. `provider_timeout` with `failure_stage: gateway_wait` identifies an expired wait without identifying whether generation, networking or provider processing caused the delay. It retains `outcome_unknown` and the original reservation. Older grants keep their limits, and a restart or longer default never retries them. Accepted independent Teach children remain accepted even if a later acquisition times out.
 
 ## Extraction queue and execution bounds
 

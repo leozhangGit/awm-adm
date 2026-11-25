@@ -52,7 +52,7 @@ def test_native_reply_is_shallow_closed_and_matches_published_contract():
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(proposed())
     assert schema == json.loads((ROOT / "contracts/teaching-reply.schema.json").read_text())
-    assert len(dumps(schema)) < 10000
+    assert len(dumps(schema)) < 12000  # Includes annotations of the unchanged local bounds.
 
     def walk(value):
         if isinstance(value, dict):
@@ -195,7 +195,7 @@ def test_error_diagnostics_do_not_echo_untrusted_values_or_map_keys():
 
 def test_preparation_guidance_is_model_and_domain_neutral():
     spec = specification({"objective": "owner request", "inputs": []}, {}, {}, {})
-    assert spec["prompt_version"] == "adm-teaching-preparation/17"
+    assert spec["prompt_version"] == "adm-teaching-preparation/19"
     assert "local_plan_schema" not in spec["context"]
     assert "plan_json" not in dumps(spec["schema"]).decode()
     assert all(

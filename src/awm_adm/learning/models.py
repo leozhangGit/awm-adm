@@ -54,6 +54,10 @@ class LearningSettings(ClosedModel):
     remote_calls_enabled: bool
 
 
+class AcquisitionCallLimits(CallLimits):
+    max_duration_ms: int = Field(default=180_000, ge=1, le=600_000)
+
+
 class EpisodeInput(ClosedModel):
     allowance_id: Identifier | None = None
     idempotency_key: Identifier
@@ -65,7 +69,7 @@ class EpisodeInput(ClosedModel):
     publication: Literal["review", "checked_auto"] = "review"
     disclose_model: bool = False
     limits: EpisodeLimits = Field(default_factory=EpisodeLimits)
-    call_limits: CallLimits = Field(default_factory=CallLimits)
+    call_limits: AcquisitionCallLimits = Field(default_factory=AcquisitionCallLimits)
     request_ids: list[Identifier] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode="after")

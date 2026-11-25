@@ -13,6 +13,7 @@ from ..sources.models import Projection
 from ..temporal_evidence.models import Catalog
 from ..wire import decode
 from .diagnostics import PreparationError
+from .field_guidance import OBJECTIVE, annotate_bounds
 from .models import Material
 from .readiness import Assessment
 from .source_guidance import BOUNDS, ENTITIES, KIND, NAMESPACE, SHARED, SYMBOL, UNIT, VALUES
@@ -222,6 +223,7 @@ def response_schema(*, material_refs=False, shared_projection=False, temporal_ev
 
         result["properties"]["missing_information"]["description"] = INSTRUCTIONS
     plan = result["properties"]["plan"]["anyOf"][0]["properties"]
+    plan["children"]["items"]["properties"]["objective"]["description"] = OBJECTIVE
     if temporal_evidence:
         from ..temporal_evidence.guidance import ASSESSED_PREPARATION, INSTRUCTIONS, describe_scope
 
@@ -240,7 +242,7 @@ def response_schema(*, material_refs=False, shared_projection=False, temporal_ev
         ):
             predicate[name]["description"] = description
         describe_scope(catalog["cells"]["items"])
-        return result
+        return annotate_bounds(result, schema, definitions)
     if shared_projection:
         plan["source_projection"]["description"] = SHARED
         projection = plan["source_projection"]["anyOf"][0]["properties"]
@@ -269,7 +271,7 @@ def response_schema(*, material_refs=False, shared_projection=False, temporal_ev
     cell["description"] = SCOPE
     for name in ("effective_from", "effective_to"):
         cell["properties"][name]["description"] = INSTANT
-    return result
+    return annotate_bounds(result, schema, definitions)
 
 
 def unique(items, key, stage):

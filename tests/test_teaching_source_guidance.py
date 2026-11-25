@@ -133,7 +133,7 @@ def test_source_descriptions_reach_ordered_wire_without_model_specific_guidance(
         (fields["minimum"], BOUNDS),
         (fields["maximum"], BOUNDS),
     ):
-        assert node["description"] == description
+        assert node["description"].startswith(description)
         assert description in spec["instructions"]
     wires = []
     for model in ("configured-model-a", "configured-model-b"):

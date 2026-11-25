@@ -31,19 +31,20 @@ remote_calls_enabled = false
 publication = "review"
 default_conflict_mode = "backward"
 preparation_timeout_ms = 180000
+acquisition_timeout_ms = 180000
 
 [learning.call]
 max_calls = 1
-max_input_tokens = 32000
+max_input_tokens = 128000
 max_output_tokens = 8192
 max_duration_ms = 60000
 
 [learning.episode]
 max_calls = 3
-max_input_tokens = 96000
+max_input_tokens = 384000
 max_output_tokens = 24576
 max_work = 6000000
-max_duration_ms = 360000
+max_duration_ms = 720000
 no_progress_attempts = 2
 private_draft_bytes = 2097152
 

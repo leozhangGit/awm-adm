@@ -11,6 +11,7 @@ from ..providers.diagnostics import account_outcome
 from ..providers.wire import make_wire, provenance, specification
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from ..runtime.supervisor import Supervisor
+from .diagnostics import InputCapacityExceeded, capacity_diagnostic
 from .models import ConnectionInput, EpisodeInput, TestConnection
 
 FINAL = {"accepted", "stopped", "cancelled", "rejected"}
@@ -170,7 +171,12 @@ class LearningService:
             ("call_limits", self.config.learning.call),
         ):
             for key, value in body[group].items():
-                if value > getattr(limits, key):
+                cap = (
+                    self.config.learning.acquisition_timeout_ms
+                    if group == "call_limits" and key == "max_duration_ms"
+                    else getattr(limits, key)
+                )
+                if value > cap:
                     fault("invalid_limits", "Learning limits exceed configured caps")
 
     def _usable(self, key, version, purpose):
@@ -319,9 +325,11 @@ class LearningService:
         self.store.capacity(len(raw))
         db.execute("UPDATE episodes SET data=? WHERE id=?", (raw, ep["id"]))
 
-    def _stop(self, key, ep, reason, status="stopped"):
+    def _stop(self, key, ep, reason, status="stopped", *, diagnostic=None):
         with self.store.db(key) as db, self.store.transaction(db):
             ep.update(status=status, reason=reason)
+            if diagnostic is not None:
+                ep["failure_diagnostics"] = diagnostic
             self._save(db, ep)
             db.execute(
                 "UPDATE learning_receipts SET status='cancelled' WHERE episode=? AND status IN ('received','complete','awaiting_review','approved','validating')",
@@ -437,7 +445,7 @@ class LearningService:
                 "output_tokens": body["limits"]["max_output_tokens"],
             }
             if reserve["input_tokens"] > body["limits"]["max_input_tokens"]:
-                fault("invalid_limits", "Exact wire estimate exceeds the call input cap")
+                raise InputCapacityExceeded(reserve["input_tokens"], body["limits"]["max_input_tokens"])
             if episode:
                 ep = self._get(adm, episode)
                 used = self.usage(episode=episode)
@@ -1130,7 +1138,7 @@ class LearningService:
                     with self.store.lock:
                         ep = self._get(key, action[1]["id"])
                         if ep["status"] not in FINAL:
-                            self._stop(key, ep, error.code)
+                            self._stop(key, ep, error.code, diagnostic=capacity_diagnostic(error))
                 return True
             with self.store.lock, self.store.db(key) as db:
                 head = db.execute(

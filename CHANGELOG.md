@@ -2,13 +2,17 @@
 
 ## 0.4.0
 
-Local project integration and clearer model interaction.
+Local project integration, temporal evidence and clearer model interaction.
 
-- Login-free console and public API on loopback port 9527, with private internal service authentication retained. Supported upgrades preserve existing models and history in owned schema 17.
+- Login-free console and public API on loopback port 9527, with private internal service authentication retained. Supported upgrades preserve existing models and history in owned schema 18.
 - Bundled Codex plugin for project model creation/reuse, natural-language Ask/Teach, durable work recovery, accepted-knowledge recall and explicit forward/backward changes.
 - Atomic preservation and rechecking of dependent definitions during conversational corrections, revision-compatible language metadata and accurate partial-completion reporting.
 - Checked before/after teaching reports distinguish changed definitions, preserved dependents, evidence updates and active removals.
 - Ask/Teach initially load the latest 100 exchanges; Load more adds older batches with stable scrolling. Full history and bounded interpretation context remain independent.
+- Typed temporal evidence and scoped recall preserve subject time, report/inspection time, units and attribution. Saved calculations remain distinguishable from new model computations.
+- Model-neutral preparation guidance states field bounds and keeps concise objectives linked to complete original teaching inputs. Safe diagnostics distinguish missing information, unsupported capabilities, invalid generated fields, input-capacity stops and provider failures.
+- Bounded acquisition supports a 128,000 default input reservation and an independent three-minute call deadline, with retained uncertainty and no automatic retry of dispatched timeouts.
+- Overview shows recent model operations in pages of ten; the model collection is listed in Domain models.
 - Removed retired login/session implementation and styling; updated product documentation and dependency provenance for the service, console and plugin.
 - Fixed plugin installation isolation, invalid-port handling and source-admission work accounting.
 

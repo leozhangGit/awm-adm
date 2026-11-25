@@ -448,7 +448,7 @@ class FactClaim(ClosedModel):
 
 class CallLimits(ClosedModel):
     max_calls: int = Field(default=1, ge=1, le=1)
-    max_input_tokens: int = Field(default=32_000, ge=1, le=1_050_000)
+    max_input_tokens: int = Field(default=128_000, ge=1, le=1_050_000)
     max_output_tokens: int = Field(default=8192, ge=1, le=100_000)
     max_duration_ms: int = Field(default=60_000, ge=1, le=600_000)
 

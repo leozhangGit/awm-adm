@@ -16,7 +16,8 @@
       ]
     },
     "message": {
-      "type": "string"
+      "type": "string",
+      "description": "Local limits: 1 to 2000 characters."
     },
     "plan": {
       "anyOf": [
@@ -33,7 +34,8 @@
               ]
             },
             "summary": {
-              "type": "string"
+              "type": "string",
+              "description": "Local limits: 1 to 2000 characters."
             },
             "types": {
               "type": "array",
@@ -41,7 +43,8 @@
                 "type": "object",
                 "properties": {
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Local limits: 1 to 128 characters."
                   },
                   "kind": {
                     "type": "string",
@@ -79,7 +82,8 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "description": "Local limits: at most 64 items."
                   },
                   "members": {
                     "type": "array",
@@ -87,10 +91,12 @@
                       "type": "object",
                       "properties": {
                         "name": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Local limits: 1 to 128 characters."
                         },
                         "type_id": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Local limits: 1 to 128 characters."
                         }
                       },
                       "required": [
@@ -98,12 +104,14 @@
                         "type_id"
                       ],
                       "additionalProperties": false
-                    }
+                    },
+                    "description": "Local limits: at most 64 items."
                   },
                   "element_id": {
                     "anyOf": [
                       {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Local limits: 1 to 128 characters."
                       },
                       {
                         "type": "null"
@@ -113,7 +121,8 @@
                   "length": {
                     "anyOf": [
                       {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Local limits: value >= 0; value <= 32."
                       },
                       {
                         "type": "null"
@@ -143,7 +152,8 @@
                   "symbol"
                 ],
                 "additionalProperties": false
-              }
+              },
+              "description": "Local limits: at most 128 items."
             },
             "source_projection": {
               "anyOf": [
@@ -158,14 +168,15 @@
                     },
                     "namespace": {
                       "type": "string",
-                      "description": "Projection namespace. This does not automatically prefix predicate symbols; each predicate must carry its complete qualified symbol."
+                      "description": "Projection namespace. This does not automatically prefix predicate symbols; each predicate must carry its complete qualified symbol. Local limits: at most 200 characters."
                     },
                     "entities": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Local limits: 1 to 128 characters."
                       },
-                      "description": "Stable entity identifiers, not display names: 1\u2013128 ASCII characters, beginning with a letter or digit, followed by letters, digits, underscore, dot, colon or hyphen; no spaces. Preserve existing accepted identifiers. Distinct entities must not collapse onto the same identifier. Choosing an identifier does not change or resolve ambiguous entity meaning."
+                      "description": "Stable entity identifiers, not display names: 1\u2013128 ASCII characters, beginning with a letter or digit, followed by letters, digits, underscore, dot, colon or hyphen; no spaces. Preserve existing accepted identifiers. Distinct entities must not collapse onto the same identifier. Choosing an identifier does not change or resolve ambiguous entity meaning. Local limits: 1 to 128 items."
                     },
                     "predicates": {
                       "type": "array",
@@ -174,7 +185,7 @@
                         "properties": {
                           "symbol": {
                             "type": "string",
-                            "description": "Complete qualified predicate symbol, for example domain.measure, not a bare measure name. Use at least two dot-separated identifier segments; each starts with an ASCII letter or underscore and continues with ASCII letters, digits or underscores. Maximum 200 characters. Preserve an existing predicate's exact symbol when supplied."
+                            "description": "Complete qualified predicate symbol, for example domain.measure, not a bare measure name. Use at least two dot-separated identifier segments; each starts with an ASCII letter or underscore and continues with ASCII letters, digits or underscores. Maximum 200 characters. Preserve an existing predicate's exact symbol when supplied. Local limits: at most 200 characters."
                           },
                           "kind": {
                             "type": "string",
@@ -187,22 +198,22 @@
                           },
                           "unit": {
                             "type": "string",
-                            "description": "Required nonempty unit, at most 100 characters, consistent with the supplied meaning and extracted facts. Use 'unitless' only for genuinely unitless predicates. Never fill an unknown physical unit or alter a numeric scale merely to satisfy the format."
+                            "description": "Required nonempty unit, at most 100 characters, consistent with the supplied meaning and extracted facts. Use 'unitless' only for genuinely unitless predicates. Never fill an unknown physical unit or alter a numeric scale merely to satisfy the format. Local limits: 1 to 100 characters."
                           },
                           "minimum": {
                             "type": "integer",
-                            "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused."
+                            "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused. Local limits: value >= -9007199254740991; value <= 9007199254740991."
                           },
                           "maximum": {
                             "type": "integer",
-                            "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused."
+                            "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused. Local limits: value >= -9007199254740991; value <= 9007199254740991."
                           },
                           "values": {
                             "type": "array",
                             "items": {
                               "type": "string"
                             },
-                            "description": "For boolean and integer predicates, values must be []. For enum predicates only, provide a nonempty array of unique, nonempty string labels. These are the permitted carrier labels, not observations or a list of numeric bounds converted to strings."
+                            "description": "For boolean and integer predicates, values must be []. For enum predicates only, provide a nonempty array of unique, nonempty string labels. These are the permitted carrier labels, not observations or a list of numeric bounds converted to strings. Local limits: at most 256 items."
                           }
                         },
                         "required": [
@@ -214,7 +225,8 @@
                           "values"
                         ],
                         "additionalProperties": false
-                      }
+                      },
+                      "description": "Local limits: 1 to 32 items."
                     },
                     "cells": {
                       "type": "array",
@@ -267,7 +279,8 @@
                         ],
                         "additionalProperties": false,
                         "description": "A point uses effective_from and effective_to null. An interval uses inclusive effective_from and exclusive effective_to; projection intervals must be bounded. Unknown source time uses kind unknown with both bounds null. Granularity describes the UTC carrier: day requires midnight UTC boundaries; year also requires January 1. Use second when converted boundaries are not UTC day/year aligned; this carrier encoding does not justify claiming finer evidence precision. Preserve the full supplied period, never replace it with an arbitrary instant."
-                      }
+                      },
+                      "description": "Local limits: 1 to 256 items."
                     }
                   },
                   "required": [
@@ -299,13 +312,16 @@
                     ]
                   },
                   "objective": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "A concise summary of this child's intended capability, facts or correction. Keep it within the stated character limit; do not copy the full policy or supplied material. Link every relevant original input through input_ids. Acquisition receives those original inputs separately with their detailed requirements, exceptions, assumptions and evidence. A shorter objective must not narrow or replace them. Local limits: 1 to 2000 characters."
                   },
                   "input_ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
-                    }
+                      "type": "string",
+                      "description": "Local limits: 1 to 128 characters."
+                    },
+                    "description": "Local limits: 1 to 4 items."
                   },
                   "interfaces": {
                     "type": "array",
@@ -313,7 +329,8 @@
                       "type": "object",
                       "properties": {
                         "symbol": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Local limits: 1 to 256 characters."
                         },
                         "kind": {
                           "type": "string",
@@ -328,7 +345,8 @@
                         "type_id": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
                             },
                             {
                               "type": "null"
@@ -341,10 +359,12 @@
                             "type": "object",
                             "properties": {
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Local limits: 1 to 128 characters."
                               },
                               "type_id": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Local limits: 1 to 128 characters."
                               }
                             },
                             "required": [
@@ -352,12 +372,14 @@
                               "type_id"
                             ],
                             "additionalProperties": false
-                          }
+                          },
+                          "description": "Local limits: at most 32 items."
                         },
                         "returns_id": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
                             },
                             {
                               "type": "null"
@@ -367,7 +389,8 @@
                         "state_id": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
                             },
                             {
                               "type": "null"
@@ -377,7 +400,8 @@
                         "parameters_id": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
                             },
                             {
                               "type": "null"
@@ -395,7 +419,8 @@
                         "parameters_id"
                       ],
                       "additionalProperties": false
-                    }
+                    },
+                    "description": "Local limits: at most 32 items."
                   },
                   "material": {
                     "anyOf": [
@@ -405,8 +430,10 @@
                           "material_ids": {
                             "type": "array",
                             "items": {
-                              "type": "string"
-                            }
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
+                            },
+                            "description": "Local limits: 1 to 36 items."
                           }
                         },
                         "required": [
@@ -428,7 +455,8 @@
                   "material"
                 ],
                 "additionalProperties": false
-              }
+              },
+              "description": "Local limits: 1 to 4 items."
             },
             "aliases": {
               "type": "array",
@@ -436,13 +464,15 @@
                 "type": "object",
                 "properties": {
                   "alias": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Local limits: 1 to 100 characters."
                   },
                   "targets": {
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "description": "Local limits: 1 to 16 items."
                   }
                 },
                 "required": [
@@ -450,7 +480,8 @@
                   "targets"
                 ],
                 "additionalProperties": false
-              }
+              },
+              "description": "Local limits: at most 128 items."
             },
             "parameters": {
               "type": "array",
@@ -496,7 +527,8 @@
                   "role"
                 ],
                 "additionalProperties": false
-              }
+              },
+              "description": "Local limits: at most 128 items."
             },
             "value_aliases": {
               "type": "array",
@@ -513,7 +545,8 @@
                     "type": "string"
                   },
                   "value_json": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Local limits: at most 4096 characters."
                   }
                 },
                 "required": [
@@ -523,12 +556,14 @@
                   "value_json"
                 ],
                 "additionalProperties": false
-              }
+              },
+              "description": "Local limits: at most 128 items."
             },
             "requirements_json": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Local limits: at most 32768 characters."
                 },
                 {
                   "type": "null"

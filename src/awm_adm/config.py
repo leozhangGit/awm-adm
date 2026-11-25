@@ -54,10 +54,10 @@ class RuntimeLimits(ClosedModel):
 
 class EpisodeLimits(ClosedModel):
     max_calls: int = Field(default=3, ge=1, le=100)
-    max_input_tokens: int = Field(default=96_000, ge=1, le=10_000_000)
+    max_input_tokens: int = Field(default=384_000, ge=1, le=10_000_000)
     max_output_tokens: int = Field(default=24_576, ge=1, le=10_000_000)
     max_work: int = Field(default=6_000_000, ge=1, le=1_000_000_000)
-    max_duration_ms: int = Field(default=360_000, ge=1, le=86_400_000)
+    max_duration_ms: int = Field(default=720_000, ge=1, le=86_400_000)
     no_progress_attempts: int = Field(default=2, ge=1, le=100)
     private_draft_bytes: int = Field(default=2_097_152, ge=1024, le=16_777_216)
 
@@ -90,6 +90,7 @@ class Learning(ClosedModel):
     publication: Literal["review", "checked_auto"] = "review"
     default_conflict_mode: Literal["backward", "forward"] = "backward"
     preparation_timeout_ms: int = Field(default=180_000, ge=1, le=300_000)
+    acquisition_timeout_ms: int = Field(default=180_000, ge=1, le=600_000)
     call: CallLimits = Field(default_factory=CallLimits)
     episode: EpisodeLimits = Field(default_factory=EpisodeLimits)
     quotas: Quotas = Field(default_factory=Quotas)

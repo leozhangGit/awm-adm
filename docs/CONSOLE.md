@@ -12,7 +12,7 @@ The charts show reported input/output tokens for seven calendar days and success
 
 ## Models
 
-Create an empty model or upload a snapshot. No domain selection is required. Imports receive an independent identity after their knowledge, evidence and requirements pass local checks. Overview’s examples create ordinary independent sandbox models. Recent model operations lists up to 50 create/import/export/delete records received in the past seven days, newest first. Deletions still in progress, including older ones, remain visible there with an explicit retry action if blocked. Domain models contains the model collection, without a duplicate cleanup panel. The time window does not delete records.
+Create an empty model or upload a snapshot. No domain selection is required. Imports receive an independent identity after their knowledge, evidence and requirements pass local checks. Overview shows readiness, example sandboxes and recent operations; the model collection is listed only in Domain models. Overview’s examples create ordinary independent sandbox models. Recent model operations lists up to 50 create/import/export/delete records received in the past seven days, newest first, with at most 10 operations per page. Previous/Next controls and a page/range indicator appear when there is more than one page. Background refresh preserves the selected page, moving to the last remaining page if the list shrinks. Deletions still in progress, including older ones, remain visible in a separate section with an explicit retry action if blocked. Domain models has no duplicate cleanup panel. The time window and display pagination do not delete records.
 
 Each model has **Ask**, **Teach**, **Model & evidence**, **History** and **Settings**.
 

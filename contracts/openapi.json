@@ -4661,6 +4661,41 @@
   },
   "components": {
     "schemas": {
+      "AcquisitionCallLimits": {
+        "properties": {
+          "max_calls": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Max Calls",
+            "default": 1
+          },
+          "max_input_tokens": {
+            "type": "integer",
+            "maximum": 1050000.0,
+            "minimum": 1.0,
+            "title": "Max Input Tokens",
+            "default": 128000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "default": 8192
+          },
+          "max_duration_ms": {
+            "type": "integer",
+            "maximum": 600000.0,
+            "minimum": 1.0,
+            "title": "Max Duration Ms",
+            "default": 180000
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AcquisitionCallLimits"
+      },
       "Anchor": {
         "properties": {
           "kind": {
@@ -4884,7 +4919,7 @@
             "maximum": 1050000.0,
             "minimum": 1.0,
             "title": "Max Input Tokens",
-            "default": 32000
+            "default": 128000
           },
           "max_output_tokens": {
             "type": "integer",
@@ -5590,7 +5625,7 @@
             "$ref": "#/components/schemas/EpisodeLimits"
           },
           "call_limits": {
-            "$ref": "#/components/schemas/CallLimits"
+            "$ref": "#/components/schemas/AcquisitionCallLimits"
           },
           "request_ids": {
             "items": {
@@ -5629,7 +5664,7 @@
             "maximum": 10000000.0,
             "minimum": 1.0,
             "title": "Max Input Tokens",
-            "default": 96000
+            "default": 384000
           },
           "max_output_tokens": {
             "type": "integer",
@@ -5650,7 +5685,7 @@
             "maximum": 86400000.0,
             "minimum": 1.0,
             "title": "Max Duration Ms",
-            "default": 360000
+            "default": 720000
           },
           "no_progress_attempts": {
             "type": "integer",

@@ -239,6 +239,24 @@ class Interactions:
                 result["explanation"] = run["narration"]["explanation"]
                 result["outcome_text"] = result["reply"]
             summary = run.get("summary") or {}
+            learning_failures = [
+                {
+                    "objective_id": step["id"],
+                    "episode_id": step.get("episode_id"),
+                    "reason": step.get("reason"),
+                    "diagnostic": step["failure_diagnostics"],
+                }
+                for step in run.get("steps", [])
+                if step.get("failure_diagnostics")
+            ]
+            if learning_failures:
+                result["failure_code"] = result["failure_code"] or learning_failures[0]["reason"]
+                result["failure_diagnostics"] = {
+                    "stage": "learning",
+                    "code": "learning_failed",
+                    "items": learning_failures[:20],
+                    "complete": len(learning_failures) <= 20,
+                }
             if summary.get("source_failures"):
                 result["failure_code"] = result["failure_code"] or "source_processing_failed"
                 result["failure_diagnostics"] = {
@@ -246,6 +264,14 @@ class Interactions:
                     "code": "source_processing_failed",
                     "items": summary["source_failures"],
                     "complete": summary.get("source_failures_complete", False),
+                    **(
+                        {
+                            "learning_failures": learning_failures[:20],
+                            "learning_failures_complete": len(learning_failures) <= 20,
+                        }
+                        if learning_failures
+                        else {}
+                    ),
                 }
             if (
                 run.get("delivered")

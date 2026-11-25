@@ -6,7 +6,7 @@ The provider proposes this classification; it is not a proof of representability
 
 ## Provider contract
 
-Fresh material-aware preparation uses prompt `adm-teaching-preparation/16` and [reply profile 6](../contracts/teaching-readiness-reply.schema.json). Preparation without a material manifest uses prompt `/17` and [reply profile 7](../contracts/teaching-legacy-readiness-reply.schema.json). Both use the same assessment fields and guidance, independently of the configured model.
+Fresh material-aware preparation uses prompt `adm-teaching-preparation/18` and [reply profile 6](../contracts/teaching-readiness-reply.schema.json). Preparation without a material manifest uses prompt `/19` and [reply profile 7](../contracts/teaching-legacy-readiness-reply.schema.json). Both use the same assessment fields and guidance, independently of the configured model.
 
 Every field is required; inactive arrays are empty and inactive nullable fields are null. Unknown fields are rejected.
 
@@ -40,6 +40,6 @@ No extraction, acquisition, source-policy installation or publication starts fro
 
 ## Compatibility and assurance
 
-Previously dispatched prompt/reply profiles retain their original decoders. Old unsupported outcomes are not rewritten as clarifications, and failed or uncertain calls are not automatically repeated. The ready-plan grammar is identical to the corresponding preceding profile. Fresh annotations clarify information gaps; historical annotations remain intact. Only the preparation envelope changes structurally. No database migration, model format or algebraic reasoning change is required.
+Previously dispatched prompt/reply profiles retain their original decoders. Old unsupported outcomes are not rewritten as clarifications, and failed or uncertain calls are not automatically repeated. The ready-plan grammar is shared with the corresponding non-assessed profile. Provider descriptions explain information gaps and local field bounds; historical dispatched instructions remain intact. See [teaching format and diagnostics](TEACHING.md) for concise objectives, exact original inputs and safe length/count failures. The assessment envelope does not change model formats or algebraic reasoning.
 
 Structural checks cannot prove that the provider chose the right gap or capability category, that its question is semantically complete, or that supplied evidence is externally true. Recorded-provider regressions establish routing, persistence, continuation and unchanged validation. They do not establish live interpretation reliability across arbitrary requests.

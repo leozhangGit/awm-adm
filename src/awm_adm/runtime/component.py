@@ -30,6 +30,17 @@ def exchange(url, token, body=None, *, timeout=3):
         return loads(response.read(MAX_MESSAGE + 1))
 
 
+def dispatch_job(job, token):
+    # The RPC includes delivery grace; the gateway still enforces the exact call
+    # deadline. A longer acquisition must not hit an unrelated worker timeout.
+    return exchange(
+        "http://provider-gateway:8090/internal/dispatch",
+        token,
+        {"grant_id": job["grant_id"], "lease": job["lease"]},
+        timeout=job["timeout_ms"] / 1000 + 3,
+    )
+
+
 def component_app(role, state):
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -104,12 +115,7 @@ def main():
             try:
                 job = exchange(args.app_url + "/internal/m5/claim", token, {})["job"]
                 if job:
-                    exchange(
-                        "http://provider-gateway:8090/internal/dispatch",
-                        token,
-                        {"grant_id": job["grant_id"], "lease": job["lease"]},
-                        timeout=job["timeout_ms"] / 1000 + 3,
-                    )
+                    dispatch_job(job, token)
                     continue
             except (OSError, ValueError):
                 pass  # Never repeat a dispatched lease; app retains uncertainty.

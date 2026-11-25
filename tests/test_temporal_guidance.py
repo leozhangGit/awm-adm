@@ -96,7 +96,7 @@ def test_scope_descriptions_distinguish_exact_coordinates_and_uncertainty_on_wir
         "properties"
     ]
     predicate = fields["predicates"]["items"]["properties"]
-    assert fields["namespace"]["description"] == NAMESPACE
+    assert fields["namespace"]["description"].startswith(NAMESPACE)
     for name, hint in (
         ("symbol", SYMBOL),
         ("unit", UNIT),
@@ -104,7 +104,7 @@ def test_scope_descriptions_distinguish_exact_coordinates_and_uncertainty_on_wir
         ("minimum", BOUNDS),
         ("maximum", BOUNDS),
     ):
-        assert predicate[name]["description"] == hint
+        assert predicate[name]["description"].startswith(hint)
     assert EXACT_TIME in fields["cells"]["items"]["properties"]["precision"]["description"]
     for instructions in (INSTRUCTIONS, EXTRACTION, ASK):
         assert EXACT_TIME in instructions
@@ -117,7 +117,7 @@ def test_scope_descriptions_distinguish_exact_coordinates_and_uncertainty_on_wir
         {},
         {},
     )
-    assert spec["prompt_version"] == "adm-teaching-preparation/16"
+    assert spec["prompt_version"] == "adm-teaching-preparation/18"
     wires = []
     for model in ("configured-a", "configured-b"):
         raw, _ = make_wire(

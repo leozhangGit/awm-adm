@@ -216,8 +216,14 @@ def attach(app, runtime, *, ingress=()):
     @app.exception_handler(RuntimeFault)
     async def fault(_request, error):
         from ..allowances.errors import AllowanceFault
+        from ..learning.diagnostics import capacity_diagnostic
 
         response = error_response(error.code)
+        diagnostic = capacity_diagnostic(error)
+        if diagnostic is not None:
+            body = json.loads(response.body)
+            body.update(message=diagnostic["message"], details=diagnostic)
+            return JSONResponse(body, status_code=response.status_code)
         if isinstance(error, AllowanceFault):
             # This class is raised only with static trusted accounting guidance.
             # General exceptions and all provider messages retain safe redaction.

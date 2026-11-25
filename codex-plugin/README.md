@@ -6,6 +6,8 @@ The console and API run at `http://127.0.0.1:9527/` without login or a service A
 
 Ask can recall relevant accepted evidence without a storage-time window, retaining units, subject scope and attribution. Teach guidance keeps subject knowledge separate from source-inspection metadata. A saved calculation is prior work; it is not a new model derivation. No additional native tool or setup is needed; the service provides the read path.
 
+Work results preserve service `failure_code` and bounded `failure_diagnostics`. An `input_capacity_exceeded` child diagnostic reports the required and available conservative input reservations and whether that specific call was sent. Explain it as a request-capacity stop, not a knowledge conflict or proof that the requested rule cannot be modeled. Retained work reads never retry teaching; a new attempt is a separate user-directed submission.
+
 ## Install
 
 Requires the local AWM-ADM service, Python **3.13**, uv **0.13.7**, and Codex with native plugin support. The connector is a separate locked Python package; it does not import service internals. From the AWM-ADM repository root:
@@ -83,6 +85,8 @@ codex plugin marketplace remove awm-adm-local
 These commands target only this plugin and marketplace. Remove the generated `.agents/plugins/marketplace.json` only if it still matches this package's catalog. Do not remove other Codex configuration, shared caches or the service's data. Reinstallation can reuse the preserved private binding.
 
 ## Preparation failures
+
+Invalid generated plan fields report `invalid_preparation`. Length/count diagnostics include the sanitized field path, actual length, allowed minimum/maximum and character/item unit. The connector preserves these details through `adm_work`; it does not truncate supplied knowledge, rephrase automatically or ask the user to repair service-internal fields. Preparation uses concise child objectives while acquisition receives the linked original teaching inputs separately. An objective-format failure is distinct from an unsupported capability or a model conflict.
 
 The service allows three minutes by default for teaching preparation and reports specific failures through the existing `failure_code`, `failure_diagnostics` and summary fields. A timed-out call does not imply that the connection was disabled or that the model rejected the supplied knowledge. The connector preserves the dispatch identity, recorded timing and usage uncertainty without retrying. Polling or identical resubmission retrieves the same work; an explicit new attempt is separate work. Plugin tool signatures and installation do not change for this service behavior.
 

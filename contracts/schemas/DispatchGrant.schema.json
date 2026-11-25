@@ -18,7 +18,7 @@
           "type": "integer"
         },
         "max_input_tokens": {
-          "default": 32000,
+          "default": 128000,
           "maximum": 1050000,
           "minimum": 1,
           "title": "Max Input Tokens",

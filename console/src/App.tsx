@@ -52,6 +52,7 @@ function go(part: Partial<Route>) {
   }).toString();
 }
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const operationsPerPage = 10;
 
 function ModelList({ adms }: { adms: Adm[] }) {
   const [filter, setFilter] = useState("active");
@@ -252,6 +253,7 @@ export default function App() {
     [system, setSystem] = useState<System | null>(null),
     [adms, setAdms] = useState<Adm[]>([]),
     [operations, setOperations] = useState<Operation[]>([]),
+    [operationPage, setOperationPage] = useState(1),
     [limits, setLimits] = useState<Limits | null>(null),
     [tick, setTick] = useState(0),
     [error, setError] = useState(""),
@@ -302,6 +304,12 @@ export default function App() {
           return a.items;
         });
         setOperations(o.items);
+        setOperationPage((page) =>
+          Math.min(
+            page,
+            Math.max(1, Math.ceil(o.items.length / operationsPerPage)),
+          ),
+        );
         setReadError("");
       })
       .catch((e) => {
@@ -390,6 +398,15 @@ export default function App() {
     return result.result!.snapshot!;
   }
   const chosen = adms.find((a) => a.id === route.adm);
+  const operationPages = Math.max(
+    1,
+    Math.ceil(operations.length / operationsPerPage),
+  );
+  const operationStart = (operationPage - 1) * operationsPerPage;
+  const visibleOperations = operations.slice(
+    operationStart,
+    operationStart + operationsPerPage,
+  );
   return (
     <div className="shell">
       <a
@@ -522,21 +539,6 @@ export default function App() {
                   </article>
                 ))}
               </section>
-              <div className="section-title">
-                <div>
-                  <h2>Your domain models</h2>
-                  <p className="muted">
-                    Each ADM owns its knowledge, requirements and history.
-                  </p>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => go({ view: "adms" })}
-                >
-                  View all →
-                </button>
-              </div>
-              <ModelList adms={adms.filter((a) => !a.archived).slice(0, 4)} />
               <section className="panel examples">
                 <div>
                   <p className="eyebrow">EXPLORE IN A SANDBOX</p>
@@ -581,13 +583,13 @@ export default function App() {
                 <h2>Recent model operations</h2>
                 <p className="muted">
                   Past 7 days · up to 50 latest create, import, export and
-                  delete operations.
+                  delete operations, shown 10 per page.
                 </p>
                 {!operations.length ? (
                   <p>No model operations in the past 7 days.</p>
                 ) : (
                   <div className="operation-list">
-                    {operations.map((o) => (
+                    {visibleOperations.map((o) => (
                       <div key={o.operation_id}>
                         <span>
                           <code>{short(o.operation_id)}</code> · {o.kind}
@@ -653,6 +655,41 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                )}
+                {operationPages > 1 && (
+                  <nav
+                    className="operation-pagination"
+                    aria-label="Recent model operations pages"
+                  >
+                    <span className="muted" role="status">
+                      Page {operationPage} of {operationPages} ·{" "}
+                      {operationStart + 1}–
+                      {operationStart + visibleOperations.length} of{" "}
+                      {operations.length}
+                    </span>
+                    <div className="buttons">
+                      <button
+                        className="secondary"
+                        disabled={operationPage === 1}
+                        onClick={() =>
+                          setOperationPage((page) => Math.max(1, page - 1))
+                        }
+                      >
+                        Previous
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={operationPage === operationPages}
+                        onClick={() =>
+                          setOperationPage((page) =>
+                            Math.min(operationPages, page + 1),
+                          )
+                        }
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </nav>
                 )}
               </section>
               <PendingDeletions onChanged={refresh} />

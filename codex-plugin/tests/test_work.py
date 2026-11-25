@@ -133,6 +133,38 @@ class WorkTests(unittest.TestCase):
         self.assertEqual(value["failure_code"], "source_processing_failed")
         self.assertEqual(self.service.post_count, 1)
 
+    def test_learning_capacity_diagnostics_survive_without_a_new_submission(self):
+        self.c.teach(self.path, text="Save the adopted rule", operation="capacity")
+        diagnostic = {
+            "stage": "learning",
+            "code": "learning_failed",
+            "complete": True,
+            "items": [
+                {
+                    "objective_id": "objective-one",
+                    "episode_id": "episode-one",
+                    "reason": "invalid_limits",
+                    "diagnostic": {
+                        "code": "input_capacity_exceeded",
+                        "required_input_reservation": 128001,
+                        "available_input_reservation": 128000,
+                        "provider_call_dispatched": False,
+                    },
+                }
+            ],
+        }
+        next(iter(self.service.messages.values())).update(
+            status="failed",
+            failure_code="invalid_limits",
+            failure_diagnostics=diagnostic,
+            reply="The request exceeds the configured input capacity. This call was not sent.",
+        )
+        for _ in range(2):
+            value = self.c.work(self.path, work_id="capacity")
+            self.assertEqual(value["failure_diagnostics"], diagnostic)
+            self.assertEqual(value["failure_code"], "invalid_limits")
+        self.assertEqual(self.service.post_count, 1)
+
     def test_checked_outcome_survives_explanation_failure_and_later_revision(self):
         self.c.ask(self.path, text="May it run?", operation="question")
         model = next(iter(self.service.models.values()))

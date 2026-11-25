@@ -85,21 +85,23 @@ def respond(rt, reply):
         "adm-teaching-preparation/15",
         "adm-teaching-preparation/16",
         "adm-teaching-preparation/17",
+        "adm-teaching-preparation/18",
+        "adm-teaching-preparation/19",
     }:
         task = rt.conversations.teaching.get(grant["adm"], grant["conversation_work_id"])
         convert = (
             temporal_reply
-            if grant["provenance"]["prompt_version"].endswith(("/10", "/11", "/12", "/14", "/16"))
+            if grant["provenance"]["prompt_version"].endswith(("/10", "/11", "/12", "/14", "/16", "/18"))
             else shared_reply
             if grant["provenance"]["prompt_version"].endswith("/9")
             else selected_reply
         )
         version = grant["provenance"]["prompt_version"]
-        if not version.endswith(("/15", "/17")):
+        if not version.endswith(("/15", "/17", "/19")):
             reply = convert(reply, task["material_manifest"])
-        if version.endswith(("/14", "/15", "/16", "/17")):
+        if version.endswith(("/14", "/15", "/16", "/17", "/18", "/19")):
             reply = assessed_reply(
-                reply, [i["id"] for i in task["inputs"]], temporal=version.endswith(("/14", "/16"))
+                reply, [i["id"] for i in task["inputs"]], temporal=version.endswith(("/14", "/16", "/18"))
             )
     rt.learning.authorize(job["grant_id"], job["lease"])
     rt.learning.outcome(

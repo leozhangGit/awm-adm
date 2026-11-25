@@ -27,6 +27,22 @@ class PreparationError(ValueError):
         super().__init__(self.diagnostic["message"])
 
 
+def length_details(issue):
+    """Measure JSON values internally; expose only counts and trusted bounds."""
+    code, value = issue["type"], issue.get("input")
+    if code in {"string_too_long", "string_too_short"} and type(value) is str:
+        unit = "characters"
+    elif code in {"too_long", "too_short"} and type(value) in (list, dict):
+        unit = "items"
+    else:
+        return {}
+    bound = "max_length" if code.endswith("long") else "min_length"
+    limit = issue.get("ctx", {}).get(bound)
+    if type(limit) is not int or not 0 <= limit <= 2**31 - 1:
+        return {}
+    return {"actual_length": len(value), bound: limit, "unit": unit}
+
+
 def diagnostic(stage, code="invalid_value", error=None):
     result = {"stage": stage, "code": code, "message": MESSAGES[stage], "issues": []}
     if stage == "sources":
@@ -37,7 +53,8 @@ def diagnostic(stage, code="invalid_value", error=None):
         }.get(code, result["message"])
     if isinstance(error, ValidationError):
         # Locations may contain attacker-authored map keys. Keep schema fields
-        # and indexes only, not input values, validator context or raw messages.
+        # and indexes only. Values/context are inspected for numeric length
+        # diagnostics but never copied into the returned packet or message.
         fields = {
             "profile",
             "status",
@@ -114,7 +131,7 @@ def diagnostic(stage, code="invalid_value", error=None):
             "requirements",
             "plan_json",
         }
-        for issue in error.errors(include_url=False, include_input=False, include_context=False)[:8]:
+        for issue in error.errors(include_url=False, include_input=True, include_context=True)[:8]:
             if stage == "sources" and "evidence_scope" in issue["loc"]:
                 result["message"] = (
                     "The proposed temporal evidence catalog has invalid fields. No knowledge was accepted."
@@ -125,6 +142,7 @@ def diagnostic(stage, code="invalid_value", error=None):
                         v if isinstance(v, int) or v in fields else "<field>" for v in issue["loc"][:12]
                     ],
                     "code": issue["type"][:64],
+                    **length_details(issue),
                 }
             )
             path = result["issues"][-1]["path"]
@@ -145,6 +163,15 @@ def diagnostic(stage, code="invalid_value", error=None):
                             "the start. Preserve uncertain time as a window; do not invent bounds."
                         ),
                     )
+        for issue in result["issues"]:
+            if "actual_length" in issue:
+                bound = "max_length" if "max_length" in issue else "min_length"
+                comparison = "maximum" if bound == "max_length" else "minimum"
+                result["message"] += (
+                    f" A generated field has {issue['actual_length']} {issue['unit']}; "
+                    f"the {comparison} is {issue[bound]}."
+                )
+                break
     cause = error
     while cause is not None:
         if isinstance(cause, json.JSONDecodeError):
