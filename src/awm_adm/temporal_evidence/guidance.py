@@ -58,7 +58,13 @@ def describe_scope(node, *, anchor=False):
 INSTRUCTIONS = (
     """Prepare one plan.evidence_scope catalog shared by all source children.
 It has profile awm-adm-temporal-catalog/1, a finite namespace, entities, predicate
-series and cells. It contains no asserted values. Reuse accepted predicate symbols
+series and cells. It contains no asserted values. Propose only the mapping needed for this request;
+omitting unrelated accepted descriptors does not remove them from the accumulated catalog.
+The request mapping has at most 32 predicates and 4096 possible addresses; the
+accumulated sparse catalog has a separate 65536-predicate ceiling. An accepted
+catalog view may be explicitly partial. Absence from that view is not proof that
+a property is new; clarify uncertain identity instead of creating a synonym.
+Reuse accepted predicate symbols
 and their exact meanings, carriers, units, qualifiers, statement levels and metric.
 A new unrelated predicate needs its own explicit meaning. Never rename a conflicting
 property, vary qualifiers or choose a new namespace merely to bypass its identity.

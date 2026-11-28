@@ -4,6 +4,8 @@ AWM-ADM 0.4.0 supports a trusted local workspace on a Linux ARM64 Docker host. T
 
 The application stores accepted models and account data. The gateway owns encrypted provider credentials and outbound provider access. The supported Compose stack uses non-root, read-only containers, separate networks, role credentials, bounded processes and an application seccomp profile. The host/operator and local access remain trusted; there is no user authentication. Same-origin browser checks and loopback deployment prevent unrelated websites or direct off-host callers from using the service. A deliberate trusted local relay is outside this boundary.
 
+An operator may explicitly trust native container clients on a dedicated private bridge. Both the configured HTTP authority and actual peer CIDR must match; forwarded headers cannot confer access. This path rejects browser Origin/Fetch Metadata headers and does not add a browser origin. It grants full workspace authority to every admitted container and assumes Docker/network operators are trusted. Keep worker/gateway networks and secrets separate; no listener is published beyond loopback. Both allowlists default to empty. See [trusted Docker clients](docs/TRUSTED_CLIENTS.md).
+
 ## Protect local material
 
 - Keep `.local/`, service tokens, the gateway encryption key, credentials, cookies, databases and paired backups private. Provider keys belong in the secure Connections form, not chat or committed files.

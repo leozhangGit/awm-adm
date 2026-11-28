@@ -22,14 +22,18 @@ from ..wire import check_tree, decode
 from .dependencies import preserve_dependents
 from .diagnostics import PreparationError, diagnostic
 from .materials import bind_plan
-from .models import Plan, Reply, TemporalPlan
+from .models import Plan, ReaffirmingPlan, ReaffirmingTemporalPlan, Reply, TemporalPlan
 from .provider_format import (
     MATERIAL_PROFILE,
     PROFILE,
+    REUSE_LEGACY_PROFILE,
+    REUSE_TEMPORAL_PROFILE,
     SHARED_PROFILE,
     TEMPORAL_PROFILE,
     AssessedLegacyReply,
     AssessedTemporalReply,
+    ReaffirmingLegacyReply,
+    ReaffirmingTemporalReply,
     SelectedReply,
     SharedReply,
     TemporalReply,
@@ -148,9 +152,12 @@ def compute(task, budget):
         code = "invalid_fields" if isinstance(error, ValidationError) else "invalid_value"
         if isinstance(error, ValidationError) and stage["name"] == "envelope":
             first = error.errors(include_url=False, include_input=False, include_context=False)[0]["loc"]
-            if task.get("reply_format") in {ASSESSED_TEMPORAL_PROFILE, ASSESSED_LEGACY_PROFILE} and (
-                not first or first[0] != "plan"
-            ):
+            if task.get("reply_format") in {
+                ASSESSED_TEMPORAL_PROFILE,
+                ASSESSED_LEGACY_PROFILE,
+                REUSE_TEMPORAL_PROFILE,
+                REUSE_LEGACY_PROFILE,
+            } and (not first or first[0] != "plan"):
                 stage["name"] = "assessment"
             if first and first[0] == "plan":
                 stage["name"] = "plan"
@@ -180,19 +187,30 @@ def check_reply(task, budget, model, vocabulary, base, stage):
     stage["name"] = "envelope"
     bindings = None
     assessment = None
-    if task.get("reply_format") in {ASSESSED_TEMPORAL_PROFILE, ASSESSED_LEGACY_PROFILE}:
-        schema = (
-            AssessedTemporalReply
-            if task["reply_format"] == ASSESSED_TEMPORAL_PROFILE
-            else AssessedLegacyReply
-        )
+    reuse = task.get("reply_format") in {REUSE_TEMPORAL_PROFILE, REUSE_LEGACY_PROFILE}
+    if task.get("reply_format") in {
+        ASSESSED_TEMPORAL_PROFILE,
+        ASSESSED_LEGACY_PROFILE,
+        REUSE_TEMPORAL_PROFILE,
+        REUSE_LEGACY_PROFILE,
+    }:
+        schema = {
+            ASSESSED_TEMPORAL_PROFILE: AssessedTemporalReply,
+            ASSESSED_LEGACY_PROFILE: AssessedLegacyReply,
+            REUSE_TEMPORAL_PROFILE: ReaffirmingTemporalReply,
+            REUSE_LEGACY_PROFILE: ReaffirmingLegacyReply,
+        }[task["reply_format"]]
         value = schema.model_validate(value).model_dump()
         assessment = normalize_assessment(value, task["input_ids"])
         if assessment["status"] != "ready":
             return {"reply": assessment, "work": budget.used}
         # Adapt only the checked outer envelope. Ready plans follow the existing
         # validators below; neither their grammar nor semantic checks change.
-        fmt = TEMPORAL_PROFILE if task["reply_format"] == ASSESSED_TEMPORAL_PROFILE else PROFILE
+        fmt = (
+            TEMPORAL_PROFILE
+            if task["reply_format"] in {ASSESSED_TEMPORAL_PROFILE, REUSE_TEMPORAL_PROFILE}
+            else PROFILE
+        )
         task = {**task, "reply_format": fmt}
         value = {"profile": fmt, "status": "ready", "message": value["message"], "plan": value["plan"]}
         stage["name"] = "envelope"
@@ -203,7 +221,8 @@ def check_reply(task, budget, model, vocabulary, base, stage):
             SHARED_PROFILE: SharedReply,
             TEMPORAL_PROFILE: TemporalReply,
         }[task["reply_format"]]
-        value = schema.model_validate(value).model_dump()
+        if not reuse:
+            value = schema.model_validate(value).model_dump()
         if (value["status"] == "ready") != (value["plan"] is not None):
             raise PreparationError("envelope", "status_plan_mismatch")
         reply = {"status": value["status"], "message": value["message"], "plan_json": None}
@@ -232,19 +251,25 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         raise PreparationError("envelope", "unsupported_format")
     stage["name"] = "plan"
     check_tree(value)
-    if task.get("reply_format") == TEMPORAL_PROFILE:
-        value["profile"] = "awm-adm-teaching-plan/2"
-    plan = (
-        (TemporalPlan if task.get("reply_format") == TEMPORAL_PROFILE else Plan)
-        .model_validate(value)
-        .model_dump()
+    temporal = task.get("reply_format") == TEMPORAL_PROFILE
+    schema = (
+        (ReaffirmingTemporalPlan if temporal else ReaffirmingPlan)
+        if reuse
+        else (TemporalPlan if temporal else Plan)
     )
+    if reuse or temporal:
+        value["profile"] = schema.model_fields["profile"].default
+    plan = schema.model_validate(value).model_dump()
     stage["name"] = "dependencies"
     retained = preserve_dependents(model, plan, budget)
+    from .reaffirmation import headers as reuse_headers
+    from .reaffirmation import pins
+
+    reaffirmed = pins(model, plan, budget)
     allowed = set(task["input_ids"])
     proposed, contracts, used = {}, [], set()
     accepted = model.document()["declarations"]
-    for child in plan["children"]:
+    for child_index, child in enumerate(plan["children"]):
         budget.tick()
         stage["name"] = "inputs"
         ids = set(child["input_ids"])
@@ -255,15 +280,18 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         contract = validate_contract(
             {
                 "profile": "adm-acquisition/1",
-                "required_symbols": list(child["interfaces"]),
+                "required_symbols": list(child["interfaces"] or reaffirmed[child_index]),
                 "allowed_helpers": [],
-                "interfaces": child["interfaces"],
+                "interfaces": child["interfaces"] or reuse_headers(model, reaffirmed[child_index]),
                 "allowed_retractions": [],
                 "max_declarations": 32,
                 "max_bytes": 65536,
             }
         )
         headers = interfaces(contract)
+        if child["kind"] == "reaffirmation":
+            contracts.append(contract)
+            continue
         for symbol, header in headers.items():
             if header["kind"] == "presentation":
                 raise ValueError("Algebraic presentation synthesis requires explicit local design")
@@ -325,6 +353,7 @@ def check_reply(task, budget, model, vocabulary, base, stage):
         "contracts": contracts,
         "dependencies": dependencies,
         "preserve_declarations": retained,
+        "reaffirm_declarations": reaffirmed,
         "owner_requirements_digest": digest(encode(base["requirements"])),
         "work": budget.used,
     }

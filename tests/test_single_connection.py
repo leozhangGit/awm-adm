@@ -243,11 +243,11 @@ def test_enable_expires_without_a_worker_and_does_not_dispatch(rig, monkeypatch)
     grant_id = manager.operation(op["id"])["grant_id"]
     with rt.store.db() as db:
         grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (grant_id,)).fetchone()[0])
-    monkeypatch.setattr(rt.learning, "now", lambda: grant["deadline"] + 1)
+    monkeypatch.setattr(rt.learning, "now", lambda: grant["queue_deadline"] + 1)
     for _ in range(3):
         rt.learning.tick()
     assert manager.operation(op["id"])["status"] == "failed"
-    assert manager.operation(op["id"])["error"] == "dispatch_expired"
+    assert manager.operation(op["id"])["error"] == "queue_timeout"
     assert manager.view()["state"] == "disabled"
     retained = rt.learning.grant_view(grant_id)
     assert retained["status"] == "not_dispatched"
@@ -267,6 +267,7 @@ def test_owned_15_migration_preserves_configurations_and_disables_without_dispat
     db.execute("DROP TABLE connection_operations")
     db.execute("ALTER TABLE grants DROP COLUMN dispatched_at")
     db.execute("DROP TABLE IF EXISTS local_workspace")
+    db.execute("DROP TABLE service_settings")
     db.execute("PRAGMA user_version=15")
     for n in range(count):
         db.execute(
@@ -276,7 +277,7 @@ def test_owned_15_migration_preserves_configurations_and_disables_without_dispat
     db.execute("UPDATE learning_control SET enabled=1 WHERE id=1")
     originals = [tuple(r) for r in db.execute("SELECT * FROM connections")]
     migrate(db, "registry")
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 18
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 19
     assert [tuple(r) for r in db.execute("SELECT * FROM connections")] == originals
     control = db.execute("SELECT * FROM connection_control").fetchone()
     assert control["state"] == "disabled"

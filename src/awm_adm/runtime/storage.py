@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from .protocol import RuntimeFault, dumps, loads
 
 APPLICATION_ID = 0x41574D32
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 
 
 def identifier(value):
@@ -125,6 +125,12 @@ def migrate(connection, kind):
             connection.execute("DELETE FROM auth_tickets")
         if version < 18 and kind == "registry":
             connection.execute("UPDATE installation_upgrade SET target=18,status='migrating' WHERE id=1")
+        if version < 19 and kind == "registry":
+            connection.execute("UPDATE installation_upgrade SET target=19,status='migrating' WHERE id=1")
+            connection.execute(
+                "CREATE TABLE service_settings (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL DEFAULT 0, body BLOB)"
+            )
+            connection.execute("INSERT INTO service_settings(id) VALUES(1)")
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.commit()
     except BaseException:

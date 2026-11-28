@@ -1,6 +1,6 @@
 # Console guide
 
-Open the workspace directly. Its four pages are Overview, Domain models, Connections and Operations. There is no login or account setup.
+Open the workspace directly. Its five pages are Overview, Domain models, Connections, Operations and Settings. There is no login or account setup.
 
 ## Connect once
 
@@ -37,3 +37,7 @@ Only selected material is processed by a Teach submission. Uploading alone does 
 The workspace opens directly, without a Login page or session renewal. Provider configuration remains in Connections. See [Local access](LOCAL_ACCESS.md).
 
 The console presents ordinary model interaction. Structured execution, proof checks, independent requirements, explicit source/feed operations and diagnostic records remain available through the [API](API.md); removing their manual panels does not remove their capabilities.
+
+## Installation settings
+
+Open **Settings** below **Operations** to edit input reservation, output tokens, provider timeout and the temporal catalog predicate cap. Save applies the four values together without a restart or a provider call. Changes affect new work; running tasks and existing feeds keep their captured limits. Lowering the predicate cap never removes existing knowledge. The page preserves edits on errors; use **Reload saved settings** to discard the draft and load a concurrent change. These installation settings are separate from each model’s Settings tab. See [Service settings](SETTINGS.md).

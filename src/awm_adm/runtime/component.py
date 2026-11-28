@@ -12,6 +12,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from ..llm_limits import DELIVERY_MS
 from .http import secret
 
 
@@ -37,7 +38,7 @@ def dispatch_job(job, token):
         "http://provider-gateway:8090/internal/dispatch",
         token,
         {"grant_id": job["grant_id"], "lease": job["lease"]},
-        timeout=job["timeout_ms"] / 1000 + 3,
+        timeout=(job["timeout_ms"] + DELIVERY_MS) / 1000,
     )
 
 

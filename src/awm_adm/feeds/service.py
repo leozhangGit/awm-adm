@@ -6,7 +6,9 @@ all extraction, projection and admission remain in the existing checked path.
 
 from uuid import uuid4
 
+from ..learning.diagnostics import LimitExceeded
 from ..learning.service import fault, fingerprint
+from ..llm_limits import POLICY, aggregate, replay_body, request_body, resolve_call
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from .models import FeedControl, FeedInput, Reprocess
 
@@ -85,16 +87,40 @@ class FeedService:
             self.save_run(db, run)
 
     def create(self, key, body, *, parent_task=None, allowance_id=None):
-        body = FeedInput.model_validate(body).model_dump()
+        body = request_body(FeedInput, body, ("call_limits", "budget"))
+        if body.get("catalog_predicates") is None:
+            body.pop("catalog_predicates", None)
         with self.store.lock:
             with self.store.db(key) as db:
                 old = db.execute(
                     "SELECT id,digest FROM feeds WHERE idem=?", (body["idempotency_key"],)
                 ).fetchone()
             if old:
-                if old["digest"] != fingerprint(body):
+                saved = self.get(key, old["id"])
+                if old["digest"] != fingerprint(replay_body(body, saved["body"], ("call_limits", "budget"))):
                     fault("conflict", "Feed idempotency mismatch")
-                return self.get(key, old["id"])
+                return saved
+            ceiling = (
+                self.runtime.conversations.teaching.get(key, parent_task)["execution"]["llm_limits"]["call"]
+                if parent_task
+                else self.runtime.settings.call
+            )
+            body["call_limits"] = resolve_call(ceiling, body["call_limits"])
+            from .models import FeedBudget
+
+            count = body["budget"].get("max_calls", 20)
+            derived = aggregate(body["call_limits"], count)
+            budget = {
+                "max_input_tokens": derived["max_input_tokens"],
+                "max_output_tokens": derived["max_output_tokens"],
+                **body["budget"],
+            }
+            schema = FeedBudget.model_json_schema()["properties"]
+            for name in ("max_input_tokens", "max_output_tokens"):
+                maximum = schema[name]["maximum"]
+                if budget[name] > maximum:
+                    raise LimitExceeded("aggregate", name, budget[name], maximum)
+            body["budget"] = FeedBudget.model_validate(budget).model_dump()
             info = self.sources.current(key, body["expected_revision"], body["expected_source_generation"])
             policy = self.sources.policy(key)
             if not policy.get("projection"):
@@ -103,9 +129,6 @@ class FeedService:
                 permission = self.sources.permission(key, sid)
                 if not permission or (body["allow_external"] and not permission["allow_external"]):
                     fault("forbidden", "Feed source or disclosure is not permitted")
-            for name, limit in body["call_limits"].items():
-                if limit > getattr(self.runtime.config.learning.call, name):
-                    fault("invalid_limits", "Feed call exceeds configured cap")
             if body["extractor"] == "external":
                 self.sources.learning._usable(body["connection_id"], body["connection_version"], "extraction")
         if body["publication"] == "checked_auto":
@@ -141,6 +164,7 @@ class FeedService:
             feed = {
                 **({"parent_task": parent_task, "allowance_id": allowance_id} if parent_task else {}),
                 "id": str(uuid4()),
+                "llm_policy": POLICY,
                 "body": body,
                 "generation": 1,
                 "enabled": body["enabled"],
@@ -208,6 +232,8 @@ class FeedService:
                 "pass": pass_id,
             }
         )
+        if body.get("catalog_predicates") is not None:
+            pipeline = fingerprint({"pipeline": pipeline, "catalog_predicates": body["catalog_predicates"]})
         if feed.get("parent_task"):
             pipeline = fingerprint(
                 {"pipeline": pipeline, "parent": feed["parent_task"], "allowance": feed["allowance_id"]}
@@ -388,6 +414,11 @@ class FeedService:
                         "extractor": body["extractor"],
                         "connection_id": body["connection_id"],
                         "connection_version": body["connection_version"],
+                        **(
+                            {"catalog_predicates": body["catalog_predicates"]}
+                            if body.get("catalog_predicates") is not None
+                            else {}
+                        ),
                         "call_limits": body["call_limits"],
                         "reprocess_id": run["pass_id"] if run["pass_id"] != "initial" else None,
                     },
@@ -552,7 +583,8 @@ class FeedService:
                             )
                         if item["status"] in ("queued", "awaiting_review"):
                             item["generation"] = self.store.generation
-                            item["deadline"] = self.now() + 120
+                            if not item.get("llm_policy") and "queue_deadline" not in item:
+                                item["deadline"] = self.now() + 120
                         self.sources.save(db, table, item)
 
     def tick(self):

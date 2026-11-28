@@ -2,6 +2,8 @@
 
 The service exposes model, learning, source, connection and conversational resources under `/api/v1` within AWM-ADM 0.4.0. See [local workspace access](LOCAL_ACCESS.md), [connection and usage](CONNECTION.md), [conversations](CONVERSATIONS.md) and [OpenAPI](../contracts/openapi.json).
 
+Native integrations in separate containers can use an explicitly configured [trusted Docker client network](TRUSTED_CLIENTS.md), for example `http://awm-adm:9527/api/v1`. The same routes, workspace authority and revision/idempotency contracts apply; no alternate endpoint or authentication bypass is needed. Default installations reject this address until both the Host and private peer network are configured.
+
 The public API runs at `http://127.0.0.1:9527/api/v1`. It exposes independent ADM initialization, durable local requests, exact result bindings, owner settings/requirements, bounded model operations and retained events. The [browser console](CONSOLE.md) uses these same routes for owner workflows. [Bounded learning and provider dispatch](LEARNING.md) use separate owner-authorized resources. A gap alone does not create a provider grant: an explicit episode can attach eligible requests, retain their learning interests, and trigger a new local attempt after checked publication. Provider output is never substituted for a request result.
 
 The request union includes `recall_evidence`: 1–32 exact entity/predicate selectors, `limit` up to 100 and a context-bound cursor, returning attributed accepted records across their recorded scopes. It adds no endpoint or model mutation. See [evidence recall](EVIDENCE_RECALL.md) and its [schema](../contracts/schemas/RecallQuery.schema.json).
@@ -36,7 +38,7 @@ For a generated field length/count violation, an issue also includes `actual_len
 
 Successful historical Ask outcomes include additive `value_metadata` with `unit` (exact checked string or null when unavailable) and `query_scope` (a point with `effective_at`, or an interval with inclusive `effective_from` and exclusive `effective_to`). Compact/fallback answers and narration use the same bound metadata. Null or absent legacy metadata does not mean unitless. Unsuccessful/unknown answers do not gain successful-value metadata. This presentation projection does not change the authoritative result, query/result digests or stored model/snapshot profiles; see [Ask](ASK.md).
 
-URL versioning remains `/api/v1` with no v2/v3 aliases; owned operational schema is 18. Core encodings remain compatible. Snapshots containing typed temporal evidence use the [required-feature service envelope](TEMPORAL_EVIDENCE.md); legacy-only snapshots retain their existing transport. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
+URL versioning remains `/api/v1` with no v2/v3 aliases; owned operational schema is 19. Core encodings remain compatible. Snapshots containing typed temporal evidence use the [required-feature service envelope](TEMPORAL_EVIDENCE.md); legacy-only snapshots retain their existing transport. Public health paths remain `/health/live` and `/health/ready`. See [Connection](CONNECTION.md), [Conversations](CONVERSATIONS.md) and [History](HISTORY.md).
 
 ## Open the local workspace
 
@@ -52,6 +54,10 @@ python3 scripts/api_client.py /api/v1/openapi.json > openapi.json
 All retained public operations use the shared local HTTP boundary. Same-origin console and native local requests are accepted without user credentials. Foreign/null origins, cross-site requests, browser form mutations and off-host peers are rejected. Provider secrets remain masked; internal machine credentials remain private. See [Local workspace access](LOCAL_ACCESS.md). The `/auth/*` setup/login/session/password/recovery/token routes are retired.
 
 `GET /system` includes `request_limits` and `local_service`: profile `awm-adm-local/1`, stable `installation_id`, `connection_ready` and a safe `reason`. Readiness makes no provider call. The plugin checks this contract before using its small operation subset; it does not expose every public route.
+
+## Installation settings
+
+`GET /settings` reads current values, startup defaults and a revision. `PUT /settings` atomically saves `{expected_revision, values}` for shared provider-call limits and `catalog_predicate_limit`. Saves affect new work without restart or provider calls; stale conflicting edits return `settings_conflict`. See [Service settings](SETTINGS.md) for exact fields and preservation rules.
 
 ## Instances and model operations
 
@@ -208,4 +214,18 @@ Typed temporal evidence uses `query_evidence` on the same durable request route.
 
 ## Preparation provider failures
 
-A failed Teach preparation retains its specific `failure_code` and optional `failure_diagnostics` in the task and direct interaction. The latter includes `stage: provider`, a fixed readable message, `grant_id`, `dispatch_status`, `configured_timeout_ms`, `provider_diagnostics`, known `usage`, `usage_unresolved` and `automatic_retry: false`. Gateway outcomes carry optional allowlisted transport reason/stage, elapsed and available time, observed HTTP status and child exit code. See [provider failures](PROVIDER_FAILURES.md). Preparation and acquisition each default to three minutes under separate configuration fields; an existing grant retains its original deadline. Explicit learning episodes default to 12 minutes and use `AcquisitionCallLimits` for their per-call duration. Ask, extraction, narration and connection tests retain the ordinary 60-second cap. Public paths, plugin signatures, local validators and stored model profiles are unchanged.
+A failed Teach preparation retains its specific failure_code and optional failure_diagnostics in task and interaction history, including dispatch identity, effective call limits, observed timing, known usage and uncertainty. See [provider failures](PROVIDER_FAILURES.md).
+
+All purposes share `[llm.call]`: 256,000 input-reservation units, 32,768 output tokens and 360,000 ms. Omitted/partial call fields resolve from installation policy; explicit smaller values remain effective. Aggregate defaults derive from permitted calls: a two-call Ask/child uses 512,000 input / 65,536 output and fifteen minutes; a three-call episode uses 768,000 / 98,304 and twenty-two minutes. Six-call source children and twenty-call standalone feeds derive matching token envelopes, with local-work bounds independently effective. Standing feed waiting is not provider execution.
+
+A ready grant has sixty seconds of queue time. Provider expiry begins at claim; insufficient parent capacity is diagnosed before dispatch. A separate captured three-second delivery grace permits result recording, never further provider execution. Late payloads cannot publish or answer, although known usage can settle. Grants reserve the captured output ceiling and measured conservative input; unknown usage stays reserved. Old captures and same-identity replays do not change with configuration. Dispatch reads expose execution_limits and known queue/aggregate/provider/delivery deadlines. Paths, plugin signatures and model validation remain unchanged.
+
+## Catalog selection and teaching-intent metadata
+
+`POST /api/v1/adms/{adm}/teach` supports optional `knowledge_intent: {"role": "adopted_rule", "basis": "Caller-established agreement and its scope"}`. Allowed roles are `adopted_rule`, `adopted_premise`, `observation`, `unspecified`; basis is 1–2,000 characters. Omission preserves ordinary chat and historical retry identity. Ask does not accept this teaching metadata. The caller must supply its genuine basis; these fields neither authenticate human approval nor establish external truth. Original selected inputs and exact definition/input digests are preserved in `awm-adm-teaching-intent/1` accepted evidence, visible through model/knowledge reads and independent snapshots. Unclassified historical knowledge remains unclassified.
+
+Source-job and feed creation accept optional `catalog_predicates` (1–256 unique known symbols). Selection narrows extraction to exact descriptors in the captured policy and is part of idempotency/pipeline identity. A large unselected external extraction stops with `needs_specification` before dispatch. The whole-model temporal predicate ceiling is 65,536; per-operation, byte, fact and computation limits are independent. Cumulative overflow reports `catalog_capacity_exceeded`, stage `catalog_extension`, and numeric `existing`, `proposed`, `shared`, `required`, `limit`; it never returns raw catalog input. No automatic paid retry is implied.
+
+### Unchanged-rule teaching
+
+The existing Teach endpoint also supports [checked reaffirmation](REAFFIRMATION.md). A clear request to retain an accepted rule can produce a local reuse child with no acquisition call. `teaching.summary.reaffirmed` retains its selected symbols, objective/publication IDs and unchanged-definition result; ordinary `teaching.admissions` retains revision-bound receipts. New endorsement evidence can advance support and revision while the theory stays unchanged. Historical evidence is not relabeled.

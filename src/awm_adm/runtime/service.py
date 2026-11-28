@@ -19,6 +19,9 @@ class Runtime:
         self._closed = False
         self.store = Store(config.server.data_dir, config.runtime)
         try:
+            from ..service_settings import ServiceSettings
+
+            self.settings = ServiceSettings(self)
             self.supervisor = Supervisor(config.runtime.serving_processes)
             self.lean = self._lean_status()
             from ..lifecycle.service import Lifecycle

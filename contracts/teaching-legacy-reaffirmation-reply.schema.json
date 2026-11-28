@@ -1,0 +1,717 @@
+{
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "enum": [
+        "awm-adm-teaching-reply/9"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "description": "Local limits: 1 to 2000 characters."
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "meaning",
+              "entity",
+              "unit",
+              "representation_bounds",
+              "temporal_scope",
+              "source_material",
+              "revision_target",
+              "adoption_intent",
+              "other"
+            ]
+          },
+          "input_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Local limits: 1 to 128 characters."
+            },
+            "description": "Local limits: 1 to 4 items."
+          },
+          "subject": {
+            "type": "string",
+            "description": "Local limits: 1 to 200 characters."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Local limits: 1 to 1000 characters."
+          }
+        },
+        "required": [
+          "kind",
+          "input_ids",
+          "subject",
+          "detail"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Assess readiness using structured missing_information and unsupported_capabilities;\ndo not emit a status field. Consider whether supplying missing meaning or evidence\nwould allow this objective to fit the available representation. If so, report that\ninformation gap, not an unsupported capability. This applies to entities, units,\nrepresentation bounds, temporal scope, source material, revision targets, adoption\nintent and other missing meaning. Do not invent the missing information.\n\nFor missing information: plan null, unsupported_capabilities [], one to eight\nmissing_information items, and one concise natural-language question asking for\nthe necessary clarification. Each item identifies its kind, exact input_ids,\nsubject and missing detail. Group related gaps into one focused question. Do not\nask users to provide internal source mappings, identifiers or repair schema fields.\nUse established context when it already resolves a gap; do not ask again routinely.\n\nFor an unsupported capability: plan null, missing_information [], question null,\nand one to four unsupported_capabilities items. Each names exact input_ids,\nrequested_capability, the concrete limitation and its kind: unsupported_operation,\nunsupported_representation, unbounded_domain or resource_limit. This means the\nrequested capability itself exceeds the available contract, even with necessary\ninformation supplied. Missing values alone are not representation limitations.\nIf missing information prevents deciding representability, clarify it first; do\nnot list contradictory assessments or guess that the capability is impossible.\n\nFor ready: a complete plan, both lists empty, question null. The message summarizes\nthe proposal, needed clarification or concrete limitation; it is never a routing\ninstruction. The service derives the outcome from these fields. All proposals still\nundergo unchanged local model/source checks. No partial plan can publish, and no\nassessment authorizes changing settings, expanding scope or retrying a failed call.\n Local limits: at most 8 items."
+    },
+    "unsupported_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unsupported_operation",
+              "unsupported_representation",
+              "unbounded_domain",
+              "resource_limit"
+            ]
+          },
+          "input_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Local limits: 1 to 128 characters."
+            },
+            "description": "Local limits: 1 to 4 items."
+          },
+          "requested_capability": {
+            "type": "string",
+            "description": "Local limits: 1 to 300 characters."
+          },
+          "limitation": {
+            "type": "string",
+            "description": "Local limits: 1 to 1000 characters."
+          }
+        },
+        "required": [
+          "kind",
+          "input_ids",
+          "requested_capability",
+          "limitation"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Local limits: at most 4 items."
+    },
+    "question": {
+      "anyOf": [
+        {
+          "type": "string",
+          "description": "Local limits: 1 to 2000 characters."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "capability",
+                "facts",
+                "correction",
+                "reaffirmation",
+                "mixed"
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "description": "Local limits: 1 to 2000 characters."
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Local limits: 1 to 128 characters."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "bool",
+                      "int",
+                      "enum",
+                      "record",
+                      "sum",
+                      "vector",
+                      "ref"
+                    ]
+                  },
+                  "minimum": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maximum": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "values": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Local limits: at most 64 items."
+                  },
+                  "members": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Local limits: 1 to 128 characters."
+                        },
+                        "type_id": {
+                          "type": "string",
+                          "description": "Local limits: 1 to 128 characters."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Local limits: at most 64 items."
+                  },
+                  "element_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "description": "Local limits: 1 to 128 characters."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "length": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "description": "Local limits: value >= 0; value <= 32."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "symbol": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "minimum",
+                  "maximum",
+                  "values",
+                  "members",
+                  "element_id",
+                  "length",
+                  "symbol"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Local limits: at most 128 items."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "capability",
+                      "facts",
+                      "correction",
+                      "reaffirmation"
+                    ]
+                  },
+                  "objective": {
+                    "type": "string",
+                    "description": "A concise summary of this child's intended capability, facts or correction. Keep it within the stated character limit; do not copy the full policy or supplied material. Link every relevant original input through input_ids. Acquisition receives those original inputs separately with their detailed requirements, exceptions, assumptions and evidence. A shorter objective must not narrow or replace them. Local limits: 1 to 2000 characters."
+                  },
+                  "input_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "Local limits: 1 to 128 characters."
+                    },
+                    "description": "Local limits: 1 to 4 items."
+                  },
+                  "interfaces": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "symbol": {
+                          "type": "string",
+                          "description": "Local limits: 1 to 256 characters."
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "type",
+                            "function",
+                            "assertion",
+                            "goal",
+                            "transition"
+                          ]
+                        },
+                        "type_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "params": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "Local limits: 1 to 128 characters."
+                              },
+                              "type_id": {
+                                "type": "string",
+                                "description": "Local limits: 1 to 128 characters."
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type_id"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Local limits: at most 32 items."
+                        },
+                        "returns_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "state_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "parameters_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "description": "Local limits: 1 to 128 characters."
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "symbol",
+                        "kind",
+                        "type_id",
+                        "params",
+                        "returns_id",
+                        "state_id",
+                        "parameters_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Local limits: at most 32 items."
+                  },
+                  "material": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "projection": {
+                            "type": "object",
+                            "properties": {
+                              "profile": {
+                                "type": "string",
+                                "enum": [
+                                  "awm-adm-projection/1"
+                                ]
+                              },
+                              "namespace": {
+                                "type": "string",
+                                "description": "Projection namespace. This does not automatically prefix predicate symbols; each predicate must carry its complete qualified symbol. Local limits: at most 200 characters."
+                              },
+                              "entities": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "description": "Local limits: 1 to 128 characters."
+                                },
+                                "description": "Stable entity identifiers, not display names: 1\u2013128 ASCII characters, beginning with a letter or digit, followed by letters, digits, underscore, dot, colon or hyphen; no spaces. Preserve existing accepted identifiers. Distinct entities must not collapse onto the same identifier. Choosing an identifier does not change or resolve ambiguous entity meaning. Local limits: 1 to 128 items."
+                              },
+                              "predicates": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "symbol": {
+                                      "type": "string",
+                                      "description": "Complete qualified predicate symbol, for example domain.measure, not a bare measure name. Use at least two dot-separated identifier segments; each starts with an ASCII letter or underscore and continues with ASCII letters, digits or underscores. Maximum 200 characters. Preserve an existing predicate's exact symbol when supplied. Local limits: at most 200 characters."
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "boolean",
+                                        "integer",
+                                        "enum"
+                                      ],
+                                      "description": "Source predicate kind: boolean, integer or enum. These spellings differ from the bool/int kinds in plan.types. Integer bounds define a numeric carrier, not string enum labels."
+                                    },
+                                    "unit": {
+                                      "type": "string",
+                                      "description": "Required nonempty unit, at most 100 characters, consistent with the supplied meaning and extracted facts. Use 'unitless' only for genuinely unitless predicates. Never fill an unknown physical unit or alter a numeric scale merely to satisfy the format. Local limits: 1 to 100 characters."
+                                    },
+                                    "minimum": {
+                                      "type": "integer",
+                                      "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused. Local limits: value >= -9007199254740991; value <= 9007199254740991."
+                                    },
+                                    "maximum": {
+                                      "type": "integer",
+                                      "description": "minimum and maximum are integer fields. For integer predicates they are the inclusive carrier bounds. Always keep minimum <= maximum, a span <= 1000000 and both within [-9007199254740991, 9007199254740991]; for boolean/enum use 0 and 100 when unused. Local limits: value >= -9007199254740991; value <= 9007199254740991."
+                                    },
+                                    "values": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "description": "For boolean and integer predicates, values must be []. For enum predicates only, provide a nonempty array of unique, nonempty string labels. These are the permitted carrier labels, not observations or a list of numeric bounds converted to strings. Local limits: at most 256 items."
+                                    }
+                                  },
+                                  "required": [
+                                    "symbol",
+                                    "kind",
+                                    "unit",
+                                    "minimum",
+                                    "maximum",
+                                    "values"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "description": "Local limits: 1 to 32 items."
+                              },
+                              "cells": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "point",
+                                        "interval"
+                                      ]
+                                    },
+                                    "granularity": {
+                                      "type": "string",
+                                      "enum": [
+                                        "second",
+                                        "day",
+                                        "year"
+                                      ]
+                                    },
+                                    "effective_from": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Canonical UTC instant: YYYY-MM-DDTHH:MM:SSZ, with seconds and literal Z; a bare date is not this field's representation. Convert the intended instant from its explicit timezone or the supplied system timezone, preserving meaning."
+                                    },
+                                    "effective_to": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Canonical UTC instant: YYYY-MM-DDTHH:MM:SSZ, with seconds and literal Z; a bare date is not this field's representation. Convert the intended instant from its explicit timezone or the supplied system timezone, preserving meaning."
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "granularity",
+                                    "effective_from",
+                                    "effective_to"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "A point uses effective_from and effective_to null. An interval uses inclusive effective_from and exclusive effective_to; projection intervals must be bounded. Unknown source time uses kind unknown with both bounds null. Granularity describes the UTC carrier: day requires midnight UTC boundaries; year also requires January 1. Use second when converted boundaries are not UTC day/year aligned; this carrier encoding does not justify claiming finer evidence precision. Preserve the full supplied period, never replace it with an arbitrary instant."
+                                },
+                                "description": "Local limits: 1 to 256 items."
+                              }
+                            },
+                            "required": [
+                              "profile",
+                              "namespace",
+                              "entities",
+                              "predicates",
+                              "cells"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source_id": {
+                                  "type": "string",
+                                  "description": "Local limits: 1 to 128 characters."
+                                },
+                                "attribution": {
+                                  "type": "string",
+                                  "description": "Local limits: 1 to 1024 characters."
+                                },
+                                "evidence_group": {
+                                  "type": "string",
+                                  "description": "Local limits: 1 to 128 characters."
+                                },
+                                "allow_external": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "source_id",
+                                "attribution",
+                                "evidence_group",
+                                "allow_external"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Local limits: 1 to 16 items."
+                          }
+                        },
+                        "required": [
+                          "projection",
+                          "sources"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reuse_symbols": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "For reaffirmation only: 1\u201332 unique existing qualified declaration symbols whose exact accepted definitions are retained. Use interfaces [] and material null. For all other kinds use []. Do not label a change or additional obligation as unchanged reuse. Local limits: at most 32 items."
+                  }
+                },
+                "required": [
+                  "kind",
+                  "objective",
+                  "input_ids",
+                  "interfaces",
+                  "material",
+                  "reuse_symbols"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Local limits: 1 to 4 items."
+            },
+            "aliases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "alias": {
+                    "type": "string",
+                    "description": "Local limits: 1 to 100 characters."
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Local limits: 1 to 16 items."
+                  }
+                },
+                "required": [
+                  "alias",
+                  "targets"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Local limits: at most 128 items."
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string"
+                  },
+                  "parameter": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "role": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "value",
+                          "entity",
+                          "time"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "symbol",
+                  "parameter",
+                  "unit",
+                  "role"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Local limits: at most 128 items."
+            },
+            "value_aliases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string"
+                  },
+                  "parameter": {
+                    "type": "string"
+                  },
+                  "alias": {
+                    "type": "string"
+                  },
+                  "value_json": {
+                    "type": "string",
+                    "description": "Local limits: at most 4096 characters."
+                  }
+                },
+                "required": [
+                  "symbol",
+                  "parameter",
+                  "alias",
+                  "value_json"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Local limits: at most 128 items."
+            },
+            "requirements_json": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Local limits: at most 32768 characters."
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "summary",
+            "types",
+            "children",
+            "aliases",
+            "parameters",
+            "value_aliases",
+            "requirements_json"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "profile",
+    "message",
+    "missing_information",
+    "unsupported_capabilities",
+    "question",
+    "plan"
+  ],
+  "additionalProperties": false
+}

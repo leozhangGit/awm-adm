@@ -6,7 +6,6 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from ..contracts import (
-    CallLimits,
     ClosedModel,
     FactValue,
     Identifier,
@@ -14,6 +13,7 @@ from ..contracts import (
     Symbol,
     TemporalScope,
 )
+from ..llm_limits import CallOptions
 from ..temporal_evidence.models import Catalog
 from .carriers import Predicate
 
@@ -111,7 +111,12 @@ class ExtractionOutput(ClosedModel):
     claims: list[SpannedFact] = Field(max_length=100)
 
 
+class ExtractionCallLimits(CallOptions):
+    """Compatibility name for the shared request options."""
+
+
 class JobInput(ClosedModel):
+    catalog_predicates: list[Symbol] | None = Field(default=None, min_length=1, max_length=256)
     allowance_id: Identifier | None = None
     reprocess_id: Identifier | None = None
     idempotency_key: Identifier
@@ -124,7 +129,7 @@ class JobInput(ClosedModel):
     extractor: Literal["local", "external"] = "local"
     connection_id: Identifier | None = None
     connection_version: int | None = Field(default=None, ge=1)
-    call_limits: CallLimits = Field(default_factory=CallLimits)
+    call_limits: ExtractionCallLimits = Field(default_factory=ExtractionCallLimits)
 
     @model_validator(mode="after")
     def explicit(self) -> Self:

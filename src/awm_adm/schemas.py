@@ -6,7 +6,8 @@ from pathlib import Path
 from .config import AppConfig
 from .contracts import SCHEMAS
 from .feeds.models import CoverageInput, FeedControl, FeedInput, Reprocess
-from .interaction.models import DirectMessage, DisableConnection, EnableConnection
+from .interaction.models import DirectMessage, DirectTeach, DisableConnection, EnableConnection
+from .service_settings import SettingsUpdate, SettingsValues
 from .sources.models import BatchInput, ExtractionOutput, JobInput, PolicyInput, Projection, ProjectionInput
 from .temporal_evidence.models import Catalog, Claim, Extraction
 from .temporal_evidence.types import EvidenceQuery, RecallQuery
@@ -33,6 +34,9 @@ def documents():
         "FeedReprocess": Reprocess,
         "CoverageTransition": CoverageInput,
         "DirectMessage": DirectMessage,
+        "DirectTeach": DirectTeach,
+        "SettingsValues": SettingsValues,
+        "SettingsUpdate": SettingsUpdate,
         "EnableConnection": EnableConnection,
         "DisableConnection": DisableConnection,
     }.items():

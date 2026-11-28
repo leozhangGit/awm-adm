@@ -6,7 +6,9 @@ from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
-from .contracts import CallLimits, ClosedModel, RequestLimits
+from .access_policy import TrustedClients
+from .contracts import ClosedModel, RequestLimits
+from .llm_limits import LLMPolicy, aggregate, resolve_call
 from .wire import MAX_DOCUMENT_BYTES
 
 
@@ -15,9 +17,12 @@ class Server(ClosedModel):
     port: int = Field(default=9527, ge=1024, le=65535)
     max_body_bytes: int = Field(default=2_097_152, ge=1024, le=2_097_152)
     data_dir: str = Field(default=".local/data", min_length=1, max_length=4096)
+    trusted_clients: TrustedClients = Field(default_factory=TrustedClients)
 
     @model_validator(mode="after")
     def concrete_path(self) -> Self:
+        if any(host.rsplit(":", 1)[1] != str(self.port) for host in self.trusted_clients.hosts):
+            raise ValueError("Trusted client hosts must use the configured server port")
         if (
             "\x00" in self.data_dir
             or ".." in Path(self.data_dir).parts
@@ -85,25 +90,28 @@ class Quotas(ClosedModel):
         return self
 
 
+class EpisodePolicy(ClosedModel):
+    max_calls: int = Field(default=3, ge=1, le=100)
+    max_work: int = Field(default=6_000_000, ge=1, le=1_000_000_000)
+    no_progress_attempts: int = Field(default=2, ge=1, le=100)
+    private_draft_bytes: int = Field(default=2_097_152, ge=1024, le=16_777_216)
+
+    @model_validator(mode="after")
+    def useful_stop(self) -> Self:
+        if self.no_progress_attempts > self.max_calls:
+            raise ValueError("No-progress threshold exceeds episode calls")
+        return self
+
+
 class Learning(ClosedModel):
     remote_calls_enabled: bool = False
     publication: Literal["review", "checked_auto"] = "review"
     default_conflict_mode: Literal["backward", "forward"] = "backward"
-    preparation_timeout_ms: int = Field(default=180_000, ge=1, le=300_000)
-    acquisition_timeout_ms: int = Field(default=180_000, ge=1, le=600_000)
-    call: CallLimits = Field(default_factory=CallLimits)
-    episode: EpisodeLimits = Field(default_factory=EpisodeLimits)
-    quotas: Quotas = Field(default_factory=Quotas)
-
-    @model_validator(mode="after")
-    def bounded_hierarchy(self) -> Self:
-        for name in ("max_input_tokens", "max_output_tokens", "max_duration_ms"):
-            if getattr(self.call, name) > getattr(self.episode, name):
-                raise ValueError("Call cap exceeds episode cap")
-        return self
+    episode: EpisodePolicy = Field(default_factory=EpisodePolicy)
 
 
 class Sources(ClosedModel):
+    catalog_predicate_limit: int = Field(default=65_536, ge=1, le=65_536)
     batch_items: int = Field(default=100, ge=1, le=1000)
     item_bytes: int = Field(default=262_144, ge=1, le=2_097_152)
     batch_bytes: int = Field(default=2_097_152, ge=1, le=2_097_152)
@@ -143,17 +151,40 @@ class Proof(ClosedModel):
 
 
 class AppConfig(ClosedModel):
-    config_profile: Literal["awm-adm-config/2"] = "awm-adm-config/2"
+    config_profile: Literal["awm-adm-config/3"] = "awm-adm-config/3"
     server: Server = Field(default_factory=Server)
     runtime: RuntimeLimits = Field(default_factory=RuntimeLimits)
     request: RequestLimits = Field(default_factory=RequestLimits)
     learning: Learning = Field(default_factory=Learning)
+    llm: LLMPolicy = Field(default_factory=LLMPolicy)
     sources: Sources = Field(default_factory=Sources)
     retention: Retention = Field(default_factory=Retention)
     proof: Proof = Field(default_factory=Proof)
 
+    def episode_limits(self, call=None, overrides=None, *, policy=None):
+        from .learning.diagnostics import LimitExceeded
+
+        call = call or resolve_call(self.llm.call)
+        options = overrides or {}
+        policy = policy if policy is not None else self.learning.episode.model_dump()
+        count = options.get("max_calls", policy["max_calls"])
+        for name, cap in policy.items():
+            if options.get(name, cap) > cap:
+                raise LimitExceeded("aggregate", name, options[name], cap)
+        base = policy | aggregate(call, count)
+        base["no_progress_attempts"] = min(policy["no_progress_attempts"], count)
+        for name, cap in aggregate(call, count).items():
+            if options.get(name, cap) > cap:
+                raise LimitExceeded("aggregate", name, options[name], cap)
+        value = EpisodeLimits.model_validate(base | options).model_dump()
+        for name in ("max_input_tokens", "max_output_tokens", "max_duration_ms"):
+            if value[name] < call[name]:
+                raise LimitExceeded("aggregate", name, call[name], value[name])
+        return value
+
     @model_validator(mode="after")
     def ingress_bound(self) -> Self:
+        self.episode_limits()  # Derived aggregates must also fit their finite schema.
         if self.sources.batch_bytes > self.server.max_body_bytes:
             raise ValueError("Source batch exceeds HTTP body limit")
         if self.sources.batch_bytes > self.runtime.queue_bytes_per_adm:

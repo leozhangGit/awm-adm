@@ -1,6 +1,6 @@
 # Model lifecycle and owner controls
 
-Models support naming, empty creation, checked snapshot import/export, independent cloning, conflict-mode changes, archive and durable deletion. All operate within the same local AWM-ADM 0.4.0 service and owned schema 18.
+Models support naming, empty creation, checked snapshot import/export, independent cloning, conflict-mode changes, archive and durable deletion. All operate within the same local AWM-ADM 0.4.0 service and owned schema 19.
 
 ## Using the collection
 
@@ -55,4 +55,6 @@ All controls use the shared login-free local HTTP boundary, including same-origi
 
 An identical delete retry returns the original operation even after purge; a changed meaning under the same key fails. A second identity for an already-deleting model cannot create another cleanup. Old model routes return `410 gone` where a valid model-scoped operation reaches the fence; revoked credentials fail authentication/authorization first. Invalid route inputs can fail schema validation before resource lookup. Old global import/export operation views stop returning deleted content immediately.
 
-Owned schema 18 stores deletion progress in registry `deletions` and `deletion_grants` tables. The gateway retains its own idempotent redaction ledger. Startup does not reopen deleting models. Paired backup/restore preserves deletion progress, minimal tombstones and all retained uncertainty; restored connection and client authority remain disabled. An older external backup is an independent copy and can restore knowledge that was present when that backup was captured.
+Owned schema 19 stores deletion progress in registry `deletions` and `deletion_grants` tables. The gateway retains its own idempotent redaction ledger. Startup does not reopen deleting models. Paired backup/restore preserves deletion progress, minimal tombstones and all retained uncertainty; restored connection and client authority remain disabled. An older external backup is an independent copy and can restore knowledge that was present when that backup was captured.
+
+Accepted teaching-intent evidence is portable with the snapshot, including original selected request/clarification text and exact binding digests. It does not require operational conversation/task tables in the imported model. Its caller classifications remain assertions about intent, not authenticated review or external truth. Old evidence is not retroactively classified. Temporal bindings may carry a minimal checked catalog fragment; legacy full-catalog bindings retain their exact identity and cold validation.

@@ -2,23 +2,23 @@
 
 An enabled connection can have an unsuccessful call without being disabled. Read the retained dispatch outcome and locally measured diagnostics; a failed preparation is not a rejection of the supplied knowledge by the algebraic engine.
 
-## Preparation time
+## Shared call and workflow deadlines
 
-Teaching preparation has its own `learning.preparation_timeout_ms` installation bound, default **180,000 ms (three minutes)**, allowed from 1 through 300,000 ms. It applies to every domain, provider and model. Acquisition has a separate three-minute bound described below. Ask, narration, extraction and connection tests use the ordinary per-call limit, normally 60,000 ms. Token, concurrency and local compute limits are separate from these deadlines.
+Every provider purpose uses [the common policy](LIMITS.md): 256,000 conservative input units, 32,768 output tokens and 360,000 ms of provider execution by default. Explicit smaller limits remain effective; above-ceiling values are refused.
 
-The three-minute setting bounds a new preparation grant; its deadline is the earlier of that bound from reservation and the exchange's existing five-minute active-work deadline. Claim and dispatch cannot extend it. The gateway's actual remaining deadline may therefore be shorter than the configured limit. The worker waits for that grant's duration plus its existing delivery grace; the gateway bounds the complete child process, including response reads. A longer deadline is not a guarantee that a provider will complete a plan.
+A ready grant has sixty seconds to obtain dispatch. Claim starts its provider expiry without subtracting queue wait. The parent must fit the complete call plus three seconds of RPC delivery; otherwise the call is refused as aggregate exhaustion. The gateway enforces the whole-call deadline, including response reads and child termination. Delivery grace does not extend execution.
 
-New configuration defaults apply to new preparation work. Retained grants keep their original limits and identity; upgrades never extend, replay or reclassify an uncertain historical call. Waiting for a semantic clarification is separate from running work and requires no spending permission renewal.
+The application captures a separate result-delivery deadline at claim: provider expiry plus three seconds, bounded by the parent. Its timeout sweep waits until that deadline so a returning timeout or completed response can be recorded consistently. Authorization still stops at provider expiry. After the delivery deadline, known usage can settle, but a successful payload becomes `dispatch_expired` and cannot publish or answer. An uncertain call is never automatically repeated. Retained leases without a delivery deadline use their original expiry.
 
-## Acquisition time
+Finite workflows derive deadlines from locally permitted calls: N times (queue wait plus provider duration), plus finishing allowance. A two-call Ask permits fifteen minutes overall; a three-call episode twenty-two. Teach narrows its envelope to its checked plan. These are ceilings, not expected durations or retries. Accepted independent children remain accepted when later work fails. Human clarification is separate; retained work keeps its captured limits.
 
-Acquisition uses `learning.acquisition_timeout_ms`, default **180,000 ms**, allowed from 1 through 600,000 ms. Explicit episodes use a three-minute call default and check submitted limits against that installation cap. The general episode allows up to 12 minutes for its bounded attempts and local checking. Automatic Teach captures a child deadline no later than the remaining 15-minute execution deadline and clips each call accordingly. At claim, the execution lease is the earlier of the captured call duration and the episode deadline; the gateway enforces the remaining time for its complete child process. Worker RPC delivery grace does not extend that execution deadline.
+## Extraction output, queue and execution bounds
 
-Input capacity and elapsed time are independent limits: a larger request cap does not imply proportionally longer execution or a larger output allowance. `provider_timeout` with `failure_stage: gateway_wait` identifies an expired wait without identifying whether generation, networking or provider processing caused the delay. It retains `outcome_unknown` and the original reservation. Older grants keep their limits, and a restart or longer default never retries them. Accepted independent Teach children remain accepted even if a later acquisition times out.
+Teach, intake, feeds and direct extraction APIs use the same profile. Six-call Teach source feeds derive 196,608 output tokens; a default twenty-call feed derives 655,360. Each item reserves its captured call ceiling. Smaller explicit budgets and independent local-work bounds stay effective. Standing feeds do not expire merely while waiting for material.
 
-## Extraction queue and execution bounds
+Known usage settles global accounting even on failure; unknown dispatched outcomes retain reservations. Feed lifetime reservations remain conservative and are not refunded. Queue expiry is queue_timeout / not_dispatched with no provider charge. Insufficient parent capacity is aggregate_exhausted. Dispatch reads expose execution_limits with call limits, queue/aggregate deadlines, provider expiry, delivery deadline and observed dispatch flag.
 
-New extraction jobs allow up to 60 seconds waiting for dispatch, separately from their configured per-call duration (normally 60 seconds). Their overall deadline is the earlier of creation plus both bounds and the owning task deadline. The grant retains that overall bound; its execution lease starts when claimed and is clipped to the remaining overall deadline. Queue waiting therefore does not consume the per-call duration while sufficient overall time remains. Queue expiry is `queue_timeout` and `not_dispatched`, with no call charge. Existing grants retain their original deadlines; leased/dispatched work is never renewed or automatically retried.
+An output_incomplete response reporting max_output_tokens reached its captured output allowance, including provider-counted reasoning where applicable. No incomplete response is admitted, even if a fragment resembles complete JSON. A larger bound does not guarantee completion or renew/retry historical work.
 
 ## Retained diagnostics
 

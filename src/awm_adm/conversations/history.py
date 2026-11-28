@@ -33,10 +33,13 @@ accepted_fact_projections also lists historical metadata retained in this model'
 accepted snapshot. Use the compatible lookup for legacy point/validity facts; use query evidence with the explicit intent for temporal catalogs, period values, occurrences and attributed reports.
 These are names, types, units and coverage only, not fact values or current support
 status. Only the local lookup can establish whether an answer is supported.
+Catalog selection metadata declares whether a view is complete. A partial view is
+a retrieval hint: absence is not proof of missing knowledge. Clarify uncertain
+identity rather than inventing a new symbol or claiming an exhaustive search.
 """
 
 
-def snapshot_metadata(checked, budget):
+def snapshot_metadata(checked, budget, *, utterance=None):
     """Bounded read of validated metadata; never return source bytes or fact values."""
     from ..sources.compute import projected
 
@@ -47,9 +50,28 @@ def snapshot_metadata(checked, budget):
         if entry["projection"].get("profile") == "awm-adm-temporal-catalog/1":
             profile["profile"] = "awm-adm-temporal-catalog/1"
         profiles[encode(profile)] = profile
-        if len(profiles) > 32 or sum(len(raw) for raw in profiles) > 32768:
+        if utterance is None and (len(profiles) > 32 or sum(len(raw) for raw in profiles) > 32768):
             raise ValueError("Historical metadata exceeds disclosure bound")
-    return [profiles[raw] for raw in sorted(profiles)]
+    if utterance is None:
+        return [profiles[raw] for raw in sorted(profiles)]
+    import re
+
+    words = set(re.findall(r"[\w]+", utterance.casefold()))
+    ordered = sorted(
+        profiles, key=lambda raw: (-len(words & set(re.findall(r"[\w]+", raw.decode().casefold()))), raw)
+    )
+    selected, size = [], 0
+    for raw in ordered:
+        budget.tick()
+        if len(selected) < 32 and size + len(raw) <= 32768:
+            selected.append(profiles[raw])
+            size += len(raw)
+    return selected, {
+        "complete": len(selected) == len(profiles),
+        "total_profiles": len(profiles),
+        "included_profiles": len(selected),
+        "selection": "lexical_relevance",
+    }
 
 
 def options(service, key):

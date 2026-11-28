@@ -14,16 +14,19 @@ def project(task, checked, budget, existing):
     from ..sources.compute import declaration, evidence
 
     p = Catalog.model_validate(task["policy"]["projection"]).model_dump()
+    descriptors = {s["symbol"]: s for s in p["predicates"]}
     definitions, artifacts, support, cells = {}, {}, {}, {}
     prospective = []
     retractions = set()
     for row in task["claims"]:
         budget.tick()
         f = Claim.model_validate(row["claim"]).model_dump()
-        selected, reason = resolve(p, f)
+        s = descriptors.get(f["predicate"])
+        if s is None or f["entity_id"] not in p["entities"]:
+            raise ValueError("Held temporal claim cannot publish")
+        selected, reason = resolve({**p, "predicates": [s], "entities": [f["entity_id"]]}, f)
         if reason or f["status"] != "candidate":
             raise ValueError("Held temporal claim cannot publish")
-        s = next(s for s in p["predicates"] if s["symbol"] == f["predicate"])
         source = row["source"]
         record = source["record"]
         raw = source["content"].encode()
@@ -69,7 +72,7 @@ def project(task, checked, budget, existing):
         note = evidence(
             {
                 "profile": BINDING,
-                "projection": p,
+                "projection": {**p, "entities": [f["entity_id"]], "predicates": [s], "cells": selected},
                 "claim": f,
                 "cell": selected[0],
                 "descriptor_digest": descriptor_key(s),
@@ -100,11 +103,16 @@ def project(task, checked, budget, existing):
         support[symbol] = list(origin["evidence"])
         for key in origin["evidence"]:
             artifacts[key] = thaw(read_json(checked["blobs"][key]))
+    from ..teaching.intent import attach as attach_intent
+
+    sources, support = attach_intent(
+        task.get("teaching_intent"), definitions, preserved, list(artifacts.values()), support
+    )
     package = build_candidate(
         checked["model"],
         definitions,
         candidate_id=task["candidate_id"],
-        evidence=list(artifacts.values()),
+        evidence=sources,
         evidence_by_symbol=support,
         retractions=sorted(retractions),
     )

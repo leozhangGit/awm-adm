@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from ..feeds.service import FINAL as FEED_FINAL
 from ..learning.service import fault, fingerprint
+from ..llm_limits import aggregate, captured_call
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from ..teaching.diagnostics import PreparationError
 from ..teaching.materials import originals
@@ -207,7 +208,10 @@ class Intake:
         projections = [c["material"]["projection"] for c in children]
         if any(p != projections[0] for p in projections):
             raise PreparationError("sources", "multiple_projections")
-        extend(policy.get("projection"), projections[0])
+        merged = extend(policy.get("projection"), projections[0])
+        from ..temporal_evidence.capacity import check_growth
+
+        check_growth(policy.get("projection"), merged, task.get("catalog_predicate_limit", 65_536))
         if task.get("material_manifest"):
             for child in children:
                 self.selected(key, task, child)
@@ -398,6 +402,8 @@ class Intake:
         step = next(s for s in run["steps"] if s["id"] == step["id"])
         feed_input = step.get("feed_input")
         if not feed_input:
+            call = captured_call(run)
+            envelope = aggregate(call, 6)
             feed_input = {
                 "idempotency_key": step["id"],
                 "name": child["objective"][:128],
@@ -416,16 +422,13 @@ class Intake:
                 "budget": {
                     "max_items": 20 if task.get("source_queue") else len(selected),
                     "max_calls": 6,
-                    "max_input_tokens": 6 * max(32000, run["input_bound"]),
-                    "max_output_tokens": 49152,
+                    "max_input_tokens": envelope["max_input_tokens"],
+                    "max_output_tokens": envelope["max_output_tokens"],
                     "max_work": 12000000,
                 },
-                "call_limits": {
-                    "max_input_tokens": run["input_bound"],
-                    "max_output_tokens": 8192,
-                    "max_duration_ms": 60000,
-                },
+                "call_limits": call,
                 "max_pending": 4,
+                "catalog_predicates": [p["symbol"] for p in child["material"]["projection"]["predicates"]],
             }
             step["feed_input"] = feed_input
             self.execution.persist(key, task)

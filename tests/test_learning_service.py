@@ -506,13 +506,7 @@ def test_private_partial_construction_survives_only_same_context(rig):
 def test_removed_financial_quota_does_not_block_new_work_or_erase_uncertainty(rig, monkeypatch):
     rt, gateway = rig
     c = connection(rt, gateway, [{"ok": True}])
-    rt.learning.config = rt.config.model_copy(
-        update={
-            "learning": rt.config.learning.model_copy(
-                update={"quotas": rt.config.learning.quotas.model_copy(update={"calls_installation": 1})}
-            )
-        }
-    )
+    assert "quotas" not in rt.config.learning.model_dump()
     first = rt.learning.test_connection(c["id"], {"idempotency_key": "quota-a", "expected_version": 1})
     with rt.store.db() as db:
         db.execute("UPDATE grants SET created=0")
@@ -560,8 +554,7 @@ def test_complete_proposal_one_call_and_explicit_deadline(rig):
     }
     c = connection(rt, gateway, [reply])
     key = rt.create("complete")["id"]
-    limits = rt.config.learning.episode.model_dump()
-    limits.update(max_calls=1, no_progress_attempts=1)
+    limits = rt.config.episode_limits(overrides={"max_calls": 1, "no_progress_attempts": 1})
     ep = episode(rt, key, c, construction=False, limits=limits)
     advance(rt, key, ep["id"], "acquiring")
     dispatch(rt, gateway)

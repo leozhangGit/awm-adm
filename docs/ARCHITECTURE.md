@@ -20,6 +20,8 @@ flowchart LR
 
 ## Process and authority boundaries
 
+The browser and native localhost clients share a login-free workspace. An optional native-container path requires both an explicitly allowed HTTP authority and an actual peer in a configured private network. It grants the same workspace authority, rejects browser Origin/Fetch Metadata headers and never trusts forwarded headers. Only the application joins the dedicated client network; component credentials and network separation remain. See [trusted Docker clients](TRUSTED_CLIENTS.md).
+
 | Component | Responsibility |
 | --- | --- |
 | Application | Public API/console, local workspace, registry and ADM stores, local submissions, model controls, local results and scheduling |
@@ -65,7 +67,7 @@ The project skill resolves discoverable factual gaps using relevant project mate
 
 The registry, per-model SQLite stores and gateway ledger have separate transaction boundaries. Durable intents reconcile cross-store handoffs. Publication commits model/support/decision changes atomically within an ADM. Context generations, cancellation and deletion fence stale work.
 
-Current owned schema is 18. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
+Current owned schema is 19. Startup transactionally reconciles supported older stores and refuses foreign or future versions. Restoration preserves uncertain accounting while disabling remote authority and revoking operational credentials. Independent model snapshots recheck content and requirements without copying accounts, conversations or provider credentials.
 
 ## Repository map
 

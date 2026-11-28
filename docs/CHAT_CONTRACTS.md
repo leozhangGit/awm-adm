@@ -1,6 +1,6 @@
 # Conversation and task contracts
 
-AWM-ADM 0.4.0 exposes direct Ask/Teach exchanges under `/api/v1`. The current operational storage schema is 18. Core encodings remain compatible; snapshots with typed temporal evidence use the [required-feature service envelope](TEMPORAL_EVIDENCE.md). [OpenAPI](../contracts/openapi.json) specifies the request shapes.
+AWM-ADM 0.4.0 exposes direct Ask/Teach exchanges under `/api/v1`. The current operational storage schema is 19. Core encodings remain compatible; snapshots with typed temporal evidence use the [required-feature service envelope](TEMPORAL_EVIDENCE.md). [OpenAPI](../contracts/openapi.json) specifies the request shapes.
 
 ## Meaning and authority
 

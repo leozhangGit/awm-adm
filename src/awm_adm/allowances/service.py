@@ -269,7 +269,9 @@ class Allowances:
                     held = self.summary_holds(db, adm=adm)
                     lane_used = self.learning.usage_snapshot(db, adm=adm, lane="learning")
                     for field in ("calls", "input_tokens", "output_tokens"):
-                        cap = getattr(self.learning.config.learning.quotas, field + "_" + scope)
+                        from ..config import Quotas
+
+                        cap = getattr(Quotas(), field + "_" + scope)
                         n = value["completion"][field]
                         if used[field] + held[field] + n > cap or lane_used[field] + held[field] + n > max(
                             1, cap * 60 // 100

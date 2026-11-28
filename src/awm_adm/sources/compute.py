@@ -112,10 +112,10 @@ def extract(task, budget):
     modern = is_catalog(profile)
     raw = source["content"].encode()
     if task["purpose"] == "schema":
-        from ..temporal_evidence.models import Catalog
+        from ..temporal_evidence.models import CatalogBatch
 
         proposal = (
-            (Catalog if modern else Projection)
+            (CatalogBatch if modern else Projection)
             .model_validate(loads(task.get("provider_text", source["content"])))
             .model_dump()
         )
@@ -388,11 +388,16 @@ def compute(task, budget):
                 cells[symbol] = {"claim": fact["claim_id"], "version": row["version_key"]}
         if len(set(existing) | set(cells)) > task["max_facts"]:
             raise ValueError("Projection fact bound exceeded")
+        from ..teaching.intent import attach as attach_intent
+
+        sources, support = attach_intent(
+            task.get("teaching_intent"), declarations, set(), list(artifacts.values()), support
+        )
         candidate = build_candidate(
             checked["model"],
             declarations,
             candidate_id=task["candidate_id"],
-            evidence=list(artifacts.values()),
+            evidence=sources,
             evidence_by_symbol=support,
         )
         return {"package": transport(candidate), "preview": declarations, "cells": cells, "work": budget.used}

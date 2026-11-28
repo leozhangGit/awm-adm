@@ -15,6 +15,7 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 | [Knowledge intent](KNOWLEDGE_INTENT.md) | Adopted rules, sourced facts, scoped premises and exploratory material |
 | [Meaning and temporal context](TEMPORAL_INTERPRETATION.md) | System timezone, calendar-date lookup, source precision and historical presentation |
 | [Teaching](TEACHING.md) | Goals, clarification and automatic checked learning |
+| [Checked reaffirmation](REAFFIRMATION.md) | Retain accepted rules and record a new endorsement without regenerating definitions |
 | [Preparation readiness](PREPARATION_READINESS.md) | Missing information, capability limits and resumable clarification |
 | [Teaching execution](TEACHING_EXECUTION.md) | Admission, cancellation, completion and recovery |
 | [Teaching change reports](CHANGE_REPORTING.md) | Checked before/after meanings, preserved dependents and bounded publication reports |
@@ -22,7 +23,8 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 | [History](HISTORY.md) | Time-filtered console/API activity and current knowledge search |
 | [Model lifecycle](MODEL_LIFECYCLE.md) | Independent snapshots, mode changes, archive and deletion |
 | [Connection](CONNECTION.md) | Enable/Disable, saved keys, token and call charts |
-| [Provider failures](PROVIDER_FAILURES.md) | Preparation deadline, precise transport diagnostics and uncertain outcomes |
+| [Settings](SETTINGS.md) | Persistent shared provider limits and the temporal predicate cap |
+| [Provider failures](PROVIDER_FAILURES.md) | Shared call/workflow deadlines, precise transport diagnostics and uncertain outcomes |
 | [Operations](OPERATIONS.md) | Backups, restore, diagnostics, retention and upgrade boundaries |
 
 ## Integrate and inspect
@@ -31,6 +33,7 @@ For the motivation and conceptual architecture, read [Explore AWM-ADM](https://c
 | --- | --- |
 | [Codex project plugin](../codex-plugin/README.md) | Local setup, project bindings, Ask/Teach and explicit revision |
 | [API](API.md) and [OpenAPI](../contracts/openapi.json) | Unified `/api/v1` model and chat APIs |
+| [Trusted Docker clients](TRUSTED_CLIENTS.md) | Opt-in private network access for native integrations in separate containers |
 | [Conversations](CONVERSATIONS.md) | Direct messages, automatic context and durable provenance |
 | [Learning](LEARNING.md) | Manual bounded acquisition and provider transport |
 | [Language preview](LANGUAGE.md) | Explicit interpretation preview and confirmation |

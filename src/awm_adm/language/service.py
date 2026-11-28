@@ -7,7 +7,9 @@ from uuid import uuid4
 
 from ..application.store import context_binding
 from ..contracts import IntentDraft, Request
+from ..learning.diagnostics import capacity_diagnostic
 from ..learning.service import fault, fingerprint
+from ..llm_limits import POLICY, aggregate, replay_body, request_body, resolve_call
 from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from .models import (
@@ -266,18 +268,23 @@ class LanguageService:
         self.store.emit(db, key, "interpretation.changed", item["id"], data={"status": item["status"]})
 
     def create(self, key, body, *, parent=None, revalidation=None):
-        body = InterpretationInput.model_validate(body).model_dump()
+        body = request_body(InterpretationInput, body)
         if body.get("allowance_id") is None:
             body.pop("allowance_id", None)
-        identity = fingerprint({"body": body, "parent": parent, "revalidation": revalidation})
         with self.store.lock, self.store.db(key) as db, self.store.transaction(db):
             old = db.execute(
                 "SELECT id,digest FROM interpretations WHERE idem=?", (body["idempotency_key"],)
             ).fetchone()
             if old:
-                if old["digest"] != identity:
+                saved = self.get(key, old["id"])
+                replay = replay_body(body, saved["body"])
+                if old["digest"] != fingerprint(
+                    {"body": replay, "parent": parent, "revalidation": revalidation}
+                ):
                     fault("conflict", "Interpretation idempotency mismatch")
-                return self.get(key, old["id"])
+                return saved
+            body["call_limits"] = resolve_call(self.runtime.settings.call, body["call_limits"])
+            identity = fingerprint({"body": body, "parent": parent, "revalidation": revalidation})
             meta = self.vocabulary(key)
             info = self._current(key, body["expected_revision"], meta["generation"])
             if parent:
@@ -296,14 +303,12 @@ class LanguageService:
             config = None
             if body["translator"] == "external":
                 c = self.learning._usable(body["connection_id"], body["connection_version"], "interpretation")
-                for name, limit in body["call_limits"].items():
-                    if limit > getattr(self.runtime.config.learning.call, name):
-                        fault("invalid_limits", "Translation call exceeds configured caps")
                 config = {k: c[k] for k in ("provider", "model", "configuration_digest")}
                 config["connection_id"] = c["id"]
             uid = str(uuid4())
             item = {
                 "id": uid,
+                "llm_policy": POLICY,
                 "body": body,
                 "status": "queued",
                 "created": self.learning.now(),
@@ -322,7 +327,7 @@ class LanguageService:
                 "choices": [],
                 "error": None,
                 "generation": self.store.generation,
-                "deadline": self.learning.now() + body["call_limits"]["max_duration_ms"] / 1000 + 60,
+                "deadline": self.learning.now() + aggregate(body["call_limits"], 1)["max_duration_ms"] / 1000,
             }
             self._room(db, body["conversation_id"], len(dumps(item)))
             db.execute(
@@ -364,12 +369,14 @@ class LanguageService:
             fault("not_found", "Interpretation not found")
         return loads(row[0])
 
-    def _fail(self, key, item, reason):
+    def _fail(self, key, item, reason, diagnostic=None):
         with self.store.db(key) as db, self.store.transaction(db):
             item = self._raw(key, item["id"])
             if item["status"] not in PENDING:
                 return
             item.update(status="failed", error=reason)
+            if diagnostic:
+                item["failure_diagnostics"] = diagnostic
             self._save(db, key, item)
 
     def cancel(self, key, uid):
@@ -545,7 +552,7 @@ class LanguageService:
                 except RuntimeFault as error:
                     if error.code == "busy":
                         continue
-                    self._fail(key, self._raw(key, item["id"]), error.code)
+                    self._fail(key, self._raw(key, item["id"]), error.code, capacity_diagnostic(error))
                     return True
                 except (ValueError, KeyError, TypeError):
                     self._fail(key, self._raw(key, item["id"]), "invalid_interpretation")
@@ -598,6 +605,7 @@ class LanguageService:
             grant_id = self.learning.reserve(
                 {
                     "purpose": "interpretation",
+                    **({"llm_policy": item["llm_policy"]} if item.get("llm_policy") else {}),
                     "allowance_id": body.get("allowance_id"),
                     "interpretation_id": item["id"],
                     "base_revision": item["revision_id"],
@@ -609,9 +617,7 @@ class LanguageService:
                     "limits": body["call_limits"],
                     "provenance": provenance(spec, raw),
                     "recorded_index": 0,
-                    "deadline": min(
-                        item["deadline"], self.learning.now() + body["call_limits"]["max_duration_ms"] / 1000
-                    ),
+                    "deadline": item["deadline"],
                 },
                 adm=key,
             )

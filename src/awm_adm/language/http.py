@@ -50,7 +50,7 @@ def public(router, auth, service):
     @router.post("/adms/{adm}/interpretations", status_code=202)
     def interpret(request: Request, adm: str, body: InterpretationInput):
         auth.require(request, adm, "submit", owner=body.translator == "external")
-        return service.create(adm, body.model_dump())
+        return service.create(adm, body.model_dump(exclude_unset=True))
 
     @router.get("/adms/{adm}/interpretations/{interpretation}")
     def interpretation_detail(request: Request, adm: str, interpretation: str):
@@ -60,7 +60,7 @@ def public(router, auth, service):
     @router.post("/adms/{adm}/interpretations/{interpretation}/clarify", status_code=202)
     def clarify(request: Request, adm: str, interpretation: str, body: InterpretationInput):
         auth.require(request, adm, "submit", owner=body.translator == "external")
-        return service.create(adm, body.model_dump(), parent=interpretation)
+        return service.create(adm, body.model_dump(exclude_unset=True), parent=interpretation)
 
     @router.post("/adms/{adm}/interpretations/{interpretation}/revalidate", status_code=202)
     def revalidate(request: Request, adm: str, interpretation: str, body: Revalidate):

@@ -91,7 +91,7 @@ def test_malformed_temporal_proposals_still_fail_across_process_without_coercion
 
 
 def test_scope_descriptions_distinguish_exact_coordinates_and_uncertainty_on_wire():
-    schema = response_schema(temporal_evidence=True, assessed=True)
+    schema = response_schema(temporal_evidence=True, assessed=True, reaffirmation=True)
     fields = schema["properties"]["plan"]["anyOf"][0]["properties"]["evidence_scope"]["anyOf"][0][
         "properties"
     ]
@@ -117,7 +117,7 @@ def test_scope_descriptions_distinguish_exact_coordinates_and_uncertainty_on_wir
         {},
         {},
     )
-    assert spec["prompt_version"] == "adm-teaching-preparation/18"
+    assert spec["prompt_version"] == "adm-teaching-preparation/22"
     wires = []
     for model in ("configured-a", "configured-b"):
         raw, _ = make_wire(

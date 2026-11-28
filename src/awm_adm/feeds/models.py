@@ -4,20 +4,24 @@ from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
-from ..contracts import CallLimits, ClosedModel, Identifier
-from ..sources.models import Predicate, Projection
+from ..contracts import ClosedModel, Identifier, Symbol
+from ..llm_limits import CallPolicy, aggregate
+from ..sources.models import ExtractionCallLimits, Predicate, Projection
 from ..temporal_evidence.models import Catalog
+
+DEFAULT_FEED = aggregate(CallPolicy().limits(), 20)
 
 
 class FeedBudget(ClosedModel):
     max_items: int = Field(default=20, ge=1, le=10000)
     max_calls: int = Field(default=20, ge=0, le=10000)
-    max_input_tokens: int = Field(default=640000, ge=0, le=100000000)
-    max_output_tokens: int = Field(default=163840, ge=0, le=100000000)
+    max_input_tokens: int = Field(default=DEFAULT_FEED["max_input_tokens"], ge=0, le=100000000)
+    max_output_tokens: int = Field(default=DEFAULT_FEED["max_output_tokens"], ge=0, le=100000000)
     max_work: int = Field(default=60000000, ge=1, le=1000000000)
 
 
 class FeedInput(ClosedModel):
+    catalog_predicates: list[Symbol] | None = Field(default=None, min_length=1, max_length=256)
     idempotency_key: Identifier
     name: str = Field(min_length=1, max_length=128)
     expected_revision: Identifier
@@ -32,7 +36,7 @@ class FeedInput(ClosedModel):
     allow_external: bool = False
     after_sequence: int = Field(default=0, ge=0)
     budget: FeedBudget = Field(default_factory=FeedBudget)
-    call_limits: CallLimits = Field(default_factory=CallLimits)
+    call_limits: ExtractionCallLimits = Field(default_factory=ExtractionCallLimits)
     max_pending: int = Field(default=4, ge=1, le=32)
     max_failures: int = Field(default=3, ge=1, le=20)
     retry_limit: int = Field(default=2, ge=0, le=5)

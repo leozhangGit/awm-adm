@@ -5,6 +5,7 @@ import { short } from "./types.ts";
 import { Badge, CopyButton, Notice } from "./components.tsx";
 import { Connections } from "./Connections.tsx";
 import { Operations } from "./Operations.tsx";
+import { ServiceSettings } from "./ServiceSettings.tsx";
 import { Activity } from "./Activity.tsx";
 import { Knowledge } from "./Knowledge.tsx";
 import { DirectWorkspace } from "./DirectWorkspace.tsx";
@@ -20,6 +21,7 @@ const nav = [
   { id: "adms", label: "Domain models", icon: "◇" },
   { id: "connections", label: "Connections", icon: "⇄" },
   { id: "operations", label: "Operations", icon: "⚙" },
+  { id: "settings", label: "Settings", icon: "☷" },
 ];
 type Route = {
   view: string;
@@ -762,6 +764,8 @@ export default function App() {
             </>
           ) : route.view === "operations" ? (
             <Operations />
+          ) : route.view === "settings" ? (
+            <ServiceSettings />
           ) : route.view === "connections" ? (
             <Connections />
           ) : (

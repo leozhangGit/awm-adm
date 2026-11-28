@@ -19,40 +19,46 @@ from .test_learning_service import advance, connection, episode
 from .test_learning_service import rig as rig
 
 
-def test_acquisition_defaults_leave_other_provider_calls_and_compute_unchanged():
+def test_acquisition_defaults_match_shared_profile_and_leave_compute_unchanged():
     for config in (
         AppConfig(),
         load_config(Path("config/default.toml")),
         load_config(Path("deploy/config.toml")),
     ):
-        assert config.learning.acquisition_timeout_ms == 180000
-        assert config.learning.preparation_timeout_ms == 180000
-        assert config.learning.episode.max_duration_ms == 720000
-        assert config.learning.call.max_duration_ms == 60000
-        assert config.learning.call.max_output_tokens == 8192
-        assert config.learning.call.max_input_tokens == 128000
+        assert config.llm.call.max_duration_ms == 360000
+        assert config.llm.call.max_output_tokens == 32768
+        assert config.llm.call.max_input_tokens == 256000
+        assert config.episode_limits()["max_duration_ms"] == 1320000
+        assert config.request.max_duration_ms == 10000
 
 
 @pytest.mark.parametrize("value", [0, 600001, True])
 def test_acquisition_timeout_has_finite_configuration_bounds(value):
     with pytest.raises(ValidationError):
-        AppConfig.model_validate({"learning": {"acquisition_timeout_ms": value}})
+        AppConfig.model_validate({"llm": {"call": {"max_duration_ms": value}}})
 
 
-@pytest.mark.parametrize("cap,parent_remaining", [(180000, 900000), (90000, 900000), (180000, 45000)])
+@pytest.mark.parametrize("cap,parent_remaining", [(360000, 900000), (90000, 900000)])
 def test_automatic_teach_uses_acquisition_cap_and_remaining_parent_deadline(
     rig, monkeypatch, cap, parent_remaining
 ):
     rt, gw = rig
     data = rt.config.model_dump()
-    data["learning"]["acquisition_timeout_ms"] = cap
+    data["llm"]["call"]["max_duration_ms"] = cap
     config = AppConfig.model_validate(data)
     monkeypatch.setattr(rt, "config", config)
+    state = rt.settings.get()
+    rt.settings.update(
+        {
+            "expected_revision": state["revision"],
+            "values": state["values"] | {"llm_call": data["llm"]["call"]},
+        }
+    )
     monkeypatch.setattr(rt.learning, "config", config)
     key, uid = preparation(rt, gw)
     t = task(rt, key, uid)
     now = rt.conversations.now()
-    assert 899000 <= t["execution"]["deadline_ms"] - now <= 900000
+    assert 0 < t["execution"]["deadline_ms"] - now <= 4 * (60000 + cap) + 60000
     monkeypatch.setattr(rt.conversations, "now", lambda: now)
     t["execution"]["deadline_ms"] = now + parent_remaining
     rt.conversations.teaching.execution.persist(key, t)
@@ -60,14 +66,14 @@ def test_automatic_teach_uses_acquisition_cap_and_remaining_parent_deadline(
     step = task(rt, key, uid)["execution"]["steps"][0]
     saved = rt.learning.episode(key, step["episode_id"])
     assert saved["body"]["call_limits"]["max_duration_ms"] == min(cap, parent_remaining)
-    assert saved["body"]["limits"]["max_duration_ms"] == min(720000, parent_remaining)
+    assert saved["body"]["limits"]["max_duration_ms"] == min(2 * (60000 + cap) + 60000, parent_remaining)
     assert saved["body"]["limits"]["max_calls"] == 2
-    assert saved["body"]["call_limits"]["max_output_tokens"] == 8192
+    assert saved["body"]["call_limits"]["max_output_tokens"] == 32768
     job = rt.learning.claim()
     assert job["timeout_ms"] == min(cap, parent_remaining)
 
 
-@pytest.mark.parametrize("explicit_ms,queue_delay", [(None, 0), (30000, 0), (180000, 700)])
+@pytest.mark.parametrize("explicit_ms,queue_delay", [(None, 0), (30000, 0), (360000, 30)])
 def test_acquisition_deadline_reaches_gateway_and_preserves_shorter_bounds(
     rig, monkeypatch, explicit_ms, queue_delay
 ):
@@ -76,8 +82,8 @@ def test_acquisition_deadline_reaches_gateway_and_preserves_shorter_bounds(
     key = rt.create("Bounded deadline")["id"]
     options = {} if explicit_ms is None else {"call_limits": {"max_duration_ms": explicit_ms}}
     saved = episode(rt, key, c, **options)
-    assert saved["body"]["call_limits"]["max_duration_ms"] == (explicit_ms or 180000)
-    assert saved["deadline"] - saved["created"] == 720
+    assert saved["body"]["call_limits"]["max_duration_ms"] == (explicit_ms or 360000)
+    assert saved["deadline"] - saved["created"] == 3 * (60 + (explicit_ms or 360000) / 1000) + 60
     advance(rt, key, saved["id"], "acquiring")
     clock = [saved["created"] + queue_delay]
     monkeypatch.setattr(rt.learning, "now", lambda: clock[0])
@@ -91,7 +97,7 @@ def test_acquisition_deadline_reaches_gateway_and_preserves_shorter_bounds(
 
     monkeypatch.setattr(gateway_service, "acquire", acquire)
     gw.dispatch(job["grant_id"], job["lease"])
-    assert seen == [min((explicit_ms or 180000) / 1000, 720 - queue_delay)]
+    assert seen == [(explicit_ms or 360000) / 1000]
 
 
 def test_acquisition_above_configured_cap_is_rejected_before_dispatch(rig):
@@ -99,7 +105,7 @@ def test_acquisition_above_configured_cap_is_rejected_before_dispatch(rig):
     c = connection(rt, gw)
     key = rt.create("Explicit cap")["id"]
     with pytest.raises(RuntimeFault) as error:
-        episode(rt, key, c, call_limits={"max_duration_ms": 180001})
+        episode(rt, key, c, call_limits={"max_duration_ms": 360001})
     assert error.value.code == "invalid_limits"
     assert rt.learning.claim() is None
 
@@ -124,10 +130,10 @@ def test_response_after_old_one_minute_limit_can_pass_full_admission(rig, monkey
 
     monkeypatch.setattr(gateway_service, "acquire", acquire)
     job = rt.learning.claim()
-    assert job["timeout_ms"] == 180000
+    assert job["timeout_ms"] == 360000
     assert gw.dispatch(job["grant_id"], job["lease"])["status"] == "succeeded"
     done = advance(rt, key, saved["id"], "accepted")
-    assert durations == [180]
+    assert durations == [360]
     assert done["usage"]["calls"] == 1
     assert rt.query(key, value_query())["result"]["value"] == 10
 
@@ -156,10 +162,10 @@ def test_timeout_keeps_reservation_and_original_limit_after_restart(rig, monkeyp
     job = rt.learning.claim()
     gw.dispatch(job["grant_id"], job["lease"])
     done = advance(rt, key, saved["id"], "stopped")
-    assert done["reason"] == "outcome_unknown" and done["receipts"] == []
+    assert done["reason"] == "provider_timeout" and len(done["receipts"]) == 1
     usage = done["usage"]
     assert usage["calls"] == 1 and usage["unresolved"] == 1
-    assert usage["input_tokens"] > 0 and usage["output_tokens"] == 8192
+    assert usage["input_tokens"] > 0 and usage["output_tokens"] == 32768
     with rt.store.db() as db:
         outcome = loads(db.execute("SELECT outcome FROM grants WHERE id=?", (job["grant_id"],)).fetchone()[0])
     assert outcome["error"] == "provider_timeout"
@@ -168,7 +174,7 @@ def test_timeout_keeps_reservation_and_original_limit_after_restart(rig, monkeyp
     assert rt.store.info(key)["revision_id"] == revision
     assert rt.learning.claim() is None
     data = rt.config.model_dump()
-    data["learning"]["acquisition_timeout_ms"] = 240000
+    data["llm"]["call"]["max_duration_ms"] = 240000
     config = AppConfig.model_validate(data)
     rt.close()
     restarted = Runtime(config, start_scheduler=False)

@@ -12,6 +12,8 @@ Append immutable source versions with stable batch/item/version identities. Rece
 
 The feed specification is immutable. Create a new explicit policy to change sources, extraction configuration, requirements, coverage generation or lifetime processing limits. A mode/owner-policy epoch change stalls existing authority; an explicit resume acknowledges the current epoch. A changed source-policy generation requires a new feed specification. Pausing remains possible after such a change.
 
+External feeds resolve the common `[llm.call]` profile: 256,000 input-reservation units, 32,768 output tokens and six minutes per call. Partial/omitted limits resolve from installation policy; explicit smaller values remain effective. Aggregate defaults derive from permitted calls: a twenty-call feed has 5,120,000 input and 655,360 output units. Local-work bounds remain independent. Teach feeds capture six-call envelopes and their parent policy. Each ready grant has a sixty-second queue allowance; insufficient parent time is diagnosed before dispatch. Existing feeds/jobs retain their captured values across configuration changes and restart. See [provider deadlines](PROVIDER_FAILURES.md#extraction-output-queue-and-execution-bounds).
+
 ## Finite scheduling and accounting
 
 | Boundary | Implemented behavior |
@@ -25,6 +27,10 @@ The feed specification is immutable. Create a new explicit policy to change sour
 | Retention/backpressure | Existing per-ADM item/byte and installation storage caps include feed policies, interests, runs and transitions. Maximum 100 retained feed specifications per ADM. Full pending allowance holds the source cursor; storage/intake caps reject before acknowledgment. No automatic deletion or eviction. |
 | Stopping | Default three consecutive unsuccessful item completions disable the interested feed. Held items, invalid data, rejected conflicts and interrupted work remain inspectable. Accepted work resets that feed's consecutive failure count. |
 | Retry | Only orchestration failures before an operation is created (`busy` or `quota_exceeded`) receive bounded exponential backoff, default two retries from two seconds. Completed or uncertain source jobs are never automatically repeated. |
+
+The direct feed defaults to 20 calls and 655,360 aggregate output tokens. Automatic Teach source feeds allow six calls and reserve six times the captured shared output cap (196,608 by default). Each item reserves its complete per-call output allowance before scheduling. A smaller explicit lifetime budget is not enlarged, and aggregate capacity never increases the per-call cap.
+
+Derived input/output envelopes must fit the finite lifetime bounds in `FeedBudget`. An oversized derived envelope returns `422` with `aggregate_exhausted`, required/available values and `provider_call_dispatched: false`, before any feed is created. An explicit smaller token envelope remains valid even when it permits fewer calls than the separate call-count ceiling.
 
 Reservations are intentionally conservative work authorization, not billing estimates or promises that a gap will close. Unknown usage is reported separately from measured tokens. Feed processing limits and per-call bounds are separate; enabling a policy does not enlarge either or choose a different model.
 
@@ -79,3 +85,7 @@ Recorded-provider tests exercise intake, cursors, bounded scheduling, shared int
 ## Temporal evidence
 
 Typed temporal catalogs use the same feed queue, source-generation fences, limits and original-claim admission. Different temporal kinds in one original share an extraction. Additive catalog changes preserve semantic descriptors; a window removes supported coverage through holds. Partial interval resegmentation is unsupported and preserves accepted coverage. A push credential cannot widen these meanings. See [temporal evidence](TEMPORAL_EVIDENCE.md).
+
+## Predicate working sets
+
+The accumulated temporal catalog permits 65,536 predicates under the independent [resource limits](LIMITS.md). An extraction job or feed may supply `catalog_predicates`, a list of 1–256 distinct predicate symbols already present in its pinned source policy. The service preserves each selected descriptor exactly and validates returned claims against that selection. Selection is part of the immutable work identity. Omit it for a small catalog; an external extraction against more than 256 predicates requires explicit selection before any provider dispatch. Automatic Teach derives the selection from its checked source mapping. No source is silently skipped to fit the request. Legacy projections retain their own bounds.

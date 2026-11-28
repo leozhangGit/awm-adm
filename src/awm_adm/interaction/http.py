@@ -4,7 +4,7 @@ from typing import Literal
 
 from fastapi import Header, Query, Request
 
-from .models import DirectMessage, DisableConnection, EnableConnection
+from .models import DirectMessage, DirectTeach, DisableConnection, EnableConnection
 
 
 def attach(router, auth, runtime):
@@ -55,7 +55,7 @@ def attach(router, auth, runtime):
     def teach(
         request: Request,
         adm: str,
-        body: DirectMessage,
+        body: DirectTeach,
         if_match: str | None = Header(default=None, max_length=128),
     ):
         auth.require(request, adm, owner=True)

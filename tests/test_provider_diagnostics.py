@@ -223,7 +223,7 @@ def remote_connection(rt, gateway, tmp_path, output):
 
 
 def remote_budget(rt, c, key, scope="task"):
-    return {"call_limits": rt.config.learning.call.model_dump()}
+    return {"call_limits": rt.config.llm.call.limits()}
 
 
 def test_explicit_source_retry_deduplicates_and_preserves_unknown_reservations(rig, tmp_path):
@@ -330,7 +330,7 @@ def test_failure_survives_gateway_api_and_restart_without_dispatching_again(
         def get():
             return rt.language.get(key, item["id"])
     else:
-        item = episode(rt, key, c, limits=rt.config.learning.episode.model_dump(), **budget)
+        item = episode(rt, key, c, limits=rt.config.episode_limits(), **budget)
         advance(rt, key, item["id"], "acquiring")
         tick = rt.learning.tick
 
@@ -382,7 +382,7 @@ def test_failure_survives_gateway_api_and_restart_without_dispatching_again(
         assert db.execute("SELECT outcome FROM grants WHERE id=?", (view["id"],)).fetchone()[0] == original
     assert len(calls) == 1
     assert "authored-test-credential" not in json.dumps(get())
-    later = rt.learning.now() + rt.config.learning.quotas.period_seconds + 1
+    later = rt.learning.now() + 86400 + 1
     monkeypatch.setattr(rt.learning, "now", lambda: later)
     assert rt.learning.usage()["unresolved"] == 1
     assert rt.learning.usage()["input_tokens"] == view["input_tokens"]

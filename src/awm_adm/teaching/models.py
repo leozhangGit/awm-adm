@@ -7,7 +7,7 @@ from pydantic import Field, model_validator
 from ..contracts import ClosedModel, Identifier
 from ..language.models import Vocabulary
 from ..sources.models import Projection, SourcePermission
-from ..temporal_evidence.models import Catalog
+from ..temporal_evidence.models import CatalogBatch
 
 
 class Material(ClosedModel):
@@ -64,7 +64,7 @@ class Plan(ClosedModel):
 
 
 class TemporalMaterial(Material):
-    projection: Catalog
+    projection: CatalogBatch
 
 
 class TemporalChild(Child):
@@ -100,3 +100,35 @@ REPLY_SCHEMA = {
     "required": ["status", "message", "plan_json"],
     "additionalProperties": False,
 }
+
+
+class ReaffirmingChild(Child):
+    kind: Literal["capability", "facts", "correction", "reaffirmation"]
+    reuse_symbols: list[str] = Field(default_factory=list, max_length=32)
+
+    @model_validator(mode="after")
+    def shape(self) -> Self:
+        if self.kind == "reaffirmation":
+            if not self.reuse_symbols or self.interfaces or self.material is not None:
+                raise ValueError("Reaffirmation needs existing symbols and no interfaces or source mapping")
+            if len(set(self.reuse_symbols)) != len(self.reuse_symbols):
+                raise ValueError("Reaffirmation symbols must be unique")
+            return self
+        if self.reuse_symbols:
+            raise ValueError("Only reaffirmation can select reuse symbols")
+        return super().shape()
+
+
+class ReaffirmingTemporalChild(ReaffirmingChild):
+    material: TemporalMaterial | None = None
+
+
+class ReaffirmingPlan(Plan):
+    profile: Literal["awm-adm-teaching-plan/3"] = "awm-adm-teaching-plan/3"
+    kind: Literal["capability", "facts", "correction", "reaffirmation", "mixed"]
+    children: list[ReaffirmingChild] = Field(min_length=1, max_length=4)
+
+
+class ReaffirmingTemporalPlan(ReaffirmingPlan):
+    profile: Literal["awm-adm-teaching-plan/4"] = "awm-adm-teaching-plan/4"
+    children: list[ReaffirmingTemporalChild] = Field(min_length=1, max_length=4)

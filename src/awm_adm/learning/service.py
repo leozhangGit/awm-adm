@@ -7,11 +7,21 @@ import threading
 import time
 from uuid import uuid4
 
+from ..llm_limits import (
+    DELIVERY_MS,
+    POLICY,
+    QUEUE_MS,
+    aggregate,
+    delivery_deadline,
+    replay_body,
+    request_body,
+    resolve_call,
+)
 from ..providers.diagnostics import account_outcome
 from ..providers.wire import make_wire, provenance, specification
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from ..runtime.supervisor import Supervisor
-from .diagnostics import InputCapacityExceeded, capacity_diagnostic
+from .diagnostics import InputCapacityExceeded, LimitExceeded, capacity_diagnostic
 from .models import ConnectionInput, EpisodeInput, TestConnection
 
 FINAL = {"accepted", "stopped", "cancelled", "rejected"}
@@ -65,8 +75,8 @@ class LearningService:
             "generation": row["generation"],
             "remote_calls_enabled": bool(row["enabled"]),
             "gateway_key": loads(row["public_key"]) if row["public_key"] else None,
-            "call_caps": self.config.learning.call.model_dump(),
-            "episode_caps": self.config.learning.episode.model_dump(),
+            "call_caps": self.runtime.settings.call.limits(),
+            "episode_caps": self.config.episode_limits(self.runtime.settings.call.limits()),
         }
 
     def configure(self, body):
@@ -165,19 +175,12 @@ class LearningService:
             "deletions": self.runtime.lifecycle.gateway_cleanup(deletion_acknowledgments),
         }
 
-    def _caps(self, body):
-        for group, limits in (
-            ("limits", self.config.learning.episode),
-            ("call_limits", self.config.learning.call),
-        ):
-            for key, value in body[group].items():
-                cap = (
-                    self.config.learning.acquisition_timeout_ms
-                    if group == "call_limits" and key == "max_duration_ms"
-                    else getattr(limits, key)
-                )
-                if value > cap:
-                    fault("invalid_limits", "Learning limits exceed configured caps")
+    def _caps(self, body, parent=None):
+        call_cap = parent["llm_limits"]["call"] if parent else self.runtime.settings.call
+        body["call_limits"] = resolve_call(call_cap, body["call_limits"])
+        body["limits"] = self.config.episode_limits(
+            body["call_limits"], body["limits"], policy=parent.get("episode_policy") if parent else None
+        )
 
     def _usable(self, key, version, purpose):
         c = self.connection(key, private=True)
@@ -188,23 +191,29 @@ class LearningService:
         return c
 
     def create(self, key, body, *, parent_task=None):
-        body = EpisodeInput.model_validate(body).model_dump()
+        body = request_body(EpisodeInput, body, ("call_limits", "limits"))
         if body.get("allowance_id") is None:
             body.pop("allowance_id", None)
-        self._caps(body)
-        raw, digest = dumps(body), fingerprint(body)
         with self.store.lock:
             with self.store.db(key) as db:
                 old = db.execute(
                     "SELECT digest,data FROM episodes WHERE idem=?", (body["idempotency_key"],)
                 ).fetchone()
                 if old:
-                    if old["digest"] != digest:
-                        fault("conflict", "Idempotency key has different episode input")
                     saved = loads(old["data"])
+                    replay = replay_body(body, saved["body"], ("call_limits", "limits"))
+                    if old["digest"] != fingerprint(replay):
+                        fault("conflict", "Idempotency key has different episode input")
                     if saved.get("parent_task") != parent_task:
                         fault("conflict", "Episode has another parent owner")
                     return saved
+            parent = (
+                self.runtime.conversations.teaching.get(key, parent_task)["execution"]
+                if parent_task
+                else None
+            )
+            self._caps(body, parent)
+            raw, digest = dumps(body), fingerprint(body)
             current = self.store.info(key)
             if current["revision_id"] != body["expected_revision"] or current["archived"]:
                 fault("stale_context", "Displayed ADM revision changed or is archived")
@@ -214,6 +223,7 @@ class LearningService:
             now = self.now()
             ep = {
                 "id": uid(),
+                "llm_policy": POLICY,
                 "adm_id": key,
                 "body": body,
                 "status": "queued",
@@ -232,6 +242,16 @@ class LearningService:
                 "generation": self.store.generation,
                 "authority_generation": self.settings()["generation"],
             }
+            if parent_task:
+                from ..teaching.intent import capture as capture_intent
+
+                owner = self.runtime.conversations.teaching.get(key, parent_task)
+                child = next(
+                    c for c in owner["specification"]["children"] if c["id"] == body["idempotency_key"]
+                )
+                ep["teaching_intent"] = capture_intent(owner, child)
+                if child["kind"] == "reaffirmation":
+                    ep["reaffirmation"] = child["reaffirm_declarations"]
             with self.store.db(key) as db, self.store.transaction(db):
                 count, size = db.execute(
                     "SELECT count(*),COALESCE(sum(length(data)),0) FROM episodes"
@@ -446,6 +466,26 @@ class LearningService:
             }
             if reserve["input_tokens"] > body["limits"]["max_input_tokens"]:
                 raise InputCapacityExceeded(reserve["input_tokens"], body["limits"]["max_input_tokens"])
+            envelope = self._root_envelope(adm, body, episode)
+            if envelope:
+                body["llm_policy"] = POLICY
+                body["llm_root_id"] = envelope["id"]
+                body["deadline"] = min(body["deadline"], envelope["deadline"])
+                with self.store.db() as db:
+                    used = db.execute(
+                        "SELECT COALESCE(sum(calls),0),COALESCE(sum(input_tokens),0),COALESCE(sum(output_tokens),0) "
+                        "FROM grants WHERE adm=? AND json_extract(body,'$.llm_root_id')=?",
+                        (adm, envelope["id"]),
+                    ).fetchone()
+                for index, (field, amount) in enumerate(reserve.items()):
+                    available = envelope["limits"]["max_" + field] - used[index]
+                    if amount > available:
+                        raise LimitExceeded("aggregate", "max_" + field, amount, available)
+            if episode and self._get(adm, episode).get("llm_policy"):
+                body["llm_policy"] = POLICY
+            if body.get("llm_policy") == POLICY:
+                self._require_call_time(body)
+                body.setdefault("queue_deadline", min(body["deadline"], self.now() + QUEUE_MS / 1000))
             if episode:
                 ep = self._get(adm, episode)
                 used = self.usage(episode=episode)
@@ -488,29 +528,76 @@ class LearningService:
                     )
             return body["id"]
 
-    def test_connection(self, key, body):
-        body = TestConnection.model_validate(body).model_dump()
+    def _root_envelope(self, adm, body, episode=None):
+        """Locate the durable parent; a child cannot supply its own aggregate authority."""
+        if not adm:
+            return None
+        task_id = body.get("teaching_task_id")
+        if episode:
+            task_id = self._get(adm, episode).get("parent_task")
+        if body.get("source_job_id"):
+            item = self.runtime.sources.get(adm, "source_jobs", body["source_job_id"])
+            if item.get("feed_run"):
+                task_id = self.runtime.sources.feeds.run(adm, item["feed_run"]).get("parent_task")
+        with self.store.db(adm) as db:
+            if body.get("conversation_work_id"):
+                row = db.execute(
+                    "SELECT body FROM chat_work WHERE id=?", (body["conversation_work_id"],)
+                ).fetchone()
+                if row:
+                    work = loads(row[0])
+                    if work.get("flow") == "teach":
+                        task_id = work["preferences"]["task_id"]
+                    elif work.get("llm_limits"):
+                        return {
+                            "id": work["id"],
+                            "limits": work["llm_limits"]["aggregate"],
+                            "deadline": work["deadline_ms"] / 1000,
+                        }
+            if task_id:
+                row = db.execute("SELECT body FROM teaching_tasks WHERE id=?", (task_id,)).fetchone()
+                if row:
+                    task = loads(row[0])
+                    if task.get("llm_limits"):
+                        return {
+                            "id": task_id,
+                            "limits": task["llm_limits"]["aggregate"],
+                            "deadline": task["deadline_ms"] / 1000,
+                        }
+        return None
+
+    def _require_call_time(self, body):
+        required = body["limits"]["max_duration_ms"] + DELIVERY_MS
+        available = int((body["deadline"] - self.now()) * 1000)
+        if available < required:
+            raise LimitExceeded("aggregate", "max_duration_ms", required, available)
+
+    def test_connection(self, key, body, *, call_policy=None):
+        body = request_body(TestConnection, body, ("limits",))
         if body.get("allowance_id") is None:
             body.pop("allowance_id", None)
-        for field, value in body["limits"].items():
-            if value > getattr(self.config.learning.call, field):
-                fault("invalid_limits", "Connection-test cap exceeds configured allowance")
         with self.store.lock:
             with self.store.db() as db:
                 old = db.execute(
                     "SELECT * FROM connection_tests WHERE idem=?", (body["idempotency_key"],)
                 ).fetchone()
-                identity = fingerprint({"connection": key, **body})
                 if old:
-                    if old["digest"] != identity:
+                    saved = loads(
+                        db.execute("SELECT body FROM grants WHERE id=?", (old["grant_id"],)).fetchone()[0]
+                    )
+                    replay = replay_body(body, {"limits": saved["limits"]}, ("limits",))
+                    if old["digest"] != fingerprint({"connection": key, **replay}):
                         fault("conflict", "Test idempotency key has different input")
                     return self.grant_view(old["grant_id"])
+            body["limits"] = resolve_call(call_policy or self.runtime.settings.call, body["limits"])
+            identity = fingerprint({"connection": key, **body})
             c = self._usable(key, body["expected_version"], "connection_test")
             spec = specification(connection_test=True)
             raw, estimate = make_wire(c, spec, body["limits"]["max_output_tokens"])
             grant = self.reserve(
                 {
                     "purpose": "connection_test",
+                    "llm_policy": POLICY,
                     "allowance_id": body.get("allowance_id"),
                     "connection_id": key,
                     "connection_version": c["version"],
@@ -520,7 +607,7 @@ class LearningService:
                     "limits": body["limits"],
                     "provenance": provenance(spec, raw),
                     "recorded_index": 0,
-                    "deadline": self.now() + body["limits"]["max_duration_ms"] / 1000,
+                    "deadline": self.now() + aggregate(body["limits"], 1)["max_duration_ms"] / 1000,
                 },
                 test_intent=(body["idempotency_key"], identity),
             )
@@ -531,6 +618,7 @@ class LearningService:
             row = db.execute("SELECT * FROM grants WHERE id=?", (grant,)).fetchone()
         if not row:
             fault("not_found", "Unknown dispatch")
+        body = loads(row["body"])
         out = loads(row["outcome"]) if row["outcome"] else None
         if out:
             with self.store.db() as db:
@@ -546,6 +634,16 @@ class LearningService:
             "unresolved": bool(row["unresolved"]),
             "lane": row["lane"],
             "price_binding": loads(row["body"]).get("price_binding"),
+            "execution_limits": {
+                "call": body["limits"],
+                "policy": body.get("llm_policy"),
+                "aggregate_id": body.get("llm_root_id"),
+                "aggregate_deadline": body.get("deadline"),
+                "queue_deadline": body.get("queue_deadline"),
+                "provider_expires_at": body.get("expires"),
+                "delivery_deadline": body.get("delivery_deadline"),
+                "provider_call_dispatched": row["dispatched_at"] is not None,
+            },
         }
 
     @staticmethod
@@ -661,6 +759,8 @@ class LearningService:
                     ):
                         continue
                     self._grant_valid(body)
+                    if body.get("llm_policy") == POLICY:
+                        self._require_call_time(body)
                 except RuntimeFault as error:
                     self.allowances.settle(db, row["id"], not_dispatched=True)
                     db.execute(
@@ -671,7 +771,14 @@ class LearningService:
                                     "status": "not_dispatched",
                                     "error": "queue_timeout"
                                     if error.code == "queue_timeout"
+                                    else "aggregate_exhausted"
+                                    if isinstance(error, LimitExceeded)
                                     else "authority_changed",
+                                    **(
+                                        {"limit_diagnostics": capacity_diagnostic(error)}
+                                        if capacity_diagnostic(error)
+                                        else {}
+                                    ),
                                     "usage": None,
                                     "text": None,
                                 }
@@ -681,6 +788,8 @@ class LearningService:
                     )
                     continue
                 body["expires"] = min(body["deadline"], self.now() + body["limits"]["max_duration_ms"] / 1000)
+                if body.get("llm_policy") == POLICY:
+                    body["delivery_deadline"] = min(body["deadline"], body["expires"] + DELIVERY_MS / 1000)
                 db.execute("UPDATE grants SET status='leased',body=? WHERE id=?", (dumps(body), row["id"]))
                 db.execute(
                     "UPDATE provider_lanes SET last_adm=?,last_claim=(SELECT max(last_claim)+1 FROM provider_lanes) WHERE lane=?",
@@ -762,6 +871,13 @@ class LearningService:
             if row["status"] not in ("dispatched", "leased", "outcome_unknown"):
                 fault("stale_context", "Grant has not been dispatched")
             outcome = self._account_outcome(db, body, outcome)
+            if (
+                body.get("delivery_deadline") is not None
+                and self.now() >= body["delivery_deadline"]
+                and outcome["status"] == "succeeded"
+            ):
+                # Late usage can settle, but a late payload cannot become new knowledge.
+                outcome.update(status="failed", error="dispatch_expired", text=None)
             deleted = body.get("model_deleted") or (
                 body.get("adm")
                 and db.execute(
@@ -798,7 +914,7 @@ class LearningService:
                     ep["status"] == "acquiring"
                     and ep["grant_id"] == grant
                     and body["generation"] == self.store.generation
-                    and body["expires"] > self.now()
+                    and delivery_deadline(body) > self.now()
                 ):
                     body["receipt_sequence"] = self.next_receipt_sequence(body["adm"])
             db.execute(
@@ -964,6 +1080,8 @@ class LearningService:
             "draft": ep["draft"],
             "feedback": ep["feedback"],
             **extra,
+            "teaching_intent": ep.get("teaching_intent"),
+            "reaffirmation": ep.get("reaffirmation"),
         }
         value = self.supervisor.run(task, cancel=self.stop_event, scope=key)
         used = value["work"]
@@ -1025,7 +1143,8 @@ class LearningService:
             for row in rows:
                 body = loads(row["body"])
                 if row["status"] == "ready":
-                    if body["deadline"] > self.now():
+                    queue_expired = body.get("queue_deadline", body["deadline"]) <= self.now()
+                    if body["deadline"] > self.now() and not queue_expired:
                         continue
                     self.allowances.settle(db, row["id"], not_dispatched=True)
                     db.execute(
@@ -1034,7 +1153,9 @@ class LearningService:
                             dumps(
                                 {
                                     "status": "not_dispatched",
-                                    "error": "dispatch_expired",
+                                    "error": "queue_timeout"
+                                    if queue_expired and body.get("queue_deadline")
+                                    else "dispatch_expired",
                                     "usage": None,
                                     "text": None,
                                 }
@@ -1042,7 +1163,7 @@ class LearningService:
                             row["id"],
                         ),
                     )
-                elif body["expires"] <= self.now():
+                elif delivery_deadline(body) <= self.now():
                     db.execute(
                         "UPDATE grants SET status='outcome_unknown',outcome=? WHERE id=?",
                         (
@@ -1103,9 +1224,11 @@ class LearningService:
                             return True
                         if grant["outcome"]:
                             body = loads(grant["body"])
-                            if body["expires"] and body["expires"] > self.now():
+                            if body["expires"] and delivery_deadline(body) > self.now():
                                 self._receive(key, ep, body, loads(grant["outcome"]))
                                 return True
+                            self._stop(key, ep, loads(grant["outcome"]).get("error") or "dispatch_expired")
+                            return True
                     if ep["status"] == "queued":
                         if ep["base_revision"] != info["revision_id"]:
                             ep.update(
@@ -1166,7 +1289,64 @@ class LearningService:
             return True
         return False
 
+    def _prepare_reaffirmation(self, key, ep):
+        # Build locally from receiver-owned pins; do not invent a provider grant.
+        receipt_id = ep["id"] + "-reaffirmation"
+        value = self._compute(key, ep, "learning_reaffirm", {"candidate_id": receipt_id})
+        with self.store.lock:
+            ep = self._get(key, ep["id"])
+            if ep["status"] != "preparing":
+                return
+            if not self._parent_active(key, ep):
+                ep["status"] = "queued"
+                with self.store.db(key) as db:
+                    self._save(db, ep)
+                return
+            if self.store.info(key)["revision_id"] != ep["base_revision"]:
+                fault("stale_context", "Reaffirmation context changed")
+            if self.now() >= ep["deadline"]:
+                self._stop(key, ep, "deadline")
+                return
+            sequence = self.next_receipt_sequence(key)
+            data = {**value, "kind": "reaffirmation", "approval_revision": None}
+            raw = dumps(data)
+            with self.store.db(key) as db, self.store.transaction(db):
+                if (
+                    db.execute("SELECT count(*) FROM learning_receipts").fetchone()[0]
+                    >= self.config.runtime.queue_items_per_adm
+                ):
+                    fault("quota_exceeded", "Retained candidate allowance exhausted")
+                self.store.capacity(len(raw) + 4096)
+                db.execute(
+                    "INSERT INTO learning_receipts(seq,id,episode,status,data) VALUES(?,?,?,?,?)",
+                    (sequence, receipt_id, ep["id"], "complete", raw),
+                )
+                ep["status"] = "ready"
+                ep["history"].append(
+                    {
+                        "receipt_id": receipt_id,
+                        "receipt_sequence": sequence,
+                        "status": "complete",
+                        "origin": "checked_reaffirmation",
+                        "provider_calls": 0,
+                    }
+                )
+                self._save(db, ep)
+                self.store.emit(
+                    db,
+                    key,
+                    "candidate.received",
+                    receipt_id,
+                    data={
+                        "episode_id": ep["id"],
+                        "receipt_sequence": sequence,
+                        "classification": "reaffirmation",
+                    },
+                )
+
     def _prepare(self, key, ep):
+        if ep.get("reaffirmation"):
+            return self._prepare_reaffirmation(key, ep)
         c = self.connection(ep["body"]["connection_id"], private=True)
         value = self._compute(key, ep, "learning_prepare", {"connection": c})
         with self.store.lock:

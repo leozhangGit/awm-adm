@@ -51,7 +51,7 @@ class Catalog(ClosedModel):
     profile: Literal["awm-adm-temporal-catalog/1"] = CATALOG
     namespace: Module
     entities: list[Identifier] = Field(min_length=1, max_length=128)
-    predicates: list[Series] = Field(min_length=1, max_length=32)
+    predicates: list[Series] = Field(min_length=1, max_length=65_536)
     cells: list[Scope] = Field(min_length=1, max_length=256)
 
     @model_validator(mode="after")
@@ -65,8 +65,18 @@ class Catalog(ClosedModel):
         keys = [scope_key(c.model_dump()) for c in self.cells]
         if len(set(keys)) != len(keys):
             raise ValueError("Duplicate normalized temporal scope")
+        return self
+
+
+class CatalogBatch(Catalog):
+    """One proposed mapping; accumulated catalogs are sparse identity registries."""
+
+    predicates: list[Series] = Field(min_length=1, max_length=32)
+
+    @model_validator(mode="after")
+    def bounded_batch(self) -> Self:
         if len(self.entities) * len(self.predicates) * len(self.cells) > 4096:
-            raise ValueError("Combined temporal catalog exceeds 4096 finite addresses")
+            raise ValueError("One proposed mapping exceeds 4096 finite addresses")
         return self
 
 

@@ -5,8 +5,11 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from ..config import EpisodeLimits
-from ..contracts import CallLimits, ClosedModel, Identifier, ProviderDiagnostics, Purpose
+from ..contracts import ClosedModel, Identifier, ProviderDiagnostics, Purpose
 from ..engine.acquisition import validate_contract
+from ..llm_limits import CallOptions, CallPolicy, aggregate
+
+DEFAULT_EPISODE = aggregate(CallPolicy().limits(), 3)
 
 
 class ConnectionInput(ClosedModel):
@@ -54,8 +57,20 @@ class LearningSettings(ClosedModel):
     remote_calls_enabled: bool
 
 
-class AcquisitionCallLimits(CallLimits):
-    max_duration_ms: int = Field(default=180_000, ge=1, le=600_000)
+class AcquisitionCallLimits(CallOptions):
+    """Compatibility name for the shared request options."""
+
+
+class EpisodeOptions(EpisodeLimits):
+    max_input_tokens: int = Field(default=DEFAULT_EPISODE["max_input_tokens"], ge=1, le=10_000_000)
+    max_output_tokens: int = Field(default=DEFAULT_EPISODE["max_output_tokens"], ge=1, le=10_000_000)
+    max_duration_ms: int = Field(default=DEFAULT_EPISODE["max_duration_ms"], ge=1, le=86_400_000)
+
+    @model_validator(mode="after")
+    def useful_stop(self) -> Self:
+        # Resolve omitted thresholds against the requested call count first.
+        # The fully materialized EpisodeLimits is validated at creation.
+        return self
 
 
 class EpisodeInput(ClosedModel):
@@ -68,7 +83,7 @@ class EpisodeInput(ClosedModel):
     construction: bool = True
     publication: Literal["review", "checked_auto"] = "review"
     disclose_model: bool = False
-    limits: EpisodeLimits = Field(default_factory=EpisodeLimits)
+    limits: EpisodeOptions = Field(default_factory=EpisodeOptions)
     call_limits: AcquisitionCallLimits = Field(default_factory=AcquisitionCallLimits)
     request_ids: list[Identifier] = Field(default_factory=list, max_length=100)
 
@@ -84,9 +99,6 @@ class EpisodeInput(ClosedModel):
             raise ValueError("Invalid acquisition contract") from error
         if len(set(self.request_ids)) != len(self.request_ids):
             raise ValueError("Duplicate request interests")
-        for k in ("max_calls", "max_input_tokens", "max_output_tokens", "max_duration_ms"):
-            if getattr(self.call_limits, k) > getattr(self.limits, k):
-                raise ValueError("Call limit exceeds episode allowance")
         return self
 
 
@@ -94,7 +106,7 @@ class TestConnection(ClosedModel):
     allowance_id: Identifier | None = None
     idempotency_key: Identifier
     expected_version: int = Field(ge=1)
-    limits: CallLimits = Field(default_factory=lambda: CallLimits(max_output_tokens=64))
+    limits: CallOptions = Field(default_factory=CallOptions)
 
 
 class Review(ClosedModel):

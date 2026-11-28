@@ -62,4 +62,4 @@ All routes use `/api/v1/adms/{adm}` and the existing strict JSON and local-acces
 | `POST /interpretations/{id}/execute` | Submit; explicit confirmation with revision, catalog digest, limits and idempotency key. |
 | `POST /interpretations/{id}/cancel` | Submit; fence later interpretation completion/execution. |
 
-Vocabulary, interpretation, execution and teaching events are durable per-ADM records under owned schema 18. Supported migrations preserve existing model revisions, requests, learning receipts and finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) define their authority and recovery contracts.
+Vocabulary, interpretation, execution and teaching events are durable per-ADM records under owned schema 19. Supported migrations preserve existing model revisions, requests, learning receipts and finite encodings. [OpenAPI](../contracts/openapi.json) describes exact inputs; [API](API.md) and [learning](LEARNING.md) define their authority and recovery contracts.

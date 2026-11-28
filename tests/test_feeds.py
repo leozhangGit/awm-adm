@@ -346,7 +346,7 @@ def test_two_adms_shared_connection_and_unknown_across_period(rig, monkeypatch):
     usage = rt.learning.usage()
     assert usage["unresolved"] >= 1
     now = rt.learning.now()
-    monkeypatch.setattr(rt.learning, "now", lambda: now + 2 * rt.config.learning.quotas.period_seconds)
+    monkeypatch.setattr(rt.learning, "now", lambda: now + 2 * 86400)
     rt.learning.tick()
     assert rt.learning.usage()["calls"] >= 1
     assert rt.learning.usage()["unresolved"] >= 1
@@ -530,7 +530,7 @@ def test_schema_six_migrates_without_republishing_existing_fact(tmp_path):
         assert new.store.run_info(key, result["execution"]["run_id"])["result"] == result
         assert new.sources.feeds.overview(key)["feeds"] == []
         with new.store.db(key) as db:
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 18
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 19
     finally:
         new.close()
 
@@ -541,7 +541,6 @@ def test_removed_global_spending_quota_does_not_block_other_feed_or_retry_unknow
     rt, gateway = rig
     config = rt.config.model_dump()
     config["learning"]["episode"].update(max_calls=1, no_progress_attempts=1)
-    config["learning"]["quotas"].update(calls_per_adm=1, calls_installation=1)
     rt.config = rt.learning.config = AppConfig.model_validate(config)
     c = extraction_connection(rt, gateway)
     keys = [rt.create(name)["id"] for name in ("cap-a", "cap-b")]
@@ -565,7 +564,7 @@ def test_removed_global_spending_quota_does_not_block_other_feed_or_retry_unknow
     assert job
     rt.learning.authorize(job["grant_id"], job["lease"])
     now = rt.learning.now()
-    monkeypatch.setattr(rt.learning, "now", lambda: now + 2 * rt.config.learning.quotas.period_seconds)
+    monkeypatch.setattr(rt.learning, "now", lambda: now + 2 * 86400)
     rt.learning.tick()
     for _ in range(10):
         rt.sources.tick()

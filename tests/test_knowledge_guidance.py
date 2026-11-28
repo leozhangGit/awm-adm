@@ -33,7 +33,7 @@ def test_preparation_preserves_intent_as_data_without_model_specific_guidance(se
     b["context"]["temporal_context"] = a["context"]["temporal_context"]
     assert a == b
     assert PREPARATION in a["instructions"]
-    assert a["schema"] == response_schema(temporal_evidence=selected, assessed=True)
+    assert a["schema"] == response_schema(temporal_evidence=selected, assessed=True, reaffirmation=True)
     assert a["context"]["objective"] == original
     assert a["context"]["inputs"] == task["inputs"]
 

@@ -29,6 +29,12 @@ Predicate symbols are complete dot-qualified identifiers; the catalog namespace 
 
 Machine-readable contracts: [catalog](../contracts/schemas/TemporalCatalog.schema.json), [claim](../contracts/schemas/TemporalClaim.schema.json), [extraction](../contracts/schemas/TemporalExtraction.schema.json), [query](../contracts/schemas/EvidenceQuery.schema.json).
 
+## Catalog capacity and working sets
+
+The accumulated temporal registry supports 65,536 predicates, independently of a proposed mapping's 32-predicate/4,096-address working set. Unused combinations assert no facts. Semantic identity and carrier checks apply to the complete extension; exact duplicate descriptors are shared, while meaning changes are refused. A `catalog_capacity_exceeded` diagnostic reports counts without exposing raw values. See [limits](LIMITS.md) for independent byte, fact, compute and language bounds.
+
+Preparation and Ask receive bounded, explicitly complete or partial catalog views. Ask also ranks retained fact metadata into a bounded disclosure window; absence from that window does not establish absence of knowledge. Exact local query validation still uses pinned model identities and support. Source extraction uses exact selected predicate identities; Teach derives them from the checked child mapping. Direct jobs and feeds may set `catalog_predicates`. Claims outside that selection remain held under ordinary validation. Each new binding stores the one entity, descriptor and selected scope it needs; old full-catalog bindings remain readable without changing their bytes or semantic addresses.
+
 ## Compilation and revisions
 
 ```mermaid
@@ -105,15 +111,15 @@ Legacy `awm-adm-projection/1`, claims, fact symbols, canonical engine encodings,
 
 Legacy `lookup_fact` and `lookup_fact_period` can read new direct instant/validity support through a lossless temporary view. They cannot read period values, imprecise occurrences or attributed reports as world-state facts. New typed queries can read compatible legacy evidence. Valid larger legacy catalogs retain their existing serving path; new extensions must satisfy current cumulative bounds.
 
-Snapshots containing new bindings use `awm-adm-service-snapshot/1`, with required feature `temporal-evidence/1`, the unchanged core transport and its digest. Legacy-only exports keep their old shape. Missing/unknown feature declarations, stripped envelopes and forged bindings are refused. Older service readers reject the new envelope. This is a service compatibility boundary; an old core library parsing constants does not validate temporal semantics. Operational store schema 18 fences older binaries. Rollback uses a matching paired pre-upgrade backup, never a down-migration.
+Snapshots containing new bindings use `awm-adm-service-snapshot/1`, with required feature `temporal-evidence/1`, the unchanged core transport and its digest. Legacy-only exports keep their old shape. Missing/unknown feature declarations, stripped envelopes and forged bindings are refused. Older service readers reject the new envelope. This is a service compatibility boundary; an old core library parsing constants does not validate temporal semantics. Operational store schema 19 fences older binaries. Rollback uses a matching paired pre-upgrade backup, never a down-migration.
 
 Source correction holds all affected support, including use through native finite queries and dependent definitions. Import retains those holds. Historical results and source originals remain immutable. Same-value accepted replacement can refresh support; changed values follow the mode and requirements.
 
-Preparation failures retain allowlisted temporal field paths and fixed contract hints, without raw provider values or exception text. Ask uses `adm-ask-interpretation/temporal-3`. Stored preparation prompts `/10` and `/11` both select the same temporal reply decoder. Guidance annotations do not change local validation, and failed work is never replayed after a guidance update.
+Preparation failures retain allowlisted temporal field paths and fixed contract hints, without raw provider values or exception text. Ask uses `adm-ask-interpretation/temporal-4`. Stored preparation prompts `/10` and `/11` both select the same temporal reply decoder. Guidance annotations do not change local validation, and failed work is never replayed after a guidance update.
 
 ## Limits and assurance
 
-Hard catalog caps are 128 entities, 32 series, 256 normalized temporal scopes and 4,096 Cartesian addresses; extraction is at most 100 claims per original. Configured tighter limits still apply. Existing source/fact, child work/time, disclosure and teaching-child limits remain cumulative. A replacement retains at most 32 dependent definitions; oversized or incomplete groups do not publish partially.
+The accumulated catalog permits 128 entities, 65,536 series and 256 normalized temporal scopes; one proposed mapping remains bounded to 32 series and 4,096 possible addresses. Extraction is at most 100 claims per original. Configured tighter limits still apply. Existing source/fact, child work/time, disclosure and teaching-child limits remain cumulative. A replacement retains at most 32 dependent definitions; oversized or incomplete groups do not publish partially.
 
 These checks establish typed, model-relative computation and source identity. They do not prove source truth, extraction fidelity, universal semantic alias resolution or the correctness of the Python adapter. Lean and exhaustive-finite claims keep their existing separate meanings; no temporal adapter result invents a Lean proof. Validate the supplied evidence and its meaning for the intended application.
 

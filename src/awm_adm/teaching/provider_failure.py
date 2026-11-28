@@ -3,6 +3,8 @@
 from ..contracts import ProviderDiagnostics
 
 MESSAGES = {
+    "queue_timeout": "Teaching preparation exceeded its queue-wait limit before dispatch; this provider call was not made.",
+    "aggregate_exhausted": "The teaching workflow has insufficient remaining execution time for another complete provider call.",
     "provider_timeout": "Teaching preparation timed out while waiting for a complete provider response.",
     "authentication_failed": "The provider rejected authentication for teaching preparation.",
     "provider_quota_exhausted": "The provider reported insufficient quota for teaching preparation.",
@@ -54,8 +56,36 @@ def preparation_failure(grant_id, outcome, limits):
         "grant_id": grant_id,
         "dispatch_status": outcome["status"],
         "configured_timeout_ms": limits["max_duration_ms"],
+        "effective_call_limits": limits,
+        **({"limit_diagnostics": outcome["limit_diagnostics"]} if outcome.get("limit_diagnostics") else {}),
         "provider_diagnostics": diagnostic,
         "usage": outcome.get("usage"),
         "usage_unresolved": outcome.get("usage") is None and outcome["status"] != "not_dispatched",
         "automatic_retry": False,
     }
+
+
+def ask_failure(grant_id, outcome, limits, *, narration=False):
+    """Expose the same safe transport and capacity fields for both Ask calls."""
+    result = preparation_failure(grant_id, outcome, limits)
+    operation = "explanation" if narration else "interpretation"
+    code = result["code"]
+    reason = {
+        "queue_timeout": "exceeded its queue-wait limit before dispatch",
+        "aggregate_exhausted": "had insufficient remaining workflow time for a complete provider call",
+        "provider_timeout": "timed out waiting for the provider",
+        "output_incomplete": "received incomplete provider output",
+        "authentication_failed": "failed because the provider rejected authentication",
+        "provider_quota_exhausted": "failed because the provider reported insufficient quota",
+        "rate_limited": "was rate-limited by the provider",
+    }.get(code, "did not receive a complete valid provider response")
+    message = f"The question's {operation} {reason}."
+    if result["provider_diagnostics"].get("timeout_ms") is not None:
+        message += (
+            f" Available provider time: {result['provider_diagnostics']['timeout_ms'] / 1000:g} seconds."
+        )
+    if result["usage_unresolved"]:
+        message += " Provider completion or usage remains unresolved."
+    message += " This call was not retried."
+    result["message"] = message
+    return result

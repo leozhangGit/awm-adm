@@ -196,7 +196,9 @@ def test_published_schema_preserves_ready_plan_and_is_model_neutral(temporal):
     a = specification(task, {}, {}, None)
     b = specification({**task, "provider_model": "different-model"}, {}, {}, None)
     a["context"]["temporal_context"] = b["context"]["temporal_context"]
-    assert a == b and a["schema"] == current
+    assert a == b and a["schema"] == response_schema(
+        temporal_evidence=temporal, assessed=True, reaffirmation=True
+    )
     assert "Missing meaning requires clarification or unsupported" not in a["instructions"]
     assert "Missing meaning requires clarification or unsupported" not in dumps(current).decode()
     for term in ("nvidia", "parcel", "equipment", "gpt-", "claude"):

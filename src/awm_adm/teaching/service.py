@@ -3,8 +3,9 @@
 import base64
 import threading
 
-from ..contracts import CallLimits
+from ..learning.diagnostics import capacity_diagnostic
 from ..learning.service import fault, fingerprint
+from ..llm_limits import captured_call
 from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from .diagnostics import PreparationError
@@ -90,6 +91,7 @@ class Teaching:
             {
                 "id": turn["id"],
                 "text": turn["text"],
+                **({"knowledge_intent": work["knowledge_intent"]} if work.get("knowledge_intent") else {}),
                 **({"attachments": self.s.intake.inputs(db, key, turn)} if turn["attachment_ids"] else {}),
             }
         )
@@ -111,6 +113,10 @@ class Teaching:
             "source_queue": work["preferences"].get("source_queue", False),
             "preferences": work["preferences"],
             "created_at_ms": self.s.now(),
+            "llm_limits": work["llm_limits"],
+            "catalog_predicate_limit": work.get("catalog_predicate_limit", 65_536),
+            "episode_policy": work["episode_policy"],
+            "deadline_ms": work["deadline_ms"],
             "ask_gap": None,
             "specification": None,
             "execution_authorized": False,
@@ -234,6 +240,8 @@ class Teaching:
                         if isinstance(error, PreparationError):
                             work["failure_diagnostics"] = error.diagnostic
                         work["failure_code"] = code
+                        if diagnostic := capacity_diagnostic(error):
+                            work["failure_diagnostics"] = diagnostic
                         self.stop(key, work, "failed", code)
                         self.s._finish(
                             key,
@@ -255,13 +263,10 @@ class Teaching:
         with self.store.lock:
             self.s.grant_valid({"adm": key, "conversation_work_id": work["id"]})
             conn = self.rt.interactions.connection_for(work, "task_preparation")
-            limits = self.rt.config.learning.call.model_dump()
-            limits["max_duration_ms"] = self.rt.config.learning.preparation_timeout_ms
-            limits["max_output_tokens"] = min(8192, limits["max_output_tokens"])
+            limits = captured_call(work)
             raw, estimate = make_wire(conn, spec, limits["max_output_tokens"])
             if len(raw) > self.rt.config.server.max_body_bytes:
                 fault("resource_exhausted", "The teaching context is too large for one preparation")
-            limits["max_input_tokens"] = max(limits["max_input_tokens"], estimate)
             prov = provenance(spec, raw)
             gid = self.rt.learning.reserve(
                 {
@@ -274,12 +279,10 @@ class Teaching:
                     "configuration_digest": conn["configuration_digest"],
                     "wire": base64.b64encode(raw).decode(),
                     "input_estimate": estimate,
-                    "limits": CallLimits.model_validate(limits).model_dump(),
+                    "limits": limits,
                     "provenance": prov,
                     "recorded_index": 0,
-                    "deadline": min(
-                        work["deadline_ms"] / 1000, self.rt.learning.now() + limits["max_duration_ms"] / 1000
-                    ),
+                    "deadline": work["deadline_ms"] / 1000,
                 },
                 adm=key,
             )
@@ -346,6 +349,7 @@ class Teaching:
                         **child,
                         "acquisition_contract": contract,
                         "preserve_declarations": checked["preserve_declarations"][i],
+                        "reaffirm_declarations": checked["reaffirm_declarations"][i],
                         "depends_on": [
                             task["id"] + f"-child-{parent + 1}" for parent in checked["dependencies"][i]
                         ],
@@ -402,6 +406,9 @@ class Teaching:
                 code = error.code if isinstance(error, RuntimeFault) else "invalid_preparation"
                 # Retain the bounded checked proposal for diagnosis, never execution.
                 task["failed_specification"] = task["specification"]
+                if diagnostic := capacity_diagnostic(error):
+                    task["failure_diagnostics"] = diagnostic
+                    work["failure_diagnostics"] = diagnostic
                 if isinstance(error, PreparationError):
                     task["failure_diagnostics"] = error.diagnostic
                     work["failure_diagnostics"] = error.diagnostic

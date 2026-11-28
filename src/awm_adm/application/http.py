@@ -12,8 +12,10 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import Field
 from starlette.exceptions import HTTPException
 
+from ..access_policy import TrustedClientAccess, TrustedClients
 from ..contracts import ClosedModel, Identifier, Request
 from ..runtime.protocol import RuntimeFault, dumps
+from ..service_settings import SettingsUpdate
 from ..wire import decode
 from .local_access import LocalWorkspace, local_peer
 from .models import Operation, RequestPage, RequestView
@@ -77,6 +79,9 @@ CODES = {
     "not_implemented": 501,
     "invalid_input": 422,
     "invalid_limits": 422,
+    "catalog_capacity_exceeded": 422,
+    "settings_conflict": 409,
+    "invalid_settings": 422,
 }
 
 
@@ -110,6 +115,9 @@ def error_response(code, status=None):
         "needs_specification": "Source scope needs clarification before execution; review coverage, material and current policy",
         "invalid_input": "Input does not match the API contract",
         "invalid_limits": "Requested limits exceed configured caps",
+        "catalog_capacity_exceeded": "The accumulated predicate catalog exceeds its configured limit",
+        "settings_conflict": "Settings changed in another window. Reload current settings before saving",
+        "invalid_settings": "These values exceed the configured workflow bounds. Use smaller limits",
         "unsupported": "Operation is unsupported",
         "not_implemented": "Capability is not implemented",
         "internal_error": "Operation could not complete",
@@ -125,15 +133,14 @@ def error_response(code, status=None):
 
 
 class Boundary:
-    def __init__(self, app, maximum, port, ingress=()):
+    def __init__(self, app, maximum, port, ingress=(), trusted_clients=None):
         self.app, self.maximum, self.port, self.ingress = app, maximum, port, frozenset(ingress)
+        self.trusted_clients = TrustedClientAccess(trusted_clients or TrustedClients())
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         peer = (scope.get("client") or ("", 0))[0]
-        if not local_peer(peer, self.ingress):
-            return await error_response("forbidden")(scope, receive, send)
         headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
         # Duplicate Host/Origin fields must not be interpreted differently downstream.
         for field in (b"host", b"origin"):
@@ -146,7 +153,15 @@ class Boundary:
             hosts.add("testserver")
         host = headers.get("host", "")
         origin = headers.get("origin")
-        if host not in hosts or (origin is not None and origin != f"http://{host}"):
+        local = local_peer(peer, self.ingress) and host in hosts
+        trusted = self.trusted_clients.permits(host, peer)
+        # The opt-in is for native clients, never a new browser origin. Socket
+        # peers are authoritative; forwarded headers do not expand either path.
+        if local:
+            allowed = origin is None or origin == f"http://{host}"
+        else:
+            allowed = trusted and origin is None and not any(k.startswith("sec-fetch-") for k in headers)
+        if not allowed:
             return await error_response("forbidden")(scope, receive, send)
         if scope["path"].startswith("/api/v1/") and scope["method"] not in (
             "GET",
@@ -210,6 +225,7 @@ def attach(app, runtime, *, ingress=()):
         maximum=runtime.config.server.max_body_bytes,
         port=runtime.config.server.port,
         ingress=ingress,
+        trusted_clients=runtime.config.server.trusted_clients,
     )
     router = APIRouter(prefix="/api/v1")
 
@@ -250,6 +266,16 @@ def attach(app, runtime, *, ingress=()):
         from ..operations.service import diagnostic
 
         return diagnostic(runtime)
+
+    @router.get("/settings")
+    def settings(request: HTTPRequest):
+        auth.require(request, owner=True)
+        return runtime.settings.get()
+
+    @router.put("/settings")
+    def save_settings(request: HTTPRequest, body: SettingsUpdate):
+        auth.require(request, owner=True)
+        return runtime.settings.update(body.model_dump())
 
     @router.get("/operations/retention")
     def retention_plan(request: HTTPRequest):

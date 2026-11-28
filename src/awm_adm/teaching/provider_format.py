@@ -10,7 +10,7 @@ from pydantic import Field
 
 from ..contracts import ClosedModel, Identifier
 from ..sources.models import Projection
-from ..temporal_evidence.models import Catalog
+from ..temporal_evidence.models import CatalogBatch
 from ..wire import decode
 from .diagnostics import PreparationError
 from .field_guidance import OBJECTIVE, annotate_bounds
@@ -143,7 +143,7 @@ class TemporalWirePlan(ClosedModel):
     kind: Literal["capability", "facts", "correction", "mixed"]
     summary: str = Field(min_length=1, max_length=2000)
     types: list[TypeNode] = Field(max_length=128)
-    evidence_scope: Catalog | None
+    evidence_scope: CatalogBatch | None
     children: list[SharedChild] = Field(min_length=1, max_length=4)
     aliases: list[Alias] = Field(max_length=128)
     parameters: list[Parameter] = Field(max_length=128)
@@ -166,6 +166,39 @@ class AssessedLegacyReply(Assessment):
     plan: WirePlan | None
 
 
+REUSE_TEMPORAL_PROFILE = "awm-adm-teaching-reply/8"
+REUSE_LEGACY_PROFILE = "awm-adm-teaching-reply/9"
+
+
+class ReaffirmingWireChild(WireChild):
+    kind: Literal["capability", "facts", "correction", "reaffirmation"]
+    reuse_symbols: list[str] = Field(max_length=32)
+
+
+class ReaffirmingSelectedChild(ReaffirmingWireChild):
+    material: MaterialSelection | None
+
+
+class ReaffirmingWirePlan(WirePlan):
+    kind: Literal["capability", "facts", "correction", "reaffirmation", "mixed"]
+    children: list[ReaffirmingWireChild] = Field(min_length=1, max_length=4)
+
+
+class ReaffirmingTemporalWirePlan(TemporalWirePlan):
+    kind: Literal["capability", "facts", "correction", "reaffirmation", "mixed"]
+    children: list[ReaffirmingSelectedChild] = Field(min_length=1, max_length=4)
+
+
+class ReaffirmingTemporalReply(Assessment):
+    profile: Literal["awm-adm-teaching-reply/8"]
+    plan: ReaffirmingTemporalWirePlan | None
+
+
+class ReaffirmingLegacyReply(Assessment):
+    profile: Literal["awm-adm-teaching-reply/9"]
+    plan: ReaffirmingWirePlan | None
+
+
 def expand_shared_projection(value, field="source_projection"):
     """Expand one explicit projection into the unchanged local child contract.
 
@@ -185,10 +218,21 @@ def expand_shared_projection(value, field="source_projection"):
             child["material"]["projection"] = deepcopy(projection)
 
 
-def response_schema(*, material_refs=False, shared_projection=False, temporal_evidence=False, assessed=False):
+def response_schema(
+    *,
+    material_refs=False,
+    shared_projection=False,
+    temporal_evidence=False,
+    assessed=False,
+    reaffirmation=False,
+):
     """Inline the acyclic schema; limits and refinements remain local checks."""
     schema = (
-        AssessedTemporalReply
+        ReaffirmingTemporalReply
+        if reaffirmation and temporal_evidence
+        else ReaffirmingLegacyReply
+        if reaffirmation
+        else AssessedTemporalReply
         if assessed and temporal_evidence
         else AssessedLegacyReply
         if assessed
@@ -218,12 +262,18 @@ def response_schema(*, material_refs=False, shared_projection=False, temporal_ev
         return result
 
     result = simplify(schema)
-    if assessed:
+    if assessed or reaffirmation:
         from .readiness import INSTRUCTIONS
 
         result["properties"]["missing_information"]["description"] = INSTRUCTIONS
     plan = result["properties"]["plan"]["anyOf"][0]["properties"]
     plan["children"]["items"]["properties"]["objective"]["description"] = OBJECTIVE
+    if reaffirmation:
+        plan["children"]["items"]["properties"]["reuse_symbols"]["description"] = (
+            "For reaffirmation only: 1–32 unique existing qualified declaration symbols whose exact "
+            "accepted definitions are retained. Use interfaces [] and material null. For all other "
+            "kinds use []. Do not label a change or additional obligation as unchanged reuse."
+        )
     if temporal_evidence:
         from ..temporal_evidence.guidance import ASSESSED_PREPARATION, INSTRUCTIONS, describe_scope
 

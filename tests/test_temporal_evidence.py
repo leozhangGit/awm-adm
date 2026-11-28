@@ -348,6 +348,6 @@ def test_schema_upgrade_changes_no_legacy_domain_rows_or_retained_results(app_ru
         db.execute("PRAGMA user_version=17")
         before = list(db.iterdump())
         migrate(db, "instance")
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 18
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 19
         assert list(db.iterdump()) == before
     assert rt.store.snapshot(key) == snapshot

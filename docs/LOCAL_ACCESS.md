@@ -8,6 +8,8 @@ This is a single trusted local workspace, not a multi-user authorization service
 
 Host execution listens only on loopback. Docker publishes only `127.0.0.1:9527` and checks the exact supported gateway peer; the deployment preflight verifies Compose publication. This does not detect a deliberate relay created by a trusted local process. Internet/LAN exposure and forwarding proxies are unsupported.
 
+Separate native Docker clients can opt in through `[server.trusted_clients]`: an exact Host/port and actual private source CIDR must both match. Both allowlists are empty by default. This route rejects Origin and Fetch Metadata headers and does not add a browser origin. Admitted containers have full workspace access, not per-client permissions. Use a dedicated internal bridge attached only to the app and trusted clients; worker/gateway networks remain separate. See [trusted Docker clients](TRUSTED_CLIENTS.md) for configuration and verification.
+
 ## Provider and internal credentials
 
 The external provider's API key is still entered privately in **Connections**. It is distinct from service access and remains encrypted by the gateway, masked in reads and absent from prompts/snapshots. Enable performs the explicitly requested connection test; opening the console or reading readiness never calls the provider. Disable stops new provider dispatch.

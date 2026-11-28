@@ -54,6 +54,8 @@ Open **[http://127.0.0.1:9527/](http://127.0.0.1:9527/)**. The three services ar
 
 The workspace opens directly: no account, login, service API key or session renewal is required. The service trusts local access. Provider credentials belong only in Connections; they stay encrypted in the gateway and are never returned in ordinary reads. See [installation](docs/INSTALLATION.md) and the [local access boundary](docs/LOCAL_ACCESS.md).
 
+For a trusted application in a separate container, use the opt-in [private Docker client network](docs/TRUSTED_CLIENTS.md). It requires an explicit hostname and source-network allowlist; the default remains localhost-only. Admitted containers share full workspace access.
+
 ## Your first model
 
 1. Create an empty model under **Domain models**, or import a checked snapshot.
@@ -61,6 +63,8 @@ The workspace opens directly: no account, login, service API key or session rene
 3. Open **Teach** and describe what the model should learn. Attach text or Markdown when useful. Clear requests proceed automatically; answer any genuine clarification in the chat.
 4. Open **Ask** to use accepted knowledge. Missing evidence stays unknown. Ask does not teach implicitly.
 5. Search **Model & evidence**, review **History**, or use **Settings** for mode changes and snapshots.
+
+The main **Settings** page, below Operations, controls shared provider token/timeout limits and the temporal predicate cap. Changes persist without a restart and apply to new work. See [service settings](docs/SETTINGS.md).
 
 The [teaching example](examples/teaching/README.md) supplies a small equipment rule and dated history. See the [console guide](docs/CONSOLE.md) and [connection guide](docs/CONNECTION.md).
 
@@ -85,7 +89,7 @@ System timezone: Docker setup captures the host default automatically; native ex
 
 ## Scope and guarantees
 
-0.4.0 is a single-owner, single-host, loopback service with a bounded finite model language. Local acceptance checks enforce representation, independent owner requirements and configured admission rules. They do not establish that supplied premises are externally true. LLM interpretation and explanations remain fallible.
+0.4.0 is a single-owner, single-host service with loopback console publication, optional trusted container clients and a bounded finite model language. Local acceptance checks enforce representation, independent owner requirements and configured admission rules. They do not establish that supplied premises are externally true. LLM interpretation and explanations remain fallible.
 
 Lean kernel checking and exhaustive finite correspondence are reported separately. The interpreter and translator remain trusted code. Unknown provider usage stays reserved, and uncertain dispatched calls are not retried automatically. Finite execution limits bound each task; they do not guarantee that a requested capability can be learned.
 

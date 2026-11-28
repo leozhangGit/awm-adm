@@ -1,7 +1,8 @@
 {
   "$defs": {
-    "CallLimits": {
+    "ExtractionCallLimits": {
       "additionalProperties": false,
+      "description": "Compatibility name for the shared request options.",
       "properties": {
         "max_calls": {
           "default": 1,
@@ -11,28 +12,28 @@
           "type": "integer"
         },
         "max_duration_ms": {
-          "default": 60000,
+          "default": 360000,
           "maximum": 600000,
           "minimum": 1,
           "title": "Max Duration Ms",
           "type": "integer"
         },
         "max_input_tokens": {
-          "default": 128000,
+          "default": 256000,
           "maximum": 1050000,
           "minimum": 1,
           "title": "Max Input Tokens",
           "type": "integer"
         },
         "max_output_tokens": {
-          "default": 8192,
+          "default": 32768,
           "maximum": 100000,
           "minimum": 1,
           "title": "Max Output Tokens",
           "type": "integer"
         }
       },
-      "title": "CallLimits",
+      "title": "ExtractionCallLimits",
       "type": "object"
     }
   },
@@ -56,7 +57,26 @@
       "title": "Allowance Id"
     },
     "call_limits": {
-      "$ref": "#/$defs/CallLimits"
+      "$ref": "#/$defs/ExtractionCallLimits"
+    },
+    "catalog_predicates": {
+      "anyOf": [
+        {
+          "items": {
+            "maxLength": 200,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Catalog Predicates"
     },
     "connection_id": {
       "anyOf": [

@@ -7,10 +7,11 @@ Registry reservations precede child creation and retain uncertainty on interrupt
 import base64
 import threading
 
-from ..contracts import CallLimits, Request
+from ..contracts import Request
 from ..conversations.presentation import outcome, readable
 from ..knowledge_guidance import NARRATION
 from ..learning.service import FINAL, fault, fingerprint
+from ..llm_limits import aggregate, captured_call, teaching_calls
 from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
 from ..wire import decode
@@ -117,6 +118,12 @@ class Execution:
                     fault("stale_context", "Continue this historical task with a new Teach message")
                 conn = self.rt.interactions.connection_for(task, "acquisition")
                 spec = task["specification"]
+                call = captured_call(task)
+                envelope = aggregate(call, teaching_calls(spec["children"]))
+                task["llm_limits"]["aggregate"] = envelope
+                task["deadline_ms"] = min(
+                    task["deadline_ms"], task["created_at_ms"] + envelope["max_duration_ms"]
+                )
                 run = task["execution"] = {
                     "profile": "awm-adm-teaching-execution/2",
                     "version": 0,
@@ -127,10 +134,12 @@ class Execution:
                     "publication": "checked_auto",
                     "publication_authority": "local_teach_submission",
                     "started_at_ms": self.s.now(),
-                    "deadline_ms": self.s.now() + 900000,
+                    "deadline_ms": task["deadline_ms"],
+                    "llm_limits": task["llm_limits"],
+                    "episode_policy": task["episode_policy"],
                     "connection_id": conn["id"],
                     "connection_version": conn["version"],
-                    "input_bound": self.rt.config.learning.call.max_input_tokens,
+                    "input_bound": call["max_input_tokens"],
                     "steps": [
                         {"id": child["id"], "status": "prepared", "episode_id": None}
                         for child in spec["children"]
@@ -278,6 +287,12 @@ class Execution:
             or s.get("episode_input", {}).get("idempotency_key") == ep["body"]["idempotency_key"]
         )
         step.update(status="accepted", episode_id=ep["id"], revision_id=revision)
+        if ep.get("reaffirmation"):
+            step["reaffirmation"] = {
+                "symbols": sorted(ep["reaffirmation"]),
+                "definitions_unchanged": True,
+                "acquisition_calls": 0,
+            }
         if effects is not None:
             step["effects"] = effects
             if effects.get("removed"):
@@ -455,7 +470,7 @@ class Execution:
                 elif child["material"] is not None:
                     self.s.intake.prepare(key, task, step, child)
                     return True
-                elif not child["interfaces"]:
+                elif not child["interfaces"] and child["kind"] != "reaffirmation":
                     step.update(status="unresolved", reason="missing_interface")
                 else:
                     self.prepare_child(key, task, step, child)
@@ -472,10 +487,9 @@ class Execution:
     def prepare_child(self, key, task, step, child):
         run = task["execution"]
         self.valid(key, task, remote=True)
-        remaining = min(
-            self.rt.config.learning.episode.max_duration_ms, max(1, run["deadline_ms"] - self.s.now())
-        )
-        cap = min(6000000, self.rt.config.learning.episode.max_work)
+        call = captured_call(run)
+        limits = self.rt.config.episode_limits(call, {"max_calls": 2}, policy=run["episode_policy"])
+        limits["max_duration_ms"] = min(limits["max_duration_ms"], max(1, run["deadline_ms"] - self.s.now()))
         body = {
             "idempotency_key": step["id"],
             "expected_revision": run["context"]["revision_id"],
@@ -506,19 +520,8 @@ class Execution:
             },
             "construction": True,
             "disclose_model": True,
-            "limits": {
-                "max_calls": 2,
-                "max_input_tokens": 2 * run["input_bound"],
-                "max_output_tokens": 16384,
-                "max_work": cap,
-                "max_duration_ms": remaining,
-                "no_progress_attempts": 2,
-            },
-            "call_limits": CallLimits(
-                max_input_tokens=run["input_bound"],
-                max_output_tokens=min(8192, self.rt.config.learning.call.max_output_tokens),
-                max_duration_ms=min(remaining, self.rt.config.learning.acquisition_timeout_ms),
-            ).model_dump(),
+            "limits": limits,
+            "call_limits": call,
         }
         # Persist immutable creation intent before crossing the registry/ADM boundary.
         step.update(status="creating", episode_input=body)
@@ -583,7 +586,11 @@ class Execution:
                 self.persist(key, task)
                 return True
             vocabulary = task["specification"]["plan"]["vocabulary"]
-            local_until = max(run["deadline_ms"] + 60000, run.get("local_finish_until_ms", 0))
+            local_until = (
+                run["deadline_ms"]
+                if run.get("llm_limits")
+                else max(run["deadline_ms"] + 60000, run.get("local_finish_until_ms", 0))
+            )
             if self.s.now() >= local_until:
                 run.update(phase="followup", vocabulary="not_installed_local_window_expired")
                 self.persist(key, task)
@@ -629,7 +636,12 @@ class Execution:
         if (
             gap
             and not run["followup"]
-            and self.s.now() >= max(run["deadline_ms"] + 60000, run.get("local_finish_until_ms", 0))
+            and self.s.now()
+            >= (
+                run["deadline_ms"]
+                if run.get("llm_limits")
+                else max(run["deadline_ms"] + 60000, run.get("local_finish_until_ms", 0))
+            )
         ):
             run["followup"] = {
                 "status": "expired",
@@ -781,6 +793,11 @@ class Execution:
                 s.get("source_progress", {}).get("attention_complete", True) for s in run["steps"]
             )
             and sum(len(s.get("source_progress", {}).get("attention_items", [])) for s in run["steps"]) <= 20,
+            "reaffirmed": [
+                {"objective_id": s["id"], "revision_id": s.get("revision_id"), **s["reaffirmation"]}
+                for s in run["steps"]
+                if s.get("reaffirmation") and s["status"] == "accepted"
+            ],
             "checked_changes": [
                 {"objective_id": s["id"], "revision_id": s.get("revision_id"), "effects": s["effects"]}
                 for s in run["steps"]
@@ -826,6 +843,8 @@ definition_complete is true, including structures whose short description is
 abbreviated. Otherwise do not invent omitted expressions, types or conditions.
 A preserved_dependent has an exactly unchanged definition rechecked under changed
 bindings; do not say its rule was removed or rewritten. Its consequences can change.
+Reaffirmed objectives reuse exact accepted definitions and record the linked caller's
+endorsement; they are not newly acquired rules, new proofs or verified implementation.
 Distinguish evidence_changed from a changed definition and removed from historical
 erasure. Do not infer semantic equivalence or new query results.
 Distinguish saved subject facts from observations about reading a source. A saved
@@ -843,10 +862,11 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
 """
             + NARRATION,
             "context": {"packet_digest": digest, "packet": packet},
-            "prompt_version": "teaching-completion/5",
+            "prompt_version": "teaching-completion/6",
             "schema": COMPLETION_SCHEMA,
         }
-        raw, estimate = make_wire(conn, spec, 4096)
+        limits = captured_call(run)
+        raw, estimate = make_wire(conn, spec, limits["max_output_tokens"])
         prov = provenance(spec, raw)
         operation = task["id"] + "-completion"
         gid = self.learning.reserve(
@@ -860,13 +880,10 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
                 "configuration_digest": conn["configuration_digest"],
                 "wire": base64.b64encode(raw).decode(),
                 "input_estimate": estimate,
-                "limits": CallLimits(
-                    max_input_tokens=max(estimate, self.rt.config.learning.call.max_input_tokens),
-                    max_output_tokens=4096,
-                ).model_dump(),
+                "limits": limits,
                 "provenance": prov,
                 "recorded_index": 0,
-                "deadline": min(run["deadline_ms"] / 1000, self.learning.now() + 60),
+                "deadline": run["deadline_ms"] / 1000,
             },
             adm=key,
         )
@@ -911,7 +928,15 @@ accepted/unresolved IDs. Your wording is an explanation, not a proof.
             return
         summary = self.summary(task)
         text = (
-            "Learned and saved: " + "; ".join(s.strip().rstrip(".") for s in summary["accepted"]) + ". "
+            (
+                "Reaffirmed unchanged: "
+                if len(summary.get("reaffirmed", [])) == len(summary["accepted"])
+                else "Saved and reaffirmed: "
+                if summary.get("reaffirmed")
+                else "Learned and saved: "
+            )
+            + "; ".join(s.strip().rstrip(".") for s in summary["accepted"])
+            + ". "
             if summary["accepted"]
             else "No new knowledge was saved. "
         )

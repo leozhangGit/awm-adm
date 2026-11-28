@@ -234,7 +234,7 @@ def test_current_wire_contract_is_closed_published_and_model_neutral():
     spec = specification(
         {"objective": "Supplied observations", "inputs": [], "material_manifest": {"entries": []}}, {}, {}, {}
     )
-    assert spec["prompt_version"] == "adm-teaching-preparation/18"
+    assert spec["prompt_version"] == "adm-teaching-preparation/22"
     assert response_schema(shared_projection=True) == json.loads(
         (Path(__file__).parents[1] / "contracts/teaching-shared-reply.schema.json").read_text()
     )

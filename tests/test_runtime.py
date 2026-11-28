@@ -188,13 +188,13 @@ def test_owned_schema_migration_and_rollback(tmp_path):
     connection.execute("PRAGMA user_version=1")
     connection.execute("INSERT INTO instances VALUES ('example','preserved','failed')")
     migrate(connection, "registry")
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 18
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 19
     assert connection.execute("SELECT name FROM instances").fetchone()[0] == "preserved"
     connection.close()
 
     class Failing(sqlite3.Connection):
         def execute(self, sql, *args):
-            if sql.startswith("PRAGMA user_version=18"):
+            if sql.startswith("PRAGMA user_version=19"):
                 raise sqlite3.OperationalError("authored migration fault")
             return super().execute(sql, *args)
 

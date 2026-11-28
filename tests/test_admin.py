@@ -97,6 +97,7 @@ def test_upgrade_preserves_model_history_and_actor_and_needs_no_account(tmp_path
             "INSERT INTO administrator VALUES(1,'historic-owner','owner@example.test','historic-hash',7)"
         )
         db.execute("DROP TABLE local_workspace")
+        db.execute("DROP TABLE service_settings")
         db.execute("PRAGMA user_version=16")
     rt.close()
     rt = Runtime(config, start_scheduler=False)
@@ -114,7 +115,7 @@ def test_upgrade_preserves_model_history_and_actor_and_needs_no_account(tmp_path
             assert (
                 db.execute("SELECT revoked FROM credentials WHERE id=?", (issued["id"],)).fetchone()[0] == 1
             )
-            assert db.execute("PRAGMA user_version").fetchone()[0] == 18
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 19
         rt.close()
         rt = Runtime(config, start_scheduler=False)
         with browser(rt) as c:
@@ -148,11 +149,12 @@ def test_workspace_migration_rolls_back_on_failure(tmp_path):
     with sqlite3.connect(path) as db:
         migrate(db, "registry")
         db.execute("DROP TABLE local_workspace")
+        db.execute("DROP TABLE service_settings")
         db.execute("PRAGMA user_version=16")
 
     class Fail(sqlite3.Connection):
         def execute(self, sql, *args):
-            if sql.startswith("PRAGMA user_version=18"):
+            if sql.startswith("PRAGMA user_version=19"):
                 raise RuntimeError("authored rollback fault")
             return super().execute(sql, *args)
 

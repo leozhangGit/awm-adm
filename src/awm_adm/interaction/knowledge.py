@@ -78,7 +78,11 @@ def _evidence_view(value, artifacts):
         result["excerpt"] = content[:2000]
     elif isinstance(content, dict):
         profile = content.get("profile")
-        if profile == "awm-adm-source-evidence/1":
+        if profile == "awm-adm-teaching-intent/1":
+            result["name"] = "Recorded teaching intent"
+            result["excerpt"] = "\n".join(i["text"] for i in content["inputs"])[:2000]
+            result["teaching_intent"] = content
+        elif profile == "awm-adm-source-evidence/1":
             result["name"] = content.get("record", {}).get("origin", "Supplied source")
             result["excerpt"] = text(content.get("content", ""))
         elif profile == "awm-adm-projected-fact/1":
@@ -149,6 +153,11 @@ def search(runtime, key, *, query="", kind=None, after=0, limit=20, revision=Non
                         "source": evidence[eid]["name"],
                         "kind": artifacts[eid]["evidence_kind"],
                         "description": evidence[eid]["description"],
+                        **(
+                            {"teaching_intent": evidence[eid]["teaching_intent"]}
+                            if "teaching_intent" in evidence[eid]
+                            else {}
+                        ),
                     }
                     for eid in origins.get(entry["digest"], {}).get("evidence", [])
                 ],
@@ -176,6 +185,11 @@ def search(runtime, key, *, query="", kind=None, after=0, limit=20, revision=Non
                 "category": "evidence",
                 "description": evidence[entry["digest"]]["description"],
                 "excerpt": evidence[entry["digest"]]["excerpt"],
+                **(
+                    {"teaching_intent": evidence[entry["digest"]]["teaching_intent"]}
+                    if "teaching_intent" in evidence[entry["digest"]]
+                    else {}
+                ),
             }
         if kind and kind not in {row["kind"], row["category"]}:
             continue

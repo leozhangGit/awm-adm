@@ -5,6 +5,7 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from ..contracts import ClosedModel, Identifier
+from ..teaching.intent import KnowledgeIntent
 
 
 class EnableConnection(ClosedModel):
@@ -41,3 +42,8 @@ class DirectMessage(ClosedModel):
         if len(set(self.attachments)) != len(self.attachments):
             raise ValueError("Select each attachment once")
         return self
+
+
+class DirectTeach(DirectMessage):
+    # Optional caller assertion; never supplied by the provider or inferred as human review.
+    knowledge_intent: KnowledgeIntent | None = None

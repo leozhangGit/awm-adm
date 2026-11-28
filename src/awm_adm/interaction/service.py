@@ -3,8 +3,9 @@
 from uuid import uuid4
 
 from ..learning.service import fault, fingerprint
+from ..llm_limits import MAX_TEACH_CALLS, capture
 from ..runtime.protocol import dumps, loads
-from .models import DirectMessage
+from .models import DirectMessage, DirectTeach
 
 
 class Interactions:
@@ -12,7 +13,9 @@ class Interactions:
         self.rt, self.store, self.s = runtime, runtime.store, runtime.conversations
 
     def submit(self, key, channel, source, *, origin="api", source_queue=False, expected_revision=None):
-        body = DirectMessage.model_validate(source).model_dump()
+        body = (DirectTeach if channel == "teach" else DirectMessage).model_validate(source).model_dump()
+        if body.get("knowledge_intent") is None:
+            body.pop("knowledge_intent", None)
         body["idempotency_key"] = body["idempotency_key"] or str(uuid4())
         if channel not in {"ask", "teach"}:
             fault("invalid_input", "Choose Ask or Teach")
@@ -46,6 +49,7 @@ class Interactions:
                 "historical_lookup": True,
                 "snapshot_history": True,
             }
+            profile = capture(self.rt.settings.call, 2 if channel == "ask" else MAX_TEACH_CALLS)
             uid, cid = str(uuid4()), str(uuid4())
             with self.store.db(key) as db, self.store.transaction(db):
                 if (
@@ -130,13 +134,18 @@ class Interactions:
                     "status": "queued",
                     "grant_id": None,
                     "created_at_ms": self.s.now(),
-                    "deadline_ms": self.s.now() + 300000,
+                    "deadline_ms": self.s.now() + profile["aggregate"]["max_duration_ms"],
+                    "llm_limits": profile,
+                    "catalog_predicate_limit": self.rt.settings.values.catalog_predicate_limit,
+                    "episode_policy": self.rt.config.learning.episode.model_dump(),
                     "depth": question["depth"] + 1 if question else 0,
                     "links": [],
                 }
                 if work["depth"] >= 4:
                     fault("needs_specification", "Please restate the full request with the missing details")
                 if channel == "teach":
+                    if body.get("knowledge_intent") is not None:
+                        work["knowledge_intent"] = body["knowledge_intent"]
                     self.s.teaching.direct_task(db, key, conv, work, turn, previous if prior else None)
                 db.execute(
                     "INSERT INTO chat_work(id,conversation,status,body) VALUES(?,?,'queued',?)",
@@ -198,6 +207,11 @@ class Interactions:
             "explanation": None,
             "outcome_label": None,
             "failure_code": work.get("failure_code"),
+            **(
+                {"failure_diagnostics": work["failure_diagnostics"]}
+                if work.get("failure_diagnostics")
+                else {}
+            ),
         }
         if question:
             result["reply"] = loads(question[0])["question"]
@@ -282,7 +296,14 @@ class Interactions:
                 and summary.get("vocabulary") == "installed"
             ):
                 count = len(summary["accepted"])
-                result["outcome_label"] = f"Learned and saved · {count} " + (
+                label = (
+                    "Reaffirmed"
+                    if len(summary.get("reaffirmed", [])) == count
+                    else "Saved and reaffirmed"
+                    if summary.get("reaffirmed")
+                    else "Learned and saved"
+                )
+                result["outcome_label"] = f"{label} · {count} " + (
                     "objective" if count == 1 else "objectives"
                 )
 
@@ -293,7 +314,13 @@ class Interactions:
             if any(e["kind"] != "added" for e in changes.get("entries", [])) or not changes.get(
                 "complete", True
             ):
-                result["outcome_label"] = changes.get("text") or result.get("outcome_label")
+                change_text = changes.get("text")
+                if summary.get("reaffirmed"):
+                    result["outcome_label"] = (result.get("outcome_label") or "Reaffirmation completed") + (
+                        ". " + change_text if change_text else ""
+                    )
+                else:
+                    result["outcome_label"] = change_text or result.get("outcome_label")
                 if self.store.info(key)["mode"] == "forward":
                     result["outcome_label"] = (
                         result["outcome_label"] or ""

@@ -4,7 +4,8 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
-from ..contracts import CallLimits, ClosedModel, Identifier, JsonValue, RequestLimits, ShortText
+from ..contracts import ClosedModel, Identifier, JsonValue, RequestLimits, ShortText
+from ..llm_limits import CallOptions
 
 Utterance = Annotated[str, Field(min_length=1, max_length=16_384)]
 Alias = Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z][A-Za-z0-9 _.-]*$")]
@@ -41,7 +42,7 @@ class InterpretationInput(ClosedModel):
     connection_version: int | None = Field(default=None, ge=1)
     disclose_catalog: bool = False
     context_turn_ids: list[Identifier] = Field(default_factory=list, max_length=6)
-    call_limits: CallLimits = Field(default_factory=lambda: CallLimits(max_output_tokens=2048))
+    call_limits: CallOptions = Field(default_factory=CallOptions)
 
     @model_validator(mode="after")
     def authority(self) -> Self:

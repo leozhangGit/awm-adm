@@ -260,7 +260,7 @@
       "items": {
         "$ref": "#/$defs/Series"
       },
-      "maxItems": 32,
+      "maxItems": 65536,
       "minItems": 1,
       "title": "Predicates",
       "type": "array"

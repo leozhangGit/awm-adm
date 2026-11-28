@@ -347,6 +347,56 @@
         }
       }
     },
+    "/api/v1/settings": {
+      "get": {
+        "summary": "Settings",
+        "operationId": "settings_api_v1_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Save Settings",
+        "operationId": "save_settings_api_v1_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/operations/retention": {
       "get": {
         "summary": "Retention Plan",
@@ -1973,7 +2023,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DirectMessage"
+                "$ref": "#/components/schemas/DirectTeach"
               }
             }
           }
@@ -4675,26 +4725,27 @@
             "maximum": 1050000.0,
             "minimum": 1.0,
             "title": "Max Input Tokens",
-            "default": 128000
+            "default": 256000
           },
           "max_output_tokens": {
             "type": "integer",
             "maximum": 100000.0,
             "minimum": 1.0,
             "title": "Max Output Tokens",
-            "default": 8192
+            "default": 32768
           },
           "max_duration_ms": {
             "type": "integer",
             "maximum": 600000.0,
             "minimum": 1.0,
             "title": "Max Duration Ms",
-            "default": 180000
+            "default": 360000
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "title": "AcquisitionCallLimits"
+        "title": "AcquisitionCallLimits",
+        "description": "Compatibility name for the shared request options."
       },
       "Anchor": {
         "properties": {
@@ -4905,7 +4956,7 @@
         ],
         "title": "BatchInput"
       },
-      "CallLimits": {
+      "CallOptions": {
         "properties": {
           "max_calls": {
             "type": "integer",
@@ -4919,26 +4970,55 @@
             "maximum": 1050000.0,
             "minimum": 1.0,
             "title": "Max Input Tokens",
-            "default": 128000
+            "default": 256000
           },
           "max_output_tokens": {
             "type": "integer",
             "maximum": 100000.0,
             "minimum": 1.0,
             "title": "Max Output Tokens",
-            "default": 8192
+            "default": 32768
           },
           "max_duration_ms": {
             "type": "integer",
             "maximum": 600000.0,
             "minimum": 1.0,
             "title": "Max Duration Ms",
-            "default": 60000
+            "default": 360000
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "title": "CallLimits"
+        "title": "CallOptions",
+        "description": "API defaults document the standard installation; omitted fields resolve there."
+      },
+      "CallPolicy": {
+        "properties": {
+          "max_input_tokens": {
+            "type": "integer",
+            "maximum": 1050000.0,
+            "minimum": 1.0,
+            "title": "Max Input Tokens",
+            "default": 256000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "default": 32768
+          },
+          "max_duration_ms": {
+            "type": "integer",
+            "maximum": 600000.0,
+            "minimum": 1.0,
+            "title": "Max Duration Ms",
+            "default": 360000
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CallPolicy"
       },
       "Capabilities": {
         "properties": {
@@ -4986,7 +5066,7 @@
               "$ref": "#/components/schemas/Series"
             },
             "type": "array",
-            "maxItems": 32,
+            "maxItems": 65536,
             "minItems": 1,
             "title": "Predicates"
           },
@@ -5454,6 +5534,68 @@
         "type": "object",
         "title": "DirectMessage"
       },
+      "DirectTeach": {
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 65536,
+            "title": "Text",
+            "default": ""
+          },
+          "attachments": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Attachments"
+          },
+          "reply_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply To"
+          },
+          "knowledge_intent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KnowledgeIntent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DirectTeach"
+      },
       "DisableConnection": {
         "properties": {
           "idempotency_key": {
@@ -5622,7 +5764,7 @@
             "default": false
           },
           "limits": {
-            "$ref": "#/components/schemas/EpisodeLimits"
+            "$ref": "#/components/schemas/EpisodeOptions"
           },
           "call_limits": {
             "$ref": "#/components/schemas/AcquisitionCallLimits"
@@ -5650,7 +5792,7 @@
         ],
         "title": "EpisodeInput"
       },
-      "EpisodeLimits": {
+      "EpisodeOptions": {
         "properties": {
           "max_calls": {
             "type": "integer",
@@ -5664,14 +5806,14 @@
             "maximum": 10000000.0,
             "minimum": 1.0,
             "title": "Max Input Tokens",
-            "default": 384000
+            "default": 768000
           },
           "max_output_tokens": {
             "type": "integer",
             "maximum": 10000000.0,
             "minimum": 1.0,
             "title": "Max Output Tokens",
-            "default": 24576
+            "default": 98304
           },
           "max_work": {
             "type": "integer",
@@ -5685,7 +5827,7 @@
             "maximum": 86400000.0,
             "minimum": 1.0,
             "title": "Max Duration Ms",
-            "default": 720000
+            "default": 1320000
           },
           "no_progress_attempts": {
             "type": "integer",
@@ -5704,7 +5846,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "title": "EpisodeLimits"
+        "title": "EpisodeOptions"
       },
       "Epoch": {
         "properties": {
@@ -5999,6 +6141,42 @@
         ],
         "title": "Export"
       },
+      "ExtractionCallLimits": {
+        "properties": {
+          "max_calls": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Max Calls",
+            "default": 1
+          },
+          "max_input_tokens": {
+            "type": "integer",
+            "maximum": 1050000.0,
+            "minimum": 1.0,
+            "title": "Max Input Tokens",
+            "default": 256000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "default": 32768
+          },
+          "max_duration_ms": {
+            "type": "integer",
+            "maximum": 600000.0,
+            "minimum": 1.0,
+            "title": "Max Duration Ms",
+            "default": 360000
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExtractionCallLimits",
+        "description": "Compatibility name for the shared request options."
+      },
       "FactLookup": {
         "properties": {
           "op": {
@@ -6102,14 +6280,14 @@
             "maximum": 100000000.0,
             "minimum": 0.0,
             "title": "Max Input Tokens",
-            "default": 640000
+            "default": 5120000
           },
           "max_output_tokens": {
             "type": "integer",
             "maximum": 100000000.0,
             "minimum": 0.0,
             "title": "Max Output Tokens",
-            "default": 163840
+            "default": 655360
           },
           "max_work": {
             "type": "integer",
@@ -6153,6 +6331,24 @@
       },
       "FeedInput": {
         "properties": {
+          "catalog_predicates": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$"
+                },
+                "type": "array",
+                "maxItems": 256,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Predicates"
+          },
           "idempotency_key": {
             "type": "string",
             "maxLength": 128,
@@ -6262,7 +6458,7 @@
             "$ref": "#/components/schemas/FeedBudget"
           },
           "call_limits": {
-            "$ref": "#/components/schemas/CallLimits"
+            "$ref": "#/components/schemas/ExtractionCallLimits"
           },
           "max_pending": {
             "type": "integer",
@@ -6476,7 +6672,7 @@
             "title": "Context Turn Ids"
           },
           "call_limits": {
-            "$ref": "#/components/schemas/CallLimits"
+            "$ref": "#/components/schemas/CallOptions"
           }
         },
         "additionalProperties": false,
@@ -6491,6 +6687,24 @@
       },
       "JobInput": {
         "properties": {
+          "catalog_predicates": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$"
+                },
+                "type": "array",
+                "maxItems": 256,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Predicates"
+          },
           "allowance_id": {
             "anyOf": [
               {
@@ -6604,7 +6818,7 @@
             "title": "Connection Version"
           },
           "call_limits": {
-            "$ref": "#/components/schemas/CallLimits"
+            "$ref": "#/components/schemas/ExtractionCallLimits"
           }
         },
         "additionalProperties": false,
@@ -6620,6 +6834,33 @@
         "title": "JobInput"
       },
       "JsonValue": {},
+      "KnowledgeIntent": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "adopted_rule",
+              "adopted_premise",
+              "observation",
+              "unspecified"
+            ],
+            "title": "Role"
+          },
+          "basis": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Basis"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "basis"
+        ],
+        "title": "KnowledgeIntent"
+      },
       "LocalServiceInfo": {
         "properties": {
           "profile": {
@@ -7845,6 +8086,42 @@
           "scope_kinds"
         ],
         "title": "Series"
+      },
+      "SettingsUpdate": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "values": {
+            "$ref": "#/components/schemas/SettingsValues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "values"
+        ],
+        "title": "SettingsUpdate"
+      },
+      "SettingsValues": {
+        "properties": {
+          "llm_call": {
+            "$ref": "#/components/schemas/CallPolicy"
+          },
+          "catalog_predicate_limit": {
+            "type": "integer",
+            "maximum": 65536.0,
+            "minimum": 1.0,
+            "title": "Catalog Predicate Limit",
+            "default": 65536
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SettingsValues"
       },
       "SourceInput": {
         "properties": {

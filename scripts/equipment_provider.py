@@ -164,18 +164,29 @@ def recorded_reply(wire):
             material["material_ids"] = [
                 entry["id"] for entry in ctx["material_manifest"]["entries"] if entry["kind"] == "upload"
             ]
-        if any(p in body.get("instructions", "") for p in (TEMPORAL_PROFILE, ASSESSED_PROFILE)):
+        if any(
+            p in body.get("instructions", "")
+            for p in (TEMPORAL_PROFILE, ASSESSED_PROFILE, "awm-adm-teaching-reply/8")
+        ):
             reply["profile"] = TEMPORAL_PROFILE
             scope = view(reply["plan"].pop("source_projection"))
             for cell in scope["cells"]:
                 cell.update(precision="second", timezone_basis="UTC")
             reply["plan"]["evidence_scope"] = scope
-        for profile in (ASSESSED_PROFILE, ASSESSED_LEGACY_PROFILE):
+        for profile in (
+            ASSESSED_PROFILE,
+            ASSESSED_LEGACY_PROFILE,
+            "awm-adm-teaching-reply/8",
+            "awm-adm-teaching-reply/9",
+        ):
             if profile in body.get("instructions", ""):
                 reply.pop("status")
                 reply.update(
                     profile=profile, missing_information=[], unsupported_capabilities=[], question=None
                 )
+        if reply["profile"] in {"awm-adm-teaching-reply/8", "awm-adm-teaching-reply/9"}:
+            for child in reply["plan"]["children"]:
+                child["reuse_symbols"] = []
         return reply
     if name == "adm_construction_v1":
         return fixture("recorded-acquisition.json")

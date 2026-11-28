@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "KnowledgeIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Basis",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "adopted_rule",
+            "adopted_premise",
+            "observation",
+            "unspecified"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "basis"
+      ],
+      "title": "KnowledgeIntent",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:DirectTeach",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attachments": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Attachments",
+      "type": "array"
+    },
+    "idempotency_key": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+    },
+    "knowledge_intent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KnowledgeIntent"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "reply_to": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reply To"
+    },
+    "text": {
+      "default": "",
+      "maxLength": 65536,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "title": "DirectTeach",
+  "type": "object"
+}

@@ -78,7 +78,7 @@ def test_same_guidance_and_authored_property_order_reach_both_provider_wires(sel
     spec = specification(data, {}, {}, None)
     assert INSTRUCTIONS in spec["instructions"]
     assert all(s not in spec["instructions"].lower() for s in ("a-team", "nvidia", "gpt-", "claude"))
-    assert spec["prompt_version"] == f"adm-teaching-preparation/{18 if selected else 19}"
+    assert spec["prompt_version"] == f"adm-teaching-preparation/{22 if selected else 23}"
     for provider in ("openai", "anthropic"):
         bodies = []
         for model in ("configured-a", "configured-b"):
@@ -92,9 +92,9 @@ def test_same_guidance_and_authored_property_order_reach_both_provider_wires(sel
             body.pop("model")
             bodies.append(body)
         assert bodies[0] == bodies[1]
-    for version in (14, 16, 18):
+    for version in (14, 16, 18, 20):
         assert ASSESSED_PROMPT_FORMATS[f"adm-teaching-preparation/{version}"] == "awm-adm-teaching-reply/6"
-    for version in (15, 17, 19):
+    for version in (15, 17, 19, 21):
         assert ASSESSED_PROMPT_FORMATS[f"adm-teaching-preparation/{version}"] == "awm-adm-teaching-reply/7"
 
 

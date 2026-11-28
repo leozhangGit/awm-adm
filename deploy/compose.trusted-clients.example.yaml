@@ -1,0 +1,16 @@
+# Use with compose.yaml from the repository root. Create the private external
+# network and .local/trusted-clients.toml first; see docs/TRUSTED_CLIENTS.md.
+services:
+  app:
+    networks:
+      internal: {}
+      ingress: {}
+      trusted-clients:
+        aliases: [awm-adm]
+    volumes:
+      - ./.local/trusted-clients.toml:/opt/awm-adm/config.toml:ro
+
+networks:
+  trusted-clients:
+    external: true
+    name: awm-adm-clients

@@ -21,7 +21,7 @@ def public(router, auth, sources):
     @router.post("/adms/{adm}/feeds", status_code=201)
     def create(request: Request, adm: str, body: FeedInput):
         auth.require(request, adm, owner=True)
-        return feeds.create(adm, body.model_dump())
+        return feeds.create(adm, body.model_dump(exclude_unset=True))
 
     @router.put("/adms/{adm}/feeds/{identity}")
     def control(request: Request, adm: str, identity: str, body: FeedControl):

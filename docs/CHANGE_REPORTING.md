@@ -40,3 +40,5 @@ Tests cover transitive dependent preservation, interface changes, additions/remo
 ## Temporal evidence
 
 Typed temporal before/after facts also carry semantic series, observed/reported clocks and subject-scope kind. Whole-period values are labeled separately from validity; report attribution is not rendered as an actual outcome. Exact replacement preserves and rechecks dependent bodies. Unsupported partial interval rewrites report no publication. See [temporal evidence](TEMPORAL_EVIDENCE.md).
+
+Reaffirmation reports an evidence update with an unchanged accepted definition. Teaching summaries additionally identify the reaffirmed symbols and zero acquisition calls. These are publication-relative results, not perpetual assurances or implementation proofs.

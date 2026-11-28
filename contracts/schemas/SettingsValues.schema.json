@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "CallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "max_duration_ms": {
+          "default": 360000,
+          "maximum": 600000,
+          "minimum": 1,
+          "title": "Max Duration Ms",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 256000,
+          "maximum": 1050000,
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 32768,
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "CallPolicy",
+      "type": "object"
+    }
+  },
+  "$id": "urn:awm-adm:m0:SettingsValues",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_predicate_limit": {
+      "default": 65536,
+      "maximum": 65536,
+      "minimum": 1,
+      "title": "Catalog Predicate Limit",
+      "type": "integer"
+    },
+    "llm_call": {
+      "$ref": "#/$defs/CallPolicy"
+    }
+  },
+  "title": "SettingsValues",
+  "type": "object"
+}

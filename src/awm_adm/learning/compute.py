@@ -40,6 +40,18 @@ def compute(task, budget):
     base = checked["model"]
     body = task["body"]
     contract = validate_contract(body["task"]["acquisition_contract"])
+    if operation == "learning_reaffirm":
+        from ..teaching.reaffirmation import candidate
+
+        value, declarations = candidate(
+            checked, task.get("reaffirmation"), task.get("teaching_intent"), task["candidate_id"], budget
+        )
+        return {
+            "status": "complete",
+            "package": transport(value),
+            "preview": {"declarations": declarations, "retractions": []},
+            "work": budget.used,
+        }
     draft = task.get("draft") or (construction.seed(contract) if body["construction"] else None)
     retained = preservation.bodies(body, base, contract, budget)
     if retained:
@@ -103,6 +115,14 @@ def compute(task, budget):
                 retractions = value["retractions"]
                 check_proposal(declarations, retractions, contract, budget)
                 sources, support = [evidence], None
+            from ..teaching.intent import attach as attach_intent
+            from ..teaching.intent import retain_support
+
+            sources, support = retain_support(checked, retained, sources, support)
+
+            sources, support = attach_intent(
+                task.get("teaching_intent"), declarations, retained, sources, support
+            )
             candidate = build_candidate(
                 base,
                 declarations,
@@ -152,6 +172,10 @@ def compute(task, budget):
             from ..sources.compute import projected
             from .changes import publication_effects
 
+            if task.get("reaffirmation"):
+                from ..teaching.reaffirmation import unchanged
+
+                result["reaffirmation"] = unchanged(current["model"], instance._model, task["reaffirmation"])
             after = {"model": instance._model, "support": instance._support, "blobs": instance._blobs}
             projected(after, budget)
             result["effects"] = publication_effects(current, instance, budget)

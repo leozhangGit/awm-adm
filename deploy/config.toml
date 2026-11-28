@@ -1,12 +1,17 @@
 # Finite service, acquisition and source caps. Retention ages are review thresholds; automatic deletion is disabled.
 # No provider credentials are configured by this file.
-config_profile = "awm-adm-config/2"
+config_profile = "awm-adm-config/3"
 
 [server]
 bind_host = "127.0.0.1"
 port = 9527
 data_dir = "/var/lib/awm-adm"
 max_body_bytes = 2097152
+
+# Optional native container clients. Both lists must be set together; restart required.
+[server.trusted_clients]
+hosts = []
+source_networks = []
 
 [runtime]
 max_adms = 10
@@ -30,25 +35,20 @@ max_search_bytes = 16000000
 remote_calls_enabled = false
 publication = "review"
 default_conflict_mode = "backward"
-preparation_timeout_ms = 180000
-acquisition_timeout_ms = 180000
 
-[learning.call]
-max_calls = 1
-max_input_tokens = 128000
-max_output_tokens = 8192
-max_duration_ms = 60000
+[llm.call]
+max_input_tokens = 256000
+max_output_tokens = 32768
+max_duration_ms = 360000
 
 [learning.episode]
 max_calls = 3
-max_input_tokens = 384000
-max_output_tokens = 24576
 max_work = 6000000
-max_duration_ms = 720000
 no_progress_attempts = 2
 private_draft_bytes = 2097152
 
 [sources]
+catalog_predicate_limit = 65536
 batch_items = 100
 item_bytes = 262144
 batch_bytes = 2097152

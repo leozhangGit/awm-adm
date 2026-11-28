@@ -463,13 +463,7 @@ def test_schema_four_migration_preserves_models_requests_and_learning(tmp_path):
 def test_obsolete_aggregate_quota_does_not_block_translation_or_local_serving(rig):  # noqa: F811
     rt, gateway = rig
     c = translation_connection(rt, gateway, proposal())
-    rt.learning.config = rt.config.model_copy(
-        update={
-            "learning": rt.config.learning.model_copy(
-                update={"quotas": rt.config.learning.quotas.model_copy(update={"calls_installation": 1})}
-            )
-        }
-    )
+    assert "quotas" not in rt.config.learning.model_dump()
     rt.learning.test_connection(c["id"], {"idempotency_key": "consume-shared-call", "expected_version": 1})
     key = rt.create("quota")["id"]
     conv = conversation(rt, key)

@@ -1,6 +1,8 @@
 .venv/
 .cache/
 .local/
+/compose.override.yaml
+/compose.override.yml
 .codex/
 .agents/
 .claude/

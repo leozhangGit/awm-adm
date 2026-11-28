@@ -20,11 +20,12 @@ Read `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md` and the relevant fea
 - Keep advanced model, proof, source, requirements and diagnostic capabilities accessible through appropriate APIs/library interfaces when their console panels are removed. Preserve current reasoning/resource defaults and full local validation; chat context is not the accepted theory. Distinguish automatic checking from actual human review in provenance.
 - Preserve immutable source bytes/spans, exact disclosure, typed historical intervals, unknown/disputed support and bounded push queues. Append credentials cannot read models or expand task/policy authority. No implicit pull connector is introduced.
 - Named deletion fences access/publication before durable cleanup. Preserve uncertain accounting, independent models and external backups. Logical deletion is not secure media erasure.
-- Current owned schema is 18. Preserve transactional supported migrations and paired restore. Foreign/future stores fail closed. Restore disables remote authority and revokes operational credentials.
+- Current owned schema is 19. Preserve transactional supported migrations and paired restore. Foreign/future stores fail closed. Restore disables remote authority and revokes operational credentials.
 
 ## Runtime and verification
 
 - The supported container target is Linux ARM64, non-root/read-only, with bounded compute, separate networks/credentials and gateway-only provider access. Keep application seccomp, host publication and health checks intact.
+- Native container access is opt-in through paired exact Host/private-peer allowlists. Defaults remain local-only; trusted containers receive full workspace authority. Preserve browser/forwarded-header rejection and separate worker/gateway networks and credentials; see `docs/TRUSTED_CLIENTS.md`.
 - Preserve actual runtime data and secrets during ordinary builds/updates. Use dedicated `awm-adm-check-*` projects, separate ports/hostnames and disposable models for runtime/deletion checks. Never use a user's installation as a fixture.
 - Automated checks use recorded/simulated providers only. Engineering live trials need explicit user scope/disclosure and a bounded test budget; past trial authority is not reusable. This testing rule does not add product spending settings. In normal product use, clicking Enable explicitly requests its connection test; workspace startup and background reads make no provider call.
 - Run `make check`, `make isolate` and appropriate runtime checks for substantive changes. Set `AWM_ADM_LEAN` to an absolute Lean 4.19.0 path for host proof checks; skipped real-kernel tests are not proof evidence. Docker includes its pinned compiler.

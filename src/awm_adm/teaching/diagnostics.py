@@ -5,6 +5,7 @@ import json
 from pydantic import ValidationError
 
 MESSAGES = {
+    "reaffirmation": "The proposed reaffirmation does not match reusable accepted declarations.",
     "wire": "The provider returned malformed preparation JSON.",
     "envelope": "The provider response does not match the preparation format.",
     "assessment": "The provider's readiness assessment is inconsistent or invalid. No learning started.",
@@ -45,6 +46,12 @@ def length_details(issue):
 
 def diagnostic(stage, code="invalid_value", error=None):
     result = {"stage": stage, "code": code, "message": MESSAGES[stage], "issues": []}
+    if stage == "reaffirmation":
+        result["message"] = {
+            "unknown_reuse_symbol": "Reaffirmation must select existing accepted declarations; an unknown symbol cannot be reused.",
+            "overlapping_reuse": "A declaration cannot be reaffirmed twice or also changed by another child in the same teaching plan.",
+            "unsupported_reuse_kind": "This declaration kind cannot be reaffirmed through teaching preparation.",
+        }.get(code, result["message"])
     if stage == "sources":
         result["message"] = {
             "multiple_projections": "The provider proposed different evidence mappings within one teaching request. One shared mapping is required; no new knowledge was accepted.",
@@ -73,6 +80,7 @@ def diagnostic(stage, code="invalid_value", error=None):
             "objective",
             "input_ids",
             "interfaces",
+            "reuse_symbols",
             "material",
             "material_ids",
             "projection",
@@ -145,6 +153,43 @@ def diagnostic(stage, code="invalid_value", error=None):
                     **length_details(issue),
                 }
             )
+            if issue["type"] == "value_error":
+                # Only exact service-authored validation messages map to fixed safe hints.
+                reason = str(issue.get("ctx", {}).get("error", ""))
+                rules = {
+                    "Each child needs an interface or finite source mapping": (
+                        "empty_teaching_child",
+                        "A teaching child must specify executable interfaces, source material, or explicit checked reaffirmation of accepted declarations.",
+                    ),
+                    "A capability needs receiver interfaces": (
+                        "capability_interfaces_required",
+                        "A capability child needs executable interfaces; unchanged accepted rules use reaffirmation.",
+                    ),
+                    "Observations require a source mapping, not executable rules": (
+                        "facts_mapping_required",
+                        "A facts child needs a source mapping and no executable interfaces.",
+                    ),
+                    "Reaffirmation needs existing symbols and no interfaces or source mapping": (
+                        "reaffirmation_shape",
+                        "Reaffirmation requires reuse_symbols with existing declarations, empty interfaces and no source mapping.",
+                    ),
+                    "Reaffirmation symbols must be unique": (
+                        "duplicate_reuse_symbol",
+                        "Select each accepted declaration only once.",
+                    ),
+                    "Only reaffirmation can select reuse symbols": (
+                        "unexpected_reuse_symbols",
+                        "Only a reaffirmation child can select reuse_symbols.",
+                    ),
+                    "Parent intent must match its typed children": (
+                        "plan_kind_mismatch",
+                        "The plan kind must match its children; different child kinds require mixed.",
+                    ),
+                }
+                if reason in rules:
+                    rule, hint = rules[reason]
+                    result["issues"][-1].update(rule=rule, hint=hint)
+                    result["message"] = hint
             path = result["issues"][-1]["path"]
             # Fixed contract hints only: never interpolate provider values or
             # validator messages. Keep retained non-temporal diagnostics stable.

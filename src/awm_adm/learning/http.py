@@ -58,7 +58,7 @@ def public(router, auth, service):
     @router.post("/adms/{adm}/episodes", status_code=202)
     def create_episode(request: Request, adm: str, body: EpisodeInput):
         auth.require(request, adm, owner=True)
-        return service.create(adm, body.model_dump())
+        return service.create(adm, body.model_dump(exclude_unset=True))
 
     @router.get("/adms/{adm}/episodes/{episode}")
     def episode(request: Request, adm: str, episode: str):

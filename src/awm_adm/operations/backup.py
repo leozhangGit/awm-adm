@@ -205,6 +205,8 @@ def verify(bundle):
         14,
         15,
         16,
+        17,
+        18,
         SCHEMA_VERSION,
     ):
         raise ValueError("Unsupported recovery bundle")

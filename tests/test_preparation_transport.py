@@ -168,13 +168,13 @@ def test_gateway_classifies_process_failures_and_reaps_child(case, monkeypatch):
     Outcome.model_validate(result)
 
 
-@pytest.mark.parametrize("value", [0, 300001, True])
+@pytest.mark.parametrize("value", [0, 600001, True])
 def test_preparation_timeout_is_finite(value):
     with pytest.raises(ValidationError):
-        AppConfig.model_validate({"learning": {"preparation_timeout_ms": value}})
+        AppConfig.model_validate({"llm": {"call": {"max_duration_ms": value}}})
 
 
-def test_preparation_has_three_minutes_while_ask_and_compute_limits_are_unchanged(rig, monkeypatch):
+def test_preparation_and_ask_share_six_minutes_without_changing_compute_limits(rig, monkeypatch):
     rt, gw = rig
     key = rt.create("Independent preparation timeout")["id"]
     recorded(rt, gw, {})
@@ -188,11 +188,18 @@ def test_preparation_has_three_minutes_while_ask_and_compute_limits_are_unchange
     current = work(rt, key, item["id"])
     with rt.store.db() as db:
         grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (current["grant_id"],)).fetchone()[0])
-    assert grant["limits"]["max_duration_ms"] == 180000
-    assert grant["limits"]["max_output_tokens"] == 8192
-    assert grant["deadline"] == min(current["deadline_ms"] / 1000, now + 180)
+    assert grant["limits"]["max_duration_ms"] == 360000
+    assert grant["limits"]["max_output_tokens"] == 32768
+    assert grant["deadline"] == current["deadline_ms"] / 1000
     # A complete response after the old deadline still goes through the normal checker.
-    clock[0] += 90
+    authorize = rt.learning.authorize
+
+    def delayed_authorize(*args):
+        value = authorize(*args)
+        clock[0] += 90
+        return value
+
+    monkeypatch.setattr(rt.learning, "authorize", delayed_authorize)
     respond(rt, {"status": "needs_clarification", "message": "Which rule is adopted?", "plan_json": None})
     assert rt.interactions.get(key, item["id"])["status"] == "needs_input"
     assert rt.limits() == baseline
@@ -204,25 +211,40 @@ def test_preparation_has_three_minutes_while_ask_and_compute_limits_are_unchange
                 "SELECT body FROM grants WHERE id=?", (work(rt, key, question["id"])["grant_id"],)
             ).fetchone()[0]
         )
-    assert ask["limits"]["max_duration_ms"] == 60000
+    assert ask["limits"]["max_duration_ms"] == 360000
 
 
-def test_preparation_respects_configured_shorter_timeout_and_work_deadline(rig, monkeypatch):
+@pytest.mark.parametrize("remaining", [10, 40])
+def test_preparation_respects_configured_shorter_timeout_and_work_deadline(rig, monkeypatch, remaining):
     rt, gw = rig
     key = rt.create("Configured bounds")["id"]
     recorded(rt, gw, {})
     config = rt.config.model_dump()
-    config["learning"]["preparation_timeout_ms"] = 25000
+    config["llm"]["call"]["max_duration_ms"] = 25000
     monkeypatch.setattr(rt, "config", AppConfig.model_validate(config))
+    state = rt.settings.get()
+    rt.settings.update(
+        {
+            "expected_revision": state["revision"],
+            "values": state["values"] | {"llm_call": config["llm"]["call"]},
+        }
+    )
     item = rt.interactions.submit(key, "teach", {"text": "Keep a bounded rule."})
     deadline = work(rt, key, item["id"])["deadline_ms"] / 1000
-    monkeypatch.setattr(rt.learning, "now", lambda: deadline - 10)
-    monkeypatch.setattr(rt.conversations, "now", lambda: int((deadline - 10) * 1000))
+    monkeypatch.setattr(rt.learning, "now", lambda: deadline - remaining)
+    monkeypatch.setattr(rt.conversations, "now", lambda: int((deadline - remaining) * 1000))
     assert rt.conversations.teaching.tick()
     job = rt.learning.claim()
+    if remaining == 10:
+        assert job is None
+        final = rt.interactions.get(key, item["id"])
+        assert final["failure_diagnostics"]["scope"] == "aggregate"
+        assert rt.learning.usage()["calls"] == 0
+        return
     value = rt.learning.authorize(job["grant_id"], job["lease"])
     assert value["limits"]["max_duration_ms"] == job["timeout_ms"] == 25000
-    assert value["expires"] == value["deadline"] == deadline
+    assert value["expires"] == deadline - 15
+    assert value["deadline"] == deadline
 
 
 @pytest.mark.parametrize(
@@ -234,8 +256,8 @@ def test_preparation_respects_configured_shorter_timeout_and_work_deadline(rig, 
             {
                 "transport_failure": "timeout",
                 "failure_stage": "gateway_wait",
-                "elapsed_ms": 180010,
-                "timeout_ms": 179500,
+                "elapsed_ms": 360010,
+                "timeout_ms": 359500,
             },
             None,
         ),
@@ -272,7 +294,7 @@ def test_failure_reaches_teach_history_and_plugin_without_retry_or_acceptance(
     assert final["state"] == "failed" and final["failure_code"] == error
     d = final["failure_diagnostics"]
     assert d["grant_id"] == job["grant_id"] and d["dispatch_status"] == status
-    assert d["configured_timeout_ms"] == 180000
+    assert d["configured_timeout_ms"] == 360000
     assert d["usage_unresolved"] == (usage is None) and not d["automatic_retry"]
     assert d["usage"] == usage
     for field, value in details.items():

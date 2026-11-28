@@ -3,11 +3,14 @@
 import base64
 import threading
 
-from ..contracts import CallLimits, Request
+from ..contracts import Request
 from ..language.prompt import specification as interpret_spec
+from ..learning.diagnostics import capacity_diagnostic
 from ..learning.service import fault, fingerprint
+from ..llm_limits import captured_call
 from ..providers.wire import make_wire, provenance
 from ..runtime.protocol import RuntimeFault, dumps, loads
+from ..teaching.provider_failure import ask_failure
 from ..wire import decode
 from . import history
 from .models import Presentation
@@ -80,11 +83,18 @@ class Ask:
                             continue
                         response = loads(grant["outcome"])
                         if response["status"] != "succeeded":
-                            fault("provider_unavailable", "Ask provider response failed")
+                            diagnostic = ask_failure(
+                                work["grant_id"],
+                                response,
+                                loads(grant["body"])["limits"],
+                                narration=work["status"] == "awaiting_narration",
+                            )
+                            work["failure_diagnostics"] = diagnostic
+                            fault(diagnostic["code"], diagnostic["message"])
                         with self.store.lock:
                             self.rt.learning._grant_valid(loads(grant["body"]))
                         text = response.get("text", "")
-                        if len(text.encode()) > 16384:
+                        if len(text.encode()) > 2_097_152:
                             raise ValueError("Oversized Ask reply")
                         if work["status"] == "awaiting_narration":
                             reply = validate(decode(text.encode()), work["packet"])
@@ -95,6 +105,8 @@ class Ask:
                     except (RuntimeFault, ValueError, TypeError, KeyError) as error:
                         code = error.code if isinstance(error, RuntimeFault) else "invalid_provider_reply"
                         work["failure_code"] = code
+                        if diagnostic := capacity_diagnostic(error):
+                            work["failure_diagnostics"] = diagnostic
                         if work.get("request_id"):
                             # Narration/context failures cannot hide a saved local outcome.
                             self.complete(key, work, reason=code)
@@ -107,7 +119,8 @@ class Ask:
                                     "The model or interaction authority changed. Please restate your question against the current model. No local request or learning task was started."
                                     if code == "stale_context"
                                     else str(error) + " No local request or learning task was started."
-                                    if code
+                                    if work.get("failure_diagnostics")
+                                    or code
                                     in {
                                         "remote_calls_disabled",
                                         "allowance_expired",
@@ -116,6 +129,7 @@ class Ask:
                                         "spending_disabled",
                                         "price_unavailable",
                                         "connection_unavailable",
+                                        "invalid_limits",
                                         "purpose_unavailable",
                                         "allowance_unavailable",
                                     }
@@ -136,6 +150,7 @@ class Ask:
             work["context"]["revision_id"],
             meta["vocabulary"],
             "language_ask_catalog" if work["preferences"].get("snapshot_history") else "language_catalog",
+            catalog_utterance=work["text"] + " " + str(work["selected_context"]),
         )
         work["vocabulary"] = meta["vocabulary"]
         work["catalog_digest"] = checked["catalog"]["digest"]
@@ -156,11 +171,20 @@ class Ask:
             from ..temporal_evidence.guidance import RECALL
 
             spec["instructions"] += history.INSTRUCTIONS + TEMPORAL_ASK + RECALL
-            spec["prompt_version"] = "adm-ask-interpretation/temporal-3"
-            spec["context"]["owner_fact_projection"] = work["fact_projection"]
+            spec["prompt_version"] = "adm-ask-interpretation/temporal-4"
+            from ..temporal_evidence.capacity import context_window
+
+            projection = work["fact_projection"]
+            if projection:
+                projection, selection = context_window(
+                    projection, work["text"] + " " + str(work["selected_context"])
+                )
+                spec["context"]["owner_catalog_selection"] = selection
+            spec["context"]["owner_fact_projection"] = projection
             if work["preferences"].get("snapshot_history"):
                 work["accepted_fact_projections"] = checked["accepted_fact_projections"]
                 spec["context"]["accepted_fact_projections"] = work["accepted_fact_projections"]
+                spec["context"]["accepted_catalog_selection"] = checked.get("accepted_catalog_selection")
                 spec["instructions"] += history.SNAPSHOT_INSTRUCTIONS
         work["allowed_result_ids"] = ids
         self.reserve(key, work, "ask_interpretation", spec)
@@ -171,7 +195,8 @@ class Ask:
             conn = self.rt.interactions.connection_for(work, purpose)
             if purpose == "ask_narration" and not work["preferences"].get("narrate_results"):
                 fault("forbidden", "Result explanation is not part of this interaction")
-            output_limit = min(4096, self.rt.config.learning.call.max_output_tokens)
+            limits = captured_call(work)
+            output_limit = limits["max_output_tokens"]
             raw, estimate = make_wire(conn, spec, output_limit)
             if len(raw) > self.rt.config.server.max_body_bytes:
                 fault("resource_exhausted", "This interpretation context exceeds the request size limit")
@@ -188,17 +213,10 @@ class Ask:
                     "configuration_digest": conn["configuration_digest"],
                     "wire": base64.b64encode(raw).decode(),
                     "input_estimate": estimate,
-                    "limits": CallLimits(
-                        max_input_tokens=max(estimate, self.rt.config.learning.call.max_input_tokens),
-                        max_output_tokens=output_limit,
-                        max_duration_ms=self.rt.config.learning.call.max_duration_ms,
-                    ).model_dump(),
+                    "limits": limits,
                     "provenance": prov,
                     "recorded_index": 0,
-                    "deadline": min(
-                        work["deadline_ms"] / 1000,
-                        self.rt.learning.now() + self.rt.config.learning.call.max_duration_ms / 1000,
-                    ),
+                    "deadline": work["deadline_ms"] / 1000,
                 },
                 adm=key,
             )

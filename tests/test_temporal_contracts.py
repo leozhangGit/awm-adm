@@ -153,7 +153,7 @@ def test_descriptor_requires_explicit_period_and_report_meanings():
     assert encode(a) != encode(b)  # transport preserves order; identity does not depend on it
 
 
-def test_cumulative_catalog_limit_does_not_reinterpret_valid_larger_legacy_scope():
+def test_sparse_catalog_preserves_valid_larger_legacy_scope_and_bounds_new_batches():
     from awm_adm.temporal_evidence.legacy import extend, view
 
     from .test_sources import profile
@@ -161,14 +161,18 @@ def test_cumulative_catalog_limit_does_not_reinterpret_valid_larger_legacy_scope
     old = profile()
     old["entities"] = [f"entity{i}" for i in range(128)]
     old["predicates"] = [{**old["predicates"][0], "symbol": f"p.value{i}"} for i in range(32)]
-    # Legacy validation remains valid above the new Cartesian cap.
+    # Accumulated coverage remains valid above the per-request Cartesian bound.
     from awm_adm.sources.models import Projection
 
     Projection.model_validate(old)
     before = encode(old)
     assert len(view(old)["entities"]) == 128
+    merged = extend(old, view(old))
+    assert merged == view(old)
+    from awm_adm.temporal_evidence.models import CatalogBatch
+
     with pytest.raises(ValueError, match="4096"):
-        extend(old, view(old))
+        CatalogBatch.model_validate(merged)
     assert encode(old) == before
 
 
@@ -186,7 +190,7 @@ def test_temporal_preparation_schema_is_published_and_has_no_model_branch():
     b = specification({**task, "provider_model": "another-provider-choice"}, {}, {}, None)
     # Capture the same default for the comparison; no model-specific semantic/schema changes.
     a["context"]["temporal_context"] = b["context"]["temporal_context"]
-    assert a == b and a["prompt_version"] == "adm-teaching-preparation/18"
+    assert a == b and a["prompt_version"] == "adm-teaching-preparation/22"
 
 
 def test_calendar_window_resolves_default_zone_and_preserves_intent():

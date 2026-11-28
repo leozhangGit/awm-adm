@@ -4,16 +4,20 @@ from ..knowledge_guidance import PREPARATION, QUERYABLE_KNOWLEDGE
 from ..temporal import MEANING, context
 from ..temporal_evidence.guidance import ASSESSED_PREPARATION as TEMPORAL_INSTRUCTIONS
 from .field_guidance import INSTRUCTIONS as FIELD_INSTRUCTIONS
-from .provider_format import response_schema
+from .provider_format import REUSE_LEGACY_PROFILE, REUSE_TEMPORAL_PROFILE, response_schema
 from .readiness import INSTRUCTIONS as READINESS_INSTRUCTIONS
 from .readiness import LEGACY_PROFILE, TEMPORAL_PROFILE
 from .source_guidance import INSTRUCTIONS as SOURCE_INSTRUCTIONS
 
-PROMPT_VERSION = "adm-teaching-preparation/18"
-LEGACY_PROMPT_VERSION = "adm-teaching-preparation/19"
+PROMPT_VERSION = "adm-teaching-preparation/22"
+LEGACY_PROMPT_VERSION = "adm-teaching-preparation/23"
 ASSESSED_PROMPT_FORMATS = {
-    PROMPT_VERSION: TEMPORAL_PROFILE,
-    LEGACY_PROMPT_VERSION: LEGACY_PROFILE,
+    PROMPT_VERSION: REUSE_TEMPORAL_PROFILE,
+    LEGACY_PROMPT_VERSION: REUSE_LEGACY_PROFILE,
+    "adm-teaching-preparation/20": TEMPORAL_PROFILE,
+    "adm-teaching-preparation/21": LEGACY_PROFILE,
+    "adm-teaching-preparation/18": TEMPORAL_PROFILE,
+    "adm-teaching-preparation/19": LEGACY_PROFILE,
     "adm-teaching-preparation/16": TEMPORAL_PROFILE,
     "adm-teaching-preparation/17": LEGACY_PROFILE,
     "adm-teaching-preparation/14": TEMPORAL_PROFILE,
@@ -44,11 +48,20 @@ def specification(task, catalog, requirements, source_policy):
         from ..temporal_evidence.legacy import is_catalog, view
 
         projection = source_policy["projection"]
-        source_policy["compatible_catalog"] = projection if is_catalog(projection) else view(projection)
+        from ..temporal_evidence.capacity import context_window
+
+        compatible = projection if is_catalog(projection) else view(projection)
+        selected_catalog, selection = context_window(
+            compatible, task["objective"] + " " + str(task["inputs"])
+        )
+        source_policy["compatible_catalog"] = selected_catalog
+        source_policy["catalog_selection"] = selection
+        if is_catalog(projection):
+            source_policy["projection"] = selected_catalog
     return {
         "name": "adm_teaching_preparation",
         "prompt_version": PROMPT_VERSION if selected else LEGACY_PROMPT_VERSION,
-        "schema": response_schema(temporal_evidence=selected, assessed=True),
+        "schema": response_schema(temporal_evidence=selected, assessed=True, reaffirmation=True),
         "instructions": (
             "Prepare a local Algebraic Domain Model teaching task, not a domain answer. "
             "The remote LLM proposes knowledge; the local ADM later checks, admits and executes it. "
@@ -61,8 +74,8 @@ def specification(task, catalog, requirements, source_policy):
             "coverage, widen scope, change protected settings, publish, or claim learning has happened. "
             "The server owns finite execution limits, provider choice and repair policy. "
             "Return the native structured reply, not Markdown or a JSON-encoded whole plan. "
-            f"Use profile {TEMPORAL_PROFILE if selected else LEGACY_PROFILE}. "
-            "Classify capability (executable rule), facts (source-backed finite propositions), correction, or mixed. "
+            f"Use profile {REUSE_TEMPORAL_PROFILE if selected else REUSE_LEGACY_PROFILE}. "
+            "Classify capability (executable rule), facts (source-backed finite propositions), correction, reaffirmation (unchanged accepted rules), or mixed. "
             "Use separate typed children for mixed intentions. Cite exact inputs[].id; preserve every input. "
             f"{FIELD_INSTRUCTIONS}"
             "Each child has an interfaces ARRAY of headers keyed by symbol, not types/functions groups. "
@@ -80,7 +93,16 @@ def specification(task, catalog, requirements, source_policy):
             "Use only referenced nodes, no cycles, at most 128 nodes and 24 nested type levels. "
             "Enum/component count <=64, vector length <=32, each carrier nonempty and <=65536 values. "
             "No refinements or algebraic presentation synthesis in this preparation profile. "
-            "Existing declaration symbols require correction intent. "
+            "To retain or reaffirm an already accepted definition unchanged, use kind reaffirmation, "
+            "reuse_symbols naming its existing qualified symbols, interfaces [], and material null. "
+            "The receiver pins and copies the accepted bodies and retains their prior evidence; "
+            "it records the linked caller intent without another acquisition call. Do not generate an "
+            "empty capability child or call unchanged reuse a correction. Reaffirmation cannot establish "
+            "new conditions, implementation behavior, stronger proof or external truth. Clarify if the "
+            "intended meaning cannot be matched to accepted knowledge; do not assume equivalence. "
+            "Other child kinds use reuse_symbols []. Keep new obligations in separate children. "
+            "Do not reaffirm a declaration that another child revises or affects through dependencies. "
+            "Existing declaration symbols being changed require correction intent. "
             "For a correction, name the existing declarations whose definitions the user intends to change. "
             "The receiver includes affected accepted dependents in the same checked candidate, retaining "
             "their exact bodies unless they are explicitly revised too. Their values may change through "

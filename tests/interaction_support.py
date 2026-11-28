@@ -75,7 +75,8 @@ def respond(rt, reply):
     assert job is not None
     with rt.store.db() as db:
         grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (job["grant_id"],)).fetchone()[0])
-    if grant["provenance"]["prompt_version"] in {
+    version = grant["provenance"]["prompt_version"]
+    if version in {
         "adm-teaching-preparation/8",
         "adm-teaching-preparation/9",
         "adm-teaching-preparation/10",
@@ -85,24 +86,38 @@ def respond(rt, reply):
         "adm-teaching-preparation/15",
         "adm-teaching-preparation/16",
         "adm-teaching-preparation/17",
+        "adm-teaching-preparation/22",
+        "adm-teaching-preparation/23",
+        "adm-teaching-preparation/20",
+        "adm-teaching-preparation/21",
         "adm-teaching-preparation/18",
         "adm-teaching-preparation/19",
     }:
         task = rt.conversations.teaching.get(grant["adm"], grant["conversation_work_id"])
         convert = (
             temporal_reply
-            if grant["provenance"]["prompt_version"].endswith(("/10", "/11", "/12", "/14", "/16", "/18"))
+            if grant["provenance"]["prompt_version"].endswith(
+                ("/10", "/11", "/12", "/14", "/16", "/18", "/20", "/22")
+            )
             else shared_reply
             if grant["provenance"]["prompt_version"].endswith("/9")
             else selected_reply
         )
         version = grant["provenance"]["prompt_version"]
-        if not version.endswith(("/15", "/17", "/19")):
+        if not version.endswith(("/15", "/17", "/19", "/21", "/23")):
             reply = convert(reply, task["material_manifest"])
-        if version.endswith(("/14", "/15", "/16", "/17", "/18", "/19")):
+        if version.endswith(("/14", "/15", "/16", "/17", "/18", "/19", "/20", "/21", "/22", "/23")):
             reply = assessed_reply(
-                reply, [i["id"] for i in task["inputs"]], temporal=version.endswith(("/14", "/16", "/18"))
+                reply,
+                [i["id"] for i in task["inputs"]],
+                temporal=version.endswith(("/14", "/16", "/18", "/20", "/22")),
             )
+    if version.endswith(("/22", "/23")):
+        reply["profile"] = (
+            "awm-adm-teaching-reply/8" if version.endswith("/22") else "awm-adm-teaching-reply/9"
+        )
+        for child in (reply.get("plan") or {}).get("children", []):
+            child.setdefault("reuse_symbols", [])
     rt.learning.authorize(job["grant_id"], job["lease"])
     rt.learning.outcome(
         job["grant_id"],
@@ -159,7 +174,8 @@ def reply(rt, value):
     assert job
     with rt.store.db() as db:
         grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (job["grant_id"],)).fetchone()[0])
-    if grant["provenance"]["prompt_version"] in {
+    version = grant["provenance"]["prompt_version"]
+    if version in {
         "adm-source-extraction/3",
         "adm-source-extraction/4",
         "adm-source-extraction/6",

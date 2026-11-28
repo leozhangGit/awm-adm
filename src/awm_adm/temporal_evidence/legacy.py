@@ -75,6 +75,9 @@ def extend(current, proposed):
     cells = {scope_key(c): c for c in a["cells"]}
     for c in b["cells"]:
         cells.setdefault(scope_key(c), c)
+    from .capacity import check_capacity
+
+    check_capacity(a, b, predicates)
     return Catalog.model_validate(
         {
             **a,

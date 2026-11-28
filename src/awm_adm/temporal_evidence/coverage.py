@@ -35,7 +35,8 @@ def check(task, checked, budget):
         or {p["symbol"] for p in merged["predicates"]} != {p["symbol"] for p in new["predicates"]}
     ):
         raise ValueError("Extension must retain accepted catalog coverage")
-    if any(p not in new["predicates"] for p in normalized["predicates"]) or not set(
+    descriptors = {p["symbol"]: p for p in new["predicates"]}
+    if any(p != descriptors.get(p["symbol"]) for p in normalized["predicates"]) or not set(
         normalized["entities"]
     ) <= set(new["entities"]):
         raise ValueError("Coverage cannot redefine or remove accepted semantic carriers")

@@ -37,6 +37,12 @@ Create an empty model or import a snapshot in **Domain models**. Ask and Teach a
 
 `deploy/config.toml` is the container configuration. Its loopback publication, private networking, process/resource limits and role-secret mounts form the supported deployment boundary. `config/default.toml` describes host/library defaults. Configuration is strict: unknown fields, invalid limits and foreign stores are rejected.
 
+The console's installation **Settings** page persists shared provider-call limits and the temporal predicate cap without a restart. Saved values override the corresponding startup defaults; other runtime settings remain in the configuration file. See [Settings](SETTINGS.md).
+
+For an integration running in a separate Docker container, configure the opt-in [trusted client network](TRUSTED_CLIENTS.md). The supplied Compose override preserves loopback console publication and joins only the app to a dedicated private bridge. The explicit Host/source-network policy requires an application restart; it is not enabled by Console Settings.
+
+Configuration files use `awm-adm-config/3` with one `[llm.call]` policy. If you maintain a custom `awm-adm-config/2` file, convert it offline before starting the new service with `.venv/bin/python scripts/convert_llm_config.py old.toml new.toml`. Review the mapping, then run `.venv/bin/python -m awm_adm check-config new.toml`. Custom old call limits require explicit shared-limit choices; see [configuration conversion](LIMITS.md#other-independent-bounds). Keep the original file with the paired rollback backup. Conversion does not rewrite retained model or provider records.
+
 The named `adm-data` volume stores models, conversations, requests, accounting and historical actor records. `gateway-data` stores provider state and encrypted credentials. `.local/secrets/gateway-master-key` is required to recover encrypted credentials. Keep that key private and back it up separately. The provider-secret mount is for explicit operator configuration; the normal secure Connections form uses managed credentials.
 
 ## Stop and restart

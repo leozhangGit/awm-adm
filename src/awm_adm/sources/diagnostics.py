@@ -4,6 +4,7 @@ MESSAGES = {
     "empty_extraction": "Extraction returned no claims and supplied no explanation; no facts were saved.",
     "provider_timeout": "Source extraction timed out; provider usage may be unknown. It was not retried.",
     "queue_timeout": "Source extraction exceeded its queue-wait limit before dispatch; no provider call was made.",
+    "aggregate_exhausted": "The source workflow has insufficient remaining execution time for another complete provider call; it was not sent.",
     "needs_specification": "Source extraction needs a usable specification; no facts were saved.",
     "needs_evidence_or_coverage": "Extracted claims lack supported evidence or catalog coverage.",
 }
@@ -16,7 +17,9 @@ def outcome(job):
     return {
         "stage": "source_extraction",
         "code": code,
-        "message": MESSAGES.get(code, "Source processing did not complete (" + code + ")."),
+        "message": (job.get("failure_diagnostics") or {}).get("message")
+        or MESSAGES.get(code, "Source processing did not complete (" + code + ")."),
+        **({"limit_diagnostics": job["failure_diagnostics"]} if job.get("failure_diagnostics") else {}),
         "job_id": job["id"],
         "grant_id": job.get("grant_id"),
     }

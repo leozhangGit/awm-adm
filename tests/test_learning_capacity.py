@@ -29,11 +29,11 @@ def test_default_input_capacity_is_consistent_in_python_and_both_installations()
         load_config(Path("config/default.toml")),
         load_config(Path("deploy/config.toml")),
     ):
-        assert config.learning.call.max_input_tokens == 128000
-        assert config.learning.episode.max_input_tokens == 384000
+        assert config.llm.call.max_input_tokens == 256000
+        assert config.episode_limits()["max_input_tokens"] == 768000
         assert config.learning.episode.max_calls == 3
-        assert config.learning.call.max_output_tokens == 8192
-        assert config.learning.call.max_duration_ms == 60000
+        assert config.llm.call.max_output_tokens == 32768
+        assert config.llm.call.max_duration_ms == 360000
 
 
 def test_large_teach_reaches_acquisition_and_checked_publication_with_new_defaults(rig):
@@ -42,8 +42,8 @@ def test_large_teach_reaches_acquisition_and_checked_publication_with_new_defaul
     pump(rt, key, uid, lambda _: has_ready(rt))
     step = task(rt, key, uid)["execution"]["steps"][0]
     ep = rt.learning.episode(key, step["episode_id"])
-    assert ep["body"]["call_limits"]["max_input_tokens"] == 128000
-    assert ep["body"]["limits"]["max_input_tokens"] == 256000
+    assert ep["body"]["call_limits"]["max_input_tokens"] == 256000
+    assert ep["body"]["limits"]["max_input_tokens"] == 512000
     assert ep["body"]["limits"]["max_calls"] == 2
     with rt.store.db() as db:
         grant = loads(db.execute("SELECT body FROM grants WHERE id=?", (ep["grant_id"],)).fetchone()[0])
@@ -56,21 +56,28 @@ def test_large_teach_reaches_acquisition_and_checked_publication_with_new_defaul
     assert "math.double" in rt.query(key, {"op": "capabilities"})["result"]["value"]["declarations"]
 
 
-@pytest.mark.parametrize("cap", [16000, 32000, 128000])
+@pytest.mark.parametrize("cap", [64000, 128000, 256000])
 def test_oversize_learning_keeps_diagnostics_through_episode_api_and_chat(rig, monkeypatch, cap):
     rt, gw = rig
     config = rt.config.model_dump()
-    config["learning"]["call"]["max_input_tokens"] = cap
+    config["llm"]["call"]["max_input_tokens"] = cap
     config = AppConfig.model_validate(config)
     monkeypatch.setattr(rt, "config", config)
+    state = rt.settings.get()
+    rt.settings.update(
+        {
+            "expected_revision": state["revision"],
+            "values": state["values"] | {"llm_call": config.llm.call.model_dump()},
+        }
+    )
     monkeypatch.setattr(rt.learning, "config", config)
-    key, uid = preparation(rt, gw, text=LARGE_TEXT)
+    key, uid = preparation(rt, gw)
     revision = rt.store.info(key)["revision_id"]
     original = rt.learning.supervisor.run
 
     def sized(task_input, **kw):
         value = original(task_input, **kw)
-        if task_input["operation"] == "learning_prepare" and cap == 128000:
+        if task_input["operation"] == "learning_prepare":
             # Author an over-cap complete wire, without needing a huge user message.
             value["wire"] = base64.b64encode(b"x" * (cap + 1 - 4096)).decode()
             value["input_estimate"] = cap + 1
@@ -150,7 +157,7 @@ def test_later_capacity_stop_preserves_accepted_child_and_partial_completion(rig
             task_input["operation"] == "learning_prepare"
             and "math.second" in task_input["body"]["task"]["acquisition_contract"]["interfaces"]
         ):
-            value["input_estimate"] = 128001
+            value["input_estimate"] = 256001
         return value
 
     monkeypatch.setattr(rt.learning.supervisor, "run", oversized_second)
@@ -160,7 +167,7 @@ def test_later_capacity_stop_preserves_accepted_child_and_partial_completion(rig
     summary = current["execution"]["summary"]
     assert summary["status"] == "partially_succeeded"
     assert len(summary["accepted_ids"]) == 1 and len(summary["unresolved_ids"]) == 1
-    assert summary["unresolved"][0]["diagnostic"]["required_input_reservation"] == 128001
+    assert summary["unresolved"][0]["diagnostic"]["required_input_reservation"] == 256001
     assert current["execution"]["steps"][0]["status"] == "accepted"
     assert "math.double" in rt.query(key, {"op": "capabilities"})["result"]["value"]["declarations"]
 

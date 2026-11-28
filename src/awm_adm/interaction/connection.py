@@ -118,7 +118,13 @@ class Connection:
                         uid,
                         body["idempotency_key"],
                         digest,
-                        dumps({"connection_id": saved["id"], "version": saved["version"]}),
+                        dumps(
+                            {
+                                "connection_id": saved["id"],
+                                "version": saved["version"],
+                                "call_limits": self.learning.runtime.settings.call.limits(),
+                            }
+                        ),
                         self.learning.now(),
                     ),
                 )
@@ -179,8 +185,22 @@ class Connection:
                     error = "gateway_unavailable"
                 else:
                     try:
-                        limits = self.learning.config.learning.call.model_dump()
-                        limits.update(max_calls=1, max_output_tokens=limits["max_output_tokens"])
+                        limits = config.get("call_limits")
+                        if limits is None:
+                            # A retained Enable may precede policy capture, or have
+                            # crashed after reserving its test but before linking it.
+                            # Reattach that exact grant; never infer new limits.
+                            with self.store.db() as db:
+                                retained = db.execute(
+                                    "SELECT g.body FROM connection_tests t JOIN grants g ON g.id=t.grant_id WHERE t.idem=?",
+                                    ("enable-test:" + row["id"],),
+                                ).fetchone()
+                            if retained is None:
+                                fault(
+                                    "stale_context",
+                                    "Retained Enable has no captured test limits; enable again",
+                                )
+                            limits = loads(retained["body"])["limits"]
                         grant = self.learning.test_connection(
                             conn["id"],
                             {
@@ -188,6 +208,7 @@ class Connection:
                                 "expected_version": conn["version"],
                                 "limits": limits,
                             },
+                            call_policy=limits,
                         )
                         with self.store.db() as db:
                             db.execute(

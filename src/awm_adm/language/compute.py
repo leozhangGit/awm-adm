@@ -28,6 +28,14 @@ def compute(task, budget):
     if task["operation"] == "language_ask_catalog":
         from ..conversations.history import snapshot_metadata
 
+        if "catalog_utterance" in task:
+            profiles, selection = snapshot_metadata(checked, budget, utterance=task["catalog_utterance"])
+            return {
+                **result,
+                "accepted_fact_projections": profiles,
+                "accepted_catalog_selection": selection,
+                "work": budget.used,
+            }
         return {
             **result,
             "accepted_fact_projections": snapshot_metadata(checked, budget),
